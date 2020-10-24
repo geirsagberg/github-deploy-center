@@ -1,0 +1,11 @@
+query fetchUser($login: String!) {
+  user(login: $login) {
+    id
+  }
+}
+
+query fetchCurrentUserId {
+  viewer {
+    id
+  }
+}

@@ -1,0 +1,23 @@
+query fetchReposWithWriteAccess($after: String) {
+  viewer {
+    repositories(
+      first: 100
+      after: $after
+      ownerAffiliations: [COLLABORATOR, ORGANIZATION_MEMBER, OWNER]
+      affiliations: [COLLABORATOR, ORGANIZATION_MEMBER, OWNER]
+      orderBy: { direction: ASC, field: NAME }
+    ) {
+      totalCount
+      edges {
+        node {
+          id
+          nameWithOwner
+        }
+      }
+      pageInfo {
+        endCursor
+        hasNextPage
+      }
+    }
+  }
+}
