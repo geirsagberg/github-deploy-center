@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@material-ui/core": "^4.11.0",
+    "@material-ui/lab": "^4.0.0-alpha.56",
     "@stitches/react": "^0.0.2",
     "@testing-library/jest-dom": "^5.11.5",
     "@testing-library/react": "^11.1.0",
@@ -13,11 +15,14 @@
     "@types/react-dom": "^16.9.8",
     "graphql": "^15.3.0",
     "graphql-request": "^3.2.0",
+    "graphql-tag": "^2.11.0",
+    "lodash-es": "^4.17.15",
+    "overmind": "^25.0.2",
+    "overmind-react": "^26.0.2",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-query": "^2.25.2",
     "react-scripts": "4.0.0",
-    "react-select": "^3.1.0",
     "typescript": "~4.0.3"
   },
   "scripts": {
@@ -25,16 +30,17 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "codegen": "graphql-codegen --config codegen.yml"
+    "codegen": "graphql-codegen --config codegen.yml",
+    "update-github-schema": "curl -H \"Authorization: Bearer $GITHUB_PAT\" https://api.github.com/graphql --output github.schema.json && json-format github.schema.json --indent 2"
   },
   "eslintConfig": {
     "extends": "react-app"
   },
   "browserslist": {
     "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
+      "defaults",
+      "not IE 11",
+      "not IE_Mob 11"
     ],
     "development": [
       "last 1 chrome version",
@@ -48,8 +54,9 @@
     "@graphql-codegen/typescript": "1.17.11",
     "@graphql-codegen/typescript-graphql-request": "^2.0.2",
     "@graphql-codegen/typescript-operations": "1.17.8",
+    "@types/lodash-es": "^4.17.3",
     "@types/react-select": "^3.0.22",
-    "graphql-tag": "^2.11.0",
+    "json-format-cli": "^1.1.1",
     "type-fest": "^0.18.0"
   }
 }

@@ -1,85 +1,113 @@
-import React, { FC, useRef } from 'react'
-import { css, styled } from './stitches.config'
-
-css.global({
-  'body, html': {
-    height: '100%',
-  },
-})
-
-const Button = styled('button', {
-  padding: '$1 $2',
-  border: '1px solid black',
-})
-
-const Label = styled('label', {
-  flexCol: true,
-})
-
-const Input = styled('input', {
-  border: '1px solid black',
-})
+import {
+  Box,
+  CircularProgress,
+  Container,
+  Paper,
+  TextField,
+  Typography,
+} from '@material-ui/core'
+import { Autocomplete } from '@material-ui/lab'
+import { orderBy } from 'lodash-es'
+import React, { FC, useState } from 'react'
+import { useQuery } from 'react-query'
+import { RepoFragment } from './generated/graphql'
+import { useActions, useOvermindState } from './overmind'
+import graphQLApi from './utils/graphQLApi'
 
 const App: FC = () => {
-  const tokenRef = useRef<HTMLInputElement>(null)
-  const usernameRef = useRef<HTMLInputElement>(null)
-  const token = localStorage.getItem('token') ?? undefined
-  const username = localStorage.getItem('username') ?? undefined
+  const { token } = useOvermindState()
+  const { setToken } = useActions()
   return (
-    <main
-      className={css({
-        flexCol: true,
-        maxWidth: 800,
-        margin: '0 auto',
-        alignItems: 'start',
-        '> *': {
-          margin: '$1',
-        },
-      })}>
-      <h1>GitHub Deploy Center</h1>
-      <Label>
-        <span>Paste your Personal Access Token:</span>
-        <Input
-          defaultValue={token}
-          ref={tokenRef}
+    <Container>
+      <Box p={4} display="grid" gridGap="1rem" component={Paper}>
+        <Typography variant="h1">GitHub Deploy Center</Typography>
+        <TextField
+          label="Personal Access Token"
+          value={token}
+          onChange={(e) => setToken(e.target.value)}
           type="password"
-          className={css({ width: '40rem' })}></Input>
-      </Label>
-      <Label>
-        <span>GitHub username:</span>
-        <Input defaultValue={username} ref={usernameRef}></Input>
-      </Label>
-      <Button
-        onClick={() => {
-          localStorage.setItem('token', tokenRef.current?.value ?? '')
-          localStorage.setItem('username', usernameRef.current?.value ?? '')
-        }}>
-        Save
-      </Button>
-
-      {token && username && <Repos token={token} username={username}></Repos>}
-    </main>
+        />
+        {token && <RepoSearchView />}
+      </Box>
+    </Container>
   )
 }
 
-const Repos: FC<{ token?: string; username: string }> = ({ username }) => {
-  const { data, loading, error } = useCurrentUserIdQuery()
-  const x = useFetchReposWithWriteAccessLazyQuery({
-    variables: {
-      after,
-    },
+const useSdk = () => {
+  const { token } = useOvermindState()
+  graphQLApi.setToken(token)
+  return graphQLApi
+}
+
+const RepoSearchView: FC = () => {
+  const api = useSdk()
+  const { data, isLoading, error } = useQuery('repos', async () => {
+    let after: string | null = null
+    let keepFetching = true
+    const repos: RepoFragment[] = []
+    while (keepFetching) {
+      const result = await api.fetchReposWithWriteAccess({
+        after,
+      })
+      const { hasNextPage, endCursor } = result.viewer.repositories.pageInfo
+      const nodes =
+        result.viewer.repositories.edges?.map((e) => e?.node as RepoFragment) ??
+        []
+      repos.push(...nodes)
+      keepFetching = hasNextPage
+      after = endCursor as string | null
+    }
+    return repos.map((r) => ({ id: r.id, name: r.name, owner: r.owner.login }))
   })
+  const [repoId, setRepoId] = useState(
+    () => localStorage.getItem('repoId') ?? ''
+  )
+
+  const selectedRepo = (repoId && data?.find((r) => r.id === repoId)) || null
+
+  const options = orderBy(data ?? [], (d) => d.owner.toLowerCase())
+
   return (
-    <div>
-      <h2>Repositories</h2>
-      {loading ? (
-        <div>Loading...</div>
-      ) : error ? (
-        <div>Error: {error.message}</div>
+    <>
+      <Typography variant="h2">Repositories</Typography>
+      {error instanceof Error ? (
+        <Typography>Error: {error.message}</Typography>
       ) : (
-        <div>{data?.viewer?.id}</div>
+        <Autocomplete
+          loading={isLoading}
+          options={options}
+          id="search-repos"
+          renderInput={(params) => (
+            <TextField
+              variant="outlined"
+              label="Search"
+              {...params}
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: isLoading ? (
+                  <Box
+                    maxWidth={24}
+                    maxHeight={24}
+                    ml={1}
+                    component={CircularProgress}></Box>
+                ) : null,
+              }}
+            />
+          )}
+          groupBy={(r) => r.owner}
+          getOptionLabel={(r) => r.name}
+          getOptionSelected={(first, second) => first.id === second.id}
+          value={selectedRepo}
+          autoHighlight
+          onChange={(_, value) => {
+            if (value) {
+              localStorage.setItem('repoId', value.id)
+              setRepoId(value.id)
+            }
+          }}
+        />
       )}
-    </div>
+    </>
   )
 }
 

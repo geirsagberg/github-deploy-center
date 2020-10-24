@@ -1,35 +1,25 @@
-import { GraphQLClient } from 'graphql-request'
+import { CssBaseline, MuiThemeProvider } from '@material-ui/core'
+import { Provider } from 'overmind-react'
 import React from 'react'
 import ReactDOM from 'react-dom'
+import { QueryCache, ReactQueryCacheProvider } from 'react-query'
 import App from './App'
+import { overmind } from './overmind'
 import * as serviceWorker from './serviceWorker'
+import { theme } from './theme'
 
-const githubGraphQLApiUrl = 'https://api.github.com/graphql'
-
-const client = new GraphQLClient(githubGraphQLApiUrl)
-
-const authLink = setContext((_, { headers }) => {
-  const token = localStorage.getItem('token')
-  return {
-    headers: {
-      ...headers,
-      authorization: token ? `Bearer ${token}` : '',
-    },
-  }
-})
-const httpLink = createHttpLink({
-  uri: 'https://api.github.com/graphql',
-})
-const apolloClient = new ApolloClient({
-  cache: new InMemoryCache(),
-  link: authLink.concat(httpLink),
-})
+const queryCache = new QueryCache()
 
 ReactDOM.render(
   <React.StrictMode>
-    <ApolloProvider client={apolloClient}>
-      <App />
-    </ApolloProvider>
+    <ReactQueryCacheProvider queryCache={queryCache}>
+      <MuiThemeProvider theme={theme}>
+        <CssBaseline />
+        <Provider value={overmind}>
+          <App />
+        </Provider>
+      </MuiThemeProvider>
+    </ReactQueryCacheProvider>
   </React.StrictMode>,
   document.getElementById('root')
 )

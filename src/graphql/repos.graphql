@@ -10,8 +10,7 @@ query fetchReposWithWriteAccess($after: String) {
       totalCount
       edges {
         node {
-          id
-          nameWithOwner
+          ...Repo
         }
       }
       pageInfo {
@@ -19,5 +18,13 @@ query fetchReposWithWriteAccess($after: String) {
         hasNextPage
       }
     }
+  }
+}
+
+fragment Repo on Repository {
+  id
+  name
+  owner {
+    login
   }
 }
