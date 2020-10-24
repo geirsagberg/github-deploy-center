@@ -8,7 +8,7 @@ import {
 } from '@material-ui/core'
 import { Autocomplete } from '@material-ui/lab'
 import { orderBy } from 'lodash-es'
-import React, { FC, useState } from 'react'
+import React, { FC } from 'react'
 import { useQuery } from 'react-query'
 import { RepoFragment } from './generated/graphql'
 import { useActions, useOvermindState } from './overmind'
@@ -59,11 +59,9 @@ const RepoSearchView: FC = () => {
     }
     return repos.map((r) => ({ id: r.id, name: r.name, owner: r.owner.login }))
   })
-  const [repoId, setRepoId] = useState(
-    () => localStorage.getItem('repoId') ?? ''
-  )
 
-  const selectedRepo = (repoId && data?.find((r) => r.id === repoId)) || null
+  const { selectedRepo } = useOvermindState()
+  const { setSelectedRepo } = useActions()
 
   const options = orderBy(data ?? [], (d) => d.owner.toLowerCase())
 
@@ -84,13 +82,14 @@ const RepoSearchView: FC = () => {
               {...params}
               InputProps={{
                 ...params.InputProps,
-                startAdornment: isLoading ? (
-                  <Box
-                    maxWidth={24}
-                    maxHeight={24}
-                    ml={1}
-                    component={CircularProgress}></Box>
-                ) : null,
+                startAdornment:
+                  isLoading && !selectedRepo ? (
+                    <Box
+                      maxWidth={24}
+                      maxHeight={24}
+                      ml={1}
+                      component={CircularProgress}></Box>
+                  ) : null,
               }}
             />
           )}
@@ -99,12 +98,7 @@ const RepoSearchView: FC = () => {
           getOptionSelected={(first, second) => first.id === second.id}
           value={selectedRepo}
           autoHighlight
-          onChange={(_, value) => {
-            if (value) {
-              localStorage.setItem('repoId', value.id)
-              setRepoId(value.id)
-            }
-          }}
+          onChange={(_, value) => setSelectedRepo(value)}
         />
       )}
     </>

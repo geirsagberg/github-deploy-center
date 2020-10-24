@@ -1,4 +1,4 @@
-interface RepoState {
+export interface RepoState {
   id: string
   name: string
   owner: string
