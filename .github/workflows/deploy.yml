@@ -43,10 +43,7 @@ jobs:
           deployment_id: ${{ steps.create_deployment.outputs.deployment_id }}
 
       - name: Download release artifact
-        uses: geirsagberg/fetch-gh-release-asset@0.0.5
-        with:
-          version: ${{ env.RELEASE }}
-          file: release.zip
+        run: curl https://github.com/${{ github.repository }}/releases/download/${{ env.RELEASE }}/release.zip --output release.zip
 
       - name: Unzip release artifact
         run: unzip release.zip -d release
