@@ -24,8 +24,8 @@ jobs:
         if: env.ENVIRONMENT != 'dev' && env.ENVIRONMENT != 'test' && env.ENVIRONMENT != 'prod'
         run: echo "::error::Invalid environment $ENVIRONMENT" && exit 1
 
-      - uses: octokit/request-action@v2.x
-        id: Validate release
+      - name: Validate release
+        uses: octokit/request-action@v2.x  
         with:
           route: GET /repos/${{ github.repository }}/releases/${{ env.RELEASE }}
 
