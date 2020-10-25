@@ -14,7 +14,6 @@ env:
   GITHUB_TOKEN: ${{ github.token }}
   ENVIRONMENT: ${{ github.event.inputs.environment }}
   RELEASE: ${{ github.event.inputs.release }}
-  AZCOPY_SPA_CLIENT_SECRET: ${{ secrets.AZCOPY_SPA_CLIENT_SECRET }}
 
 jobs:
   deploy:
@@ -27,7 +26,7 @@ jobs:
       - name: Validate release
         uses: octokit/request-action@v2.x  
         with:
-          route: GET /repos/${{ github.repository }}/releases/${{ env.RELEASE }}
+          route: GET /repos/${{ github.repository }}/releases/tags/${{ env.RELEASE }}
 
       - name: Create deployment
         id: create_deployment
@@ -56,6 +55,8 @@ jobs:
         run: wget -O azcopy_v10.tar.gz https://aka.ms/downloadazcopy-v10-linux && tar -xf azcopy_v10.tar.gz --strip-components=1
 
       - name: Login with Azure Service Principal
+        env:
+          AZCOPY_SPA_CLIENT_SECRET: ${{ secrets.AZCOPY_SPA_CLIENT_SECRET }}
         run: azcopy login --service-principal --application-id 6059feb3-4e4d-448a-ae16-73c8be36ef57
 
       - name: Set storage account
