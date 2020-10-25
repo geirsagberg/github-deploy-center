@@ -61,7 +61,7 @@ jobs:
           echo "STORAGE_ACCOUNT=${{ env.ENVIRONMENT == 'prod' && 'githubdeploy' || env.ENVIRONMENT == 'test' && 'githubdeploytest' || 'githubdeploydev' }}" >> $GITHUB_ENV
 
       - name: Copy files to Azure Storage
-        run: cd release && azcopy copy . "https://${STORAGE_ACCOUNT}.blob.core.windows.net/$web" --recursive
+        run: cd release && ../azcopy sync . "https://${STORAGE_ACCOUNT}.blob.core.windows.net/\$web" --delete-destination true
 
       - name: Update deployment status
         uses: avakar/set-deployment-status@578b982d2ad5f56e50864f9e21ec354a073cd6f5
