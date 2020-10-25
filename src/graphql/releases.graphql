@@ -1,0 +1,28 @@
+query fetchReleases {
+  repository(name: "github-deploy-center", owner: "geirsagberg") {
+    releases(first: 20, orderBy: { field: CREATED_AT, direction: DESC }) {
+      nodes {
+        id
+        name
+        tagName
+        tag {
+          id
+          name
+        }
+      }
+    }
+    deployments(first: 20, orderBy: { field: CREATED_AT, direction: DESC }) {
+      nodes {
+        id
+        environment
+        commit {
+          id
+        }
+        ref {
+          id
+          name
+        }
+      }
+    }
+  }
+}
