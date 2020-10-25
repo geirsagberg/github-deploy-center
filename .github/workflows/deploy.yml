@@ -49,12 +49,12 @@ jobs:
         run: unzip release.zip -d release
 
       - name: Download azcopy
-        run: wget -O azcopy_v10.tar.gz https://aka.ms/downloadazcopy-v10-linux && tar -xf azcopy_v10.tar.gz --strip-components=1
+        run: curl https://aka.ms/downloadazcopy-v10-linux --output azcopy_v10.tar.gz -L && tar -xf azcopy_v10.tar.gz --strip-components=1 && chmod +x azcopy
 
       - name: Login with Azure Service Principal
         env:
           AZCOPY_SPA_CLIENT_SECRET: ${{ secrets.AZCOPY_SPA_CLIENT_SECRET }}
-        run: azcopy login --service-principal --application-id 6059feb3-4e4d-448a-ae16-73c8be36ef57
+        run: ./azcopy login --service-principal --application-id 6059feb3-4e4d-448a-ae16-73c8be36ef57 --tenant-id a7d6d49d-a422-491d-bc2f-e60e48013583
 
       - name: Set storage account
         run: |
