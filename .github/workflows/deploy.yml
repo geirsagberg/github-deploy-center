@@ -40,7 +40,7 @@ jobs:
         uses: avakar/set-deployment-status@578b982d2ad5f56e50864f9e21ec354a073cd6f5
         with:
           state: in_progress
-          deployment_id: ${{ steps.create_deployment.outputs.deploymnet_id }}
+          deployment_id: ${{ steps.create_deployment.outputs.deployment_id }}
 
       - name: Download release artifact
         uses: geirsagberg/fetch-gh-release-asset@0.0.5
