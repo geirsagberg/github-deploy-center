@@ -43,7 +43,7 @@ jobs:
           deployment_id: ${{ steps.create_deployment.outputs.deployment_id }}
 
       - name: Download release artifact
-        run: curl https://github.com/${{ github.repository }}/releases/download/${{ env.RELEASE }}/release.zip --output release.zip
+        run: curl https://github.com/${{ github.repository }}/releases/download/${{ env.RELEASE }}/release.zip --output release.zip -L
 
       - name: Unzip release artifact
         run: unzip release.zip -d release
