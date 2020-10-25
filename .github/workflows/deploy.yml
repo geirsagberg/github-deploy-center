@@ -14,6 +14,7 @@ env:
   GITHUB_TOKEN: ${{ github.token }}
   ENVIRONMENT: ${{ github.event.inputs.environment }}
   RELEASE: ${{ github.event.inputs.release }}
+  AZCOPY_SPA_CLIENT_SECRET: ${{ secrets.AZCOPY_SPA_CLIENT_SECRET }}
 
 jobs:
   deploy:
@@ -25,11 +26,10 @@ jobs:
 
       - name: Set storage account
         run: |
-          echo "STORAGE_ACCOUNT=${{ env.ENVIRONMENT == 'prod' && 'githubdeploy' || env.ENVIRONMENT == 'test' && 'githubdeploy-test' || 'githubdeploy-dev' }}" >> $GITHUB_ENV
-          echo "SAS_SECRET_KEY=SAS_SECRET_${{ env.ENVIRONMENT == 'prod' && 'PROD' || env.ENVIRONMENT == 'test' && 'TEST' || 'DEV' }}" >> $GITHUB_DEV
+          echo "STORAGE_ACCOUNT=${{ env.ENVIRONMENT == 'prod' && 'githubdeploy' || env.ENVIRONMENT == 'test' && 'githubdeploytest' || 'githubdeploydev' }}" >> $GITHUB_ENV
 
       - name: Setup GitHub CLI
-        uses: geirsagberg/setup-gh-cli@v1
+        uses: geirsagberg/setup-gh-cli@v1.0.0
         with:
           token: ${{ env.GITHUB_TOKEN }}
 
@@ -51,7 +51,7 @@ jobs:
           deployment_id: ${{ steps.create_deployment.outputs.deploymnet_id }}
 
       - name: Download release artifact
-        uses: geirsagberg/fetch-gh-release-asset@v0.0.5
+        uses: geirsagberg/fetch-gh-release-asset@0.0.5
         with:
           version: ${{ env.RELEASE }}
           file: release.zip
@@ -62,10 +62,11 @@ jobs:
       - name: Download azcopy
         run: wget -O azcopy_v10.tar.gz https://aka.ms/downloadazcopy-v10-linux && tar -xf azcopy_v10.tar.gz --strip-components=1
 
+      - name: Login with Azure Service Principal
+        run: azcopy login --service-principal --application-id 6059feb3-4e4d-448a-ae16-73c8be36ef57
+
       - name: Copy files to Azure Storage
-        env:
-          SAS: ${{ secrets[env.SAS_SECRET_KEY] }}
-        run: cd release && azcopy copy . "https://${STORAGE_ACCOUNT}.blob.core.windows.net/$web?$SAS" --recursive
+        run: cd release && azcopy copy . "https://${STORAGE_ACCOUNT}.blob.core.windows.net/$web" --recursive
 
       - name: Update deployment status
         uses: avakar/set-deployment-status@578b982d2ad5f56e50864f9e21ec354a073cd6f5
