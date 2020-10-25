@@ -1,0 +1,21 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: Which release version to deploy (e.g. v1.0.3)
+        required: true
+      environment:
+        description: Which environment to deploy to
+        required: true
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        

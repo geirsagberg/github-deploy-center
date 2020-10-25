@@ -1,0 +1,40 @@
+name: Build and publish
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14'
+      - name: Install dependencies
+        run: yarn
+      - name: Build
+        run: yarn build
+      - name: Zip artifact
+        run: mkdir -p artifacts && cd build && zip -r ../artifacts/release.zip .
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
+      - name: Upload release artifact
+        uses: actions/upload-release-asset@v1
+        with:
+          upload-url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./artifacts/release.zip
+          asset_name: release.zip
+          asset_content_type: application/zip
