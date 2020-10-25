@@ -24,17 +24,10 @@ jobs:
         if: env.ENVIRONMENT != 'dev' && env.ENVIRONMENT != 'test' && env.ENVIRONMENT != 'prod'
         run: echo "::error::Invalid environment $ENVIRONMENT" && exit 1
 
-      - name: Set storage account
-        run: |
-          echo "STORAGE_ACCOUNT=${{ env.ENVIRONMENT == 'prod' && 'githubdeploy' || env.ENVIRONMENT == 'test' && 'githubdeploytest' || 'githubdeploydev' }}" >> $GITHUB_ENV
-
-      - name: Setup GitHub CLI
-        uses: geirsagberg/setup-gh-cli@v1.0.0
+      - uses: octokit/request-action@v2.x
+        id: Validate release
         with:
-          token: ${{ env.GITHUB_TOKEN }}
-
-      - name: Validate release
-        run: gh release view $RELEASE
+          route: GET /repos/${{ github.repository }}/releases/${{ env.RELEASE }}
 
       - name: Create deployment
         id: create_deployment
@@ -64,6 +57,10 @@ jobs:
 
       - name: Login with Azure Service Principal
         run: azcopy login --service-principal --application-id 6059feb3-4e4d-448a-ae16-73c8be36ef57
+
+      - name: Set storage account
+        run: |
+          echo "STORAGE_ACCOUNT=${{ env.ENVIRONMENT == 'prod' && 'githubdeploy' || env.ENVIRONMENT == 'test' && 'githubdeploytest' || 'githubdeploydev' }}" >> $GITHUB_ENV
 
       - name: Copy files to Azure Storage
         run: cd release && azcopy copy . "https://${STORAGE_ACCOUNT}.blob.core.windows.net/$web" --recursive
