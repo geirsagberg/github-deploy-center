@@ -1,5 +1,5 @@
-query fetchReleases {
-  repository(name: "github-deploy-center", owner: "geirsagberg") {
+query fetchReleasesAndDeployments($repoName: String!, $repoOwner: String!) {
+  repository(name: $repoName, owner: $repoOwner) {
     releases(first: 20, orderBy: { field: CREATED_AT, direction: DESC }) {
       nodes {
         id
@@ -8,6 +8,9 @@ query fetchReleases {
         tag {
           id
           name
+          target {
+            id
+          }
         }
       }
     }
