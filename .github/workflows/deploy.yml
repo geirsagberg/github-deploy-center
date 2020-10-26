@@ -36,6 +36,7 @@ jobs:
           production_environment: ${{ env.ENVIRONMENT == 'prod' }}
           description: Deployment of release ${{ env.RELEASE }} to ${{ env.ENVIRONMENT }}
           ref: ${{ env.RELEASE }}
+          auto_merge: false
 
       - name: Set deployment in progress
         uses: avakar/set-deployment-status@578b982d2ad5f56e50864f9e21ec354a073cd6f5
