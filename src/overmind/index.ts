@@ -21,10 +21,10 @@ declare module 'overmind' {
   interface Config extends IConfig<typeof config> {}
 }
 
-export const useOvermind = createHook<typeof config>()
-export const useOvermindState = createStateHook<typeof config>()
-export const useActions = createActionsHook<typeof config>()
-export const useEffects = createEffectsHook<typeof config>()
-export const useReaction = createReactionHook<typeof config>()
+export const useOvermind = createHook()
+export const useOvermindState = createStateHook()
+export const useActions = createActionsHook()
+export const useEffects = createEffectsHook()
+export const useReaction = createReactionHook()
 
 export const overmind = createOvermind(config)

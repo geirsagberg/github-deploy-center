@@ -9,15 +9,22 @@ const onInitialize: OnInitialize = ({ state }, instance) => {
       state.token = savedState.token || ''
       state.selectedRepo = savedState.selectedRepo || null
       state.environmentOrderByRepo = savedState.environmentOrderByRepo || {}
+      state.deploySettingsByRepo = savedState.deploySettingsByRepo || {}
     } catch (error) {
       console.error(error)
     }
   }
   instance.reaction(
-    ({ token, selectedRepo, environmentOrderByRepo }) => ({
+    ({
       token,
       selectedRepo,
       environmentOrderByRepo,
+      deploySettingsByRepo,
+    }) => ({
+      token,
+      selectedRepo,
+      environmentOrderByRepo,
+      deploySettingsByRepo,
     }),
     (data) => localStorage.setItem('overmind', JSON.stringify(data))
   )

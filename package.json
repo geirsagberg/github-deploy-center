@@ -35,7 +35,8 @@
     "eject": "react-scripts eject",
     "codegen": "graphql-codegen --config codegen.yml",
     "update-github-schema": "curl -H \"Authorization: Bearer $GITHUB_PAT\" https://api.github.com/graphql --output github.schema.json && json-format github.schema.json --indent 2",
-    "package": "mkdir -p artifacts && cd build && zip -r ../artifacts/release.zip ."
+    "package": "mkdir -p artifacts && cd build && zip -r ../artifacts/release.zip .",
+    "generate:github:openapi": "npx openapi-typescript https://raw.githubusercontent.com/github/rest-api-description/main/descriptions/api.github.com/api.github.com.yaml --output generated/github-types.ts"
   },
   "eslintConfig": {
     "extends": "react-app"
