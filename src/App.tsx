@@ -104,6 +104,10 @@ const getButtonColor = (state: DeploymentState): string => {
   switch (state) {
     case DeploymentState.Active:
       return colors.blue[400]
+    case DeploymentState.Failure:
+      return colors.red[400]
+    case DeploymentState.Pending:
+      return colors.orange[400]
     default:
       return colors.grey[50]
   }

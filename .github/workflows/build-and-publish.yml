@@ -5,9 +5,9 @@ on:
     branches:
       - master
     paths:
-      - "./src/**"
-      - "./public/**"
-      - "./.github/workflows/build-and-publish.yml"
+      - src/**
+      - public/**
+      - .github/workflows/build-and-publish.yml
   workflow_dispatch:
 
 env:
