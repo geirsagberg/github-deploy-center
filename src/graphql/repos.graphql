@@ -8,10 +8,8 @@ query fetchReposWithWriteAccess($after: String) {
       orderBy: { direction: ASC, field: NAME }
     ) {
       totalCount
-      edges {
-        node {
-          ...Repo
-        }
+      nodes {
+        ...Repo
       }
       pageInfo {
         endCursor

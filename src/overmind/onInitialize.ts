@@ -8,12 +8,17 @@ const onInitialize: OnInitialize = ({ state }, instance) => {
       const savedState = JSON.parse(savedStateJson)
       state.token = savedState.token || ''
       state.selectedRepo = savedState.selectedRepo || null
+      state.environmentOrderByRepo = savedState.environmentOrderByRepo || {}
     } catch (error) {
       console.error(error)
     }
   }
   instance.reaction(
-    ({ token, selectedRepo }) => ({ token, selectedRepo }),
+    ({ token, selectedRepo, environmentOrderByRepo }) => ({
+      token,
+      selectedRepo,
+      environmentOrderByRepo,
+    }),
     (data) => localStorage.setItem('overmind', JSON.stringify(data))
   )
   instance.reaction(

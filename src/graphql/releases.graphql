@@ -5,22 +5,45 @@ query fetchReleasesAndDeployments($repoName: String!, $repoOwner: String!) {
         id
         name
         tagName
-        tag {
-          id
-          name
-          target {
-            id
-          }
-        }
+        createdAt
+        updatedAt
       }
     }
     deployments(first: 20, orderBy: { field: CREATED_AT, direction: DESC }) {
       nodes {
         id
+        createdAt
         environment
-        commit {
+        ref {
           id
+          name
         }
+      }
+    }
+  }
+}
+
+query fetchReleases($repoName: String!, $repoOwner: String!) {
+  repository(name: $repoName, owner: $repoOwner) {
+    releases(first: 20, orderBy: { field: CREATED_AT, direction: DESC }) {
+      nodes {
+        id
+        name
+        tagName
+        createdAt
+      }
+    }
+  }
+}
+
+query fetchDeployments($repoName: String!, $repoOwner: String!) {
+  repository(name: $repoName, owner: $repoOwner) {
+    deployments(first: 20, orderBy: { field: CREATED_AT, direction: DESC }) {
+      nodes {
+        id
+        createdAt
+        environment
+        state
         ref {
           id
           name

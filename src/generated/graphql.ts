@@ -18639,6 +18639,80 @@ export type FetchCurrentUserIdQuery = (
   ) }
 );
 
+export type FetchReleasesAndDeploymentsQueryVariables = Exact<{
+  repoName: Scalars['String'];
+  repoOwner: Scalars['String'];
+}>;
+
+
+export type FetchReleasesAndDeploymentsQuery = (
+  { __typename: 'Query' }
+  & { repository: Maybe<(
+    { __typename: 'Repository' }
+    & { releases: (
+      { __typename: 'ReleaseConnection' }
+      & { nodes: Maybe<Array<Maybe<(
+        { __typename: 'Release' }
+        & Pick<Release, 'id' | 'name' | 'tagName' | 'createdAt' | 'updatedAt'>
+      )>>> }
+    ), deployments: (
+      { __typename: 'DeploymentConnection' }
+      & { nodes: Maybe<Array<Maybe<(
+        { __typename: 'Deployment' }
+        & Pick<Deployment, 'id' | 'createdAt' | 'environment'>
+        & { ref: Maybe<(
+          { __typename: 'Ref' }
+          & Pick<Ref, 'id' | 'name'>
+        )> }
+      )>>> }
+    ) }
+  )> }
+);
+
+export type FetchReleasesQueryVariables = Exact<{
+  repoName: Scalars['String'];
+  repoOwner: Scalars['String'];
+}>;
+
+
+export type FetchReleasesQuery = (
+  { __typename: 'Query' }
+  & { repository: Maybe<(
+    { __typename: 'Repository' }
+    & { releases: (
+      { __typename: 'ReleaseConnection' }
+      & { nodes: Maybe<Array<Maybe<(
+        { __typename: 'Release' }
+        & Pick<Release, 'id' | 'name' | 'tagName' | 'createdAt'>
+      )>>> }
+    ) }
+  )> }
+);
+
+export type FetchDeploymentsQueryVariables = Exact<{
+  repoName: Scalars['String'];
+  repoOwner: Scalars['String'];
+}>;
+
+
+export type FetchDeploymentsQuery = (
+  { __typename: 'Query' }
+  & { repository: Maybe<(
+    { __typename: 'Repository' }
+    & { deployments: (
+      { __typename: 'DeploymentConnection' }
+      & { nodes: Maybe<Array<Maybe<(
+        { __typename: 'Deployment' }
+        & Pick<Deployment, 'id' | 'createdAt' | 'environment' | 'state'>
+        & { ref: Maybe<(
+          { __typename: 'Ref' }
+          & Pick<Ref, 'id' | 'name'>
+        )> }
+      )>>> }
+    ) }
+  )> }
+);
+
 export type FetchReposWithWriteAccessQueryVariables = Exact<{
   after: Maybe<Scalars['String']>;
 }>;
@@ -18651,12 +18725,9 @@ export type FetchReposWithWriteAccessQuery = (
     & { repositories: (
       { __typename: 'RepositoryConnection' }
       & Pick<RepositoryConnection, 'totalCount'>
-      & { edges: Maybe<Array<Maybe<(
-        { __typename: 'RepositoryEdge' }
-        & { node: Maybe<(
-          { __typename: 'Repository' }
-          & RepoFragment
-        )> }
+      & { nodes: Maybe<Array<Maybe<(
+        { __typename: 'Repository' }
+        & RepoFragment
       )>>>, pageInfo: (
         { __typename: 'PageInfo' }
         & Pick<PageInfo, 'endCursor' | 'hasNextPage'>
@@ -18693,15 +18764,77 @@ export const FetchCurrentUserIdDocument = gql`
   }
 }
     `;
+export const FetchReleasesAndDeploymentsDocument = gql`
+    query fetchReleasesAndDeployments($repoName: String!, $repoOwner: String!) {
+  repository(name: $repoName, owner: $repoOwner) {
+    releases(first: 20, orderBy: {field: CREATED_AT, direction: DESC}) {
+      nodes {
+        id
+        name
+        tagName
+        createdAt
+        updatedAt
+      }
+    }
+    deployments(first: 20, orderBy: {field: CREATED_AT, direction: DESC}) {
+      nodes {
+        id
+        createdAt
+        environment
+        ref {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+    `;
+export const FetchReleasesDocument = gql`
+    query fetchReleases($repoName: String!, $repoOwner: String!) {
+  repository(name: $repoName, owner: $repoOwner) {
+    releases(first: 20, orderBy: {field: CREATED_AT, direction: DESC}) {
+      nodes {
+        id
+        name
+        tagName
+        createdAt
+      }
+    }
+  }
+}
+    `;
+export const FetchDeploymentsDocument = gql`
+    query fetchDeployments($repoName: String!, $repoOwner: String!) {
+  repository(name: $repoName, owner: $repoOwner) {
+    deployments(first: 20, orderBy: {field: CREATED_AT, direction: DESC}) {
+      nodes {
+        id
+        createdAt
+        environment
+        state
+        ref {
+          id
+          name
+        }
+      }
+    }
+  }
+}
+    `;
 export const FetchReposWithWriteAccessDocument = gql`
     query fetchReposWithWriteAccess($after: String) {
   viewer {
-    repositories(first: 100, after: $after, ownerAffiliations: [COLLABORATOR, ORGANIZATION_MEMBER, OWNER], affiliations: [COLLABORATOR, ORGANIZATION_MEMBER, OWNER], orderBy: {direction: ASC, field: NAME}) {
+    repositories(
+      first: 100
+      after: $after
+      ownerAffiliations: [COLLABORATOR, ORGANIZATION_MEMBER, OWNER]
+      affiliations: [COLLABORATOR, ORGANIZATION_MEMBER, OWNER]
+      orderBy: {direction: ASC, field: NAME}
+    ) {
       totalCount
-      edges {
-        node {
-          ...Repo
-        }
+      nodes {
+        ...Repo
       }
       pageInfo {
         endCursor
@@ -18720,6 +18853,15 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
   return {
     fetchCurrentUserId(variables?: FetchCurrentUserIdQueryVariables): Promise<FetchCurrentUserIdQuery> {
       return withWrapper(() => client.request<FetchCurrentUserIdQuery>(print(FetchCurrentUserIdDocument), variables));
+    },
+    fetchReleasesAndDeployments(variables: FetchReleasesAndDeploymentsQueryVariables): Promise<FetchReleasesAndDeploymentsQuery> {
+      return withWrapper(() => client.request<FetchReleasesAndDeploymentsQuery>(print(FetchReleasesAndDeploymentsDocument), variables));
+    },
+    fetchReleases(variables: FetchReleasesQueryVariables): Promise<FetchReleasesQuery> {
+      return withWrapper(() => client.request<FetchReleasesQuery>(print(FetchReleasesDocument), variables));
+    },
+    fetchDeployments(variables: FetchDeploymentsQueryVariables): Promise<FetchDeploymentsQuery> {
+      return withWrapper(() => client.request<FetchDeploymentsQuery>(print(FetchDeploymentsDocument), variables));
     },
     fetchReposWithWriteAccess(variables?: FetchReposWithWriteAccessQueryVariables): Promise<FetchReposWithWriteAccessQuery> {
       return withWrapper(() => client.request<FetchReposWithWriteAccessQuery>(print(FetchReposWithWriteAccessDocument), variables));
