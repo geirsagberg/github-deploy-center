@@ -11,8 +11,11 @@ jobs:
       - name: Sanity check
         id: sanity
         run: |
+          echo $(echo "WTF") > hmm
           echo "LOL"
           echo "OMG" > omg
       - name: Check 2
         run: |
           echo "${{ steps.sanity.outputs.stdout }}"
+          cat ./hmm
+          cat ./omg
