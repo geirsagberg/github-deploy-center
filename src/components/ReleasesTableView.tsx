@@ -84,11 +84,12 @@ export const ReleasesTableView: FC = () => {
     return record
   }, {})
 
-  const isLatestReleaseForEnvironment = (
+  const isAfterLatestReleaseForEnvironment = (
     release: ReleaseModel,
     environment: string
   ) => {
-    return releasesByEnvironment[environment]?.[0]?.tagName === release.tagName
+    const latestRelease = releasesByEnvironment[environment]?.[0]
+    return !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
   }
 
   return (
@@ -113,7 +114,7 @@ export const ReleasesTableView: FC = () => {
                 const deployment = deploymentsByTag[release.tagName]?.find(
                   (d) => d.environment === environment
                 )
-                const isLatest = isLatestReleaseForEnvironment(
+                const isLatest = isAfterLatestReleaseForEnvironment(
                   release,
                   environment
                 )
