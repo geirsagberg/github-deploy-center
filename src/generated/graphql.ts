@@ -18745,7 +18745,10 @@ export type RepoFragment = (
   ) | (
     { __typename: 'User' }
     & Pick<User, 'login'>
-  ) }
+  ), defaultBranchRef: Maybe<(
+    { __typename: 'Ref' }
+    & Pick<Ref, 'name'>
+  )> }
 );
 
 export const RepoFragmentDoc = gql`
@@ -18754,6 +18757,9 @@ export const RepoFragmentDoc = gql`
   name
   owner {
     login
+  }
+  defaultBranchRef {
+    name
   }
 }
     `;

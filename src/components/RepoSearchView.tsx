@@ -2,30 +2,11 @@ import { Box, CircularProgress, TextField, Typography } from '@material-ui/core'
 import { Autocomplete } from '@material-ui/lab'
 import { orderBy } from 'lodash-es'
 import React, { FC } from 'react'
-import { useQuery } from 'react-query'
-import { RepoFragment } from '../generated/graphql'
 import { useActions, useOvermindState } from '../overmind'
-import graphQLApi from '../utils/graphQLApi'
+import { useFetchRepos } from './fetchHooks'
 
 export const RepoSearchView: FC = () => {
-  const { data, isLoading, error } = useQuery('repos', async () => {
-    let after: string | null = null
-    let keepFetching = true
-    const repos: RepoFragment[] = []
-    while (keepFetching) {
-      const result = await graphQLApi.fetchReposWithWriteAccess({
-        after,
-      })
-      const { hasNextPage, endCursor } = result.viewer.repositories.pageInfo
-      const nodes =
-        result.viewer.repositories.nodes?.map((e) => e as RepoFragment) ?? []
-      repos.push(...nodes)
-      keepFetching = hasNextPage
-      after = endCursor as string | null
-    }
-    return repos.map((r) => ({ id: r.id, name: r.name, owner: r.owner.login }))
-  })
-
+  const { data, error, isLoading } = useFetchRepos()
   const { selectedRepo } = useOvermindState()
   const { setSelectedRepo } = useActions()
 

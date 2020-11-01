@@ -1,5 +1,10 @@
+import { getOrElse } from 'fp-ts/lib/Either'
+import { pipe } from 'fp-ts/lib/function'
 import { OnInitialize } from 'overmind'
+import { orNull } from '../utils/fp'
 import graphQLApi from '../utils/graphQLApi'
+import { restApi } from './effects'
+import { DeploySettingsByRepoCodec, RepoCodec } from './state'
 
 const onInitialize: OnInitialize = ({ state }, instance) => {
   const savedStateJson = localStorage.getItem('overmind')
@@ -7,9 +12,18 @@ const onInitialize: OnInitialize = ({ state }, instance) => {
     try {
       const savedState = JSON.parse(savedStateJson)
       state.token = savedState.token || ''
-      state.selectedRepo = savedState.selectedRepo || null
+      state.selectedRepo = pipe(
+        RepoCodec.decode(savedState.selectedRepo),
+        orNull()
+      )
       state.environmentOrderByRepo = savedState.environmentOrderByRepo || {}
-      state.deploySettingsByRepo = savedState.deploySettingsByRepo || {}
+      state.deploySettingsByRepo = pipe(
+        DeploySettingsByRepoCodec.decode(savedState.deploySettingsByRepo),
+        getOrElse((e) => {
+          console.error(e)
+          return {}
+        })
+      )
     } catch (error) {
       console.error(error)
     }
@@ -30,7 +44,10 @@ const onInitialize: OnInitialize = ({ state }, instance) => {
   )
   instance.reaction(
     ({ token }) => token,
-    (token) => graphQLApi.setToken(token)
+    (token) => {
+      graphQLApi.setToken(token)
+      restApi.setToken(token)
+    }
   )
 }
 

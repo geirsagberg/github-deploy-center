@@ -7,10 +7,12 @@ import {
   TableHead,
   TableRow,
 } from '@material-ui/core'
+import { Alert } from '@material-ui/lab'
 import { groupBy, orderBy, uniq } from 'lodash-es'
 import React, { FC } from 'react'
+import { useMutation } from 'react-query'
 import { DeploymentState } from '../generated/graphql'
-import { useOvermindState } from '../overmind'
+import { useActions, useOvermindState } from '../overmind'
 import { DeploymentModel } from '../overmind/state'
 import { useFetchDeployments, useFetchReleases } from './fetchHooks'
 
@@ -35,9 +37,22 @@ const estimateEnvironmentsOrder = (
 }
 export const ReleasesTableView: FC = () => {
   const { environmentOrderForSelectedRepo } = useOvermindState()
+  const { triggerDeployment } = useActions()
 
   const releaseResults = useFetchReleases()
   const deploymentResults = useFetchDeployments()
+
+  const [triggerDeploy, { error, isLoading }] = useMutation(
+    async ({
+      release,
+      environment,
+    }: {
+      release: string
+      environment: string
+    }) => {
+      await triggerDeployment({ release, environment })
+    }
+  )
 
   const releasesSorted = orderBy(
     releaseResults.data,
@@ -54,42 +69,63 @@ export const ReleasesTableView: FC = () => {
   )
 
   return (
-    <Table>
-      <TableHead>
-        <TableRow>
-          <TableCell>Release name</TableCell>
-          {environments.map((environment) => (
-            <TableCell key={environment}>{environment}</TableCell>
-          ))}
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {releasesSorted.map((release) => (
-          <TableRow key={release.id}>
-            <TableCell style={{ width: '20%' }}>{release.name}</TableCell>
-            {environments.map((environment) => {
-              const deployment = deploymentsByTag[release.tagName]?.find(
-                (d) => d.environment === environment
-              )
-              return (
-                <TableCell key={environment}>
-                  {deployment ? (
-                    <Button
-                      variant="outlined"
-                      style={{ color: getButtonColor(deployment.state) }}>
-                      {deployment.state}
-                    </Button>
-                  ) : (
-                    <Button variant="contained" color="primary">
-                      Deploy
-                    </Button>
-                  )}
-                </TableCell>
-              )
-            })}
+    <>
+      {error instanceof Error && (
+        <Alert severity="error">{error.message}</Alert>
+      )}
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Release name</TableCell>
+            {environments.map((environment) => (
+              <TableCell key={environment}>{environment}</TableCell>
+            ))}
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHead>
+        <TableBody>
+          {releasesSorted.map((release) => (
+            <TableRow key={release.id}>
+              <TableCell style={{ width: '20%' }}>{release.name}</TableCell>
+              {environments.map((environment) => {
+                const deployment = deploymentsByTag[release.tagName]?.find(
+                  (d) => d.environment === environment
+                )
+                return (
+                  <TableCell key={environment}>
+                    {deployment ? (
+                      <Button
+                        disabled={isLoading}
+                        variant="outlined"
+                        style={{ color: getButtonColor(deployment.state) }}
+                        onClick={() =>
+                          triggerDeploy({
+                            release: release.tagName,
+                            environment,
+                          })
+                        }>
+                        {deployment.state}
+                      </Button>
+                    ) : (
+                      <Button
+                        disabled={isLoading}
+                        variant="contained"
+                        color="primary"
+                        onClick={() =>
+                          triggerDeploy({
+                            release: release.tagName,
+                            environment,
+                          })
+                        }>
+                        Deploy
+                      </Button>
+                    )}
+                  </TableCell>
+                )
+              })}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </>
   )
 }

@@ -1,5 +1,10 @@
-import { Action } from 'overmind'
-import { RepoModel } from './state'
+import { Action, AsyncAction } from 'overmind'
+import {
+  createDeployWorkflowSettings,
+  DeployWorkflowCodec,
+  DeployWorkflowSettings,
+  RepoModel,
+} from './state'
 
 export const setToken: Action<string> = ({ state }, token) => {
   state.token = token
@@ -9,57 +14,43 @@ export const setSelectedRepo: Action<RepoModel | null> = ({ state }, repo) => {
   state.selectedRepo = repo
 }
 
-export const setWorkflowForSelectedRepo: Action<string> = (
-  { state: { selectedRepoId, deploySettingsByRepo } },
-  workflowId
-) => {
-  if (selectedRepoId) {
-    if (deploySettingsByRepo[selectedRepoId]) {
-      deploySettingsByRepo[selectedRepoId].action.workflowId = workflowId
+export const updateWorkflowSettings: Action<(
+  settings: DeployWorkflowSettings
+) => void> = ({ state: { deploySettingsByRepo, selectedRepo } }, update) => {
+  if (selectedRepo) {
+    let deploySettings = deploySettingsByRepo[selectedRepo.id]
+    if (DeployWorkflowCodec.is(deploySettings)) {
+      update(deploySettings)
     } else {
-      deploySettingsByRepo[selectedRepoId] = {
-        type: 'action',
-        action: {
-          inputs: [],
-          workflowId,
-        },
-      }
+      deploySettings = createDeployWorkflowSettings({
+        ref: selectedRepo.defaultBranch,
+      })
+      update(deploySettings)
+      deploySettingsByRepo[selectedRepo.id] = deploySettings
     }
   }
 }
 
-export const addWorkflowInput: Action = ({
-  state: { selectedRepoId, deploySettingsByRepo },
-}) => {
-  if (selectedRepoId) {
-    if (deploySettingsByRepo[selectedRepoId]) {
-      if (!Array.isArray(deploySettingsByRepo[selectedRepoId].action.inputs)) {
-        deploySettingsByRepo[selectedRepoId].action.inputs = []
-      }
-      deploySettingsByRepo[selectedRepoId].action.inputs.push(['', ''])
-    } else {
-      deploySettingsByRepo[selectedRepoId] = {
-        type: 'action',
-        action: {
-          inputs: [['', '']],
-          workflowId: '',
-        },
-      }
-    }
-  }
-}
-
-export const deleteWorkflowInput: Action<number> = (
-  { state: { deploySettingsForSelectedRepo } },
-  index
+export const triggerDeployment: AsyncAction<{
+  release: string
+  environment: string
+}> = async (
+  { effects, state: { selectedRepo, deploySettingsForSelectedRepo } },
+  { release, environment }
 ) => {
-  deploySettingsForSelectedRepo.action.inputs.splice(index, 1)
-}
+  if (!selectedRepo || !DeployWorkflowCodec.is(deploySettingsForSelectedRepo))
+    return
 
-export const updateInput: Action<{
-  index: number
-  key: string
-  value: string
-}> = ({ state: { deploySettingsForSelectedRepo } }, { index, key, value }) => {
-  deploySettingsForSelectedRepo.action.inputs[index] = [key, value]
+  if (
+    window.confirm(
+      `Are you sure you want to deploy "${release}" to "${environment}" in "${selectedRepo.owner}/${selectedRepo.name}@${deploySettingsForSelectedRepo.ref}"?`
+    )
+  ) {
+    await effects.restApi.triggerDeployWorkflow({
+      deploySettings: deploySettingsForSelectedRepo,
+      environment,
+      release,
+      selectedRepo,
+    })
+  }
 }

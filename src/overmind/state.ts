@@ -1,11 +1,15 @@
 import { Dayjs } from 'dayjs'
+import * as t from 'io-ts'
 import { DeploymentState } from '../generated/graphql'
 
-export type RepoModel = {
-  id: string
-  name: string
-  owner: string
-}
+export const RepoCodec = t.type({
+  id: t.string,
+  name: t.string,
+  owner: t.string,
+  defaultBranch: t.string,
+})
+
+export type RepoModel = t.TypeOf<typeof RepoCodec>
 
 export type ReleaseModel = {
   id: string
@@ -22,24 +26,51 @@ export type DeploymentModel = {
   state: DeploymentState
 }
 
-export type DeployAction = {
-  workflowId: string
-  inputs: [string, string][]
-}
+export const DeployWorkflowCodec = t.type({
+  type: t.literal('workflow'),
+  workflowId: t.number,
+  releaseKey: t.string,
+  environmentKey: t.string,
+  ref: t.string,
+})
 
-export type DeploySettings = {
-  type: 'action' | 'webhook' | 'deployment'
-  action: DeployAction
-}
+export type DeployWorkflowSettings = t.TypeOf<typeof DeployWorkflowCodec>
+
+export const createDeployWorkflowSettings = ({
+  workflowId = 0,
+  ref,
+}: {
+  workflowId?: number
+  ref: string
+}): DeployWorkflowSettings => ({
+  type: 'workflow',
+  environmentKey: 'environment',
+  releaseKey: 'release',
+  workflowId,
+  ref,
+})
+
+export const DeployDeploymentCodec = t.type({
+  type: t.literal('deployment'),
+})
+
+export const DeploySettingsCodec = t.union([
+  DeployWorkflowCodec,
+  DeployDeploymentCodec,
+])
+
+export const DeploySettingsByRepoCodec = t.record(t.string, DeploySettingsCodec)
+
+type DeploySettings = t.TypeOf<typeof DeploySettingsCodec>
 
 export type AppState = {
   token: string
   selectedRepo: RepoModel | null
   selectedRepoId: string | null
   environmentOrderByRepo: Record<string, string[]>
-  environmentOrderForSelectedRepo: string[] | null
+  environmentOrderForSelectedRepo: Readonly<string[]> | null
   deploySettingsByRepo: Record<string, DeploySettings>
-  deploySettingsForSelectedRepo: DeploySettings
+  deploySettingsForSelectedRepo: Readonly<DeploySettings | null>
 }
 
 const state: AppState = {
@@ -57,17 +88,11 @@ const state: AppState = {
     )
   },
   deploySettingsByRepo: {},
-  get deploySettingsForSelectedRepo(): DeploySettings {
-    return (
-      (this.selectedRepoId &&
-        this.deploySettingsByRepo[this.selectedRepoId]) || {
-        type: 'action',
-        action: {
-          inputs: [],
-          workflowId: '',
-        },
-      }
-    )
+  get deploySettingsForSelectedRepo() {
+    return this.selectedRepo
+      ? this.deploySettingsByRepo[this.selectedRepo.id] ??
+          createDeployWorkflowSettings({ ref: this.selectedRepo.defaultBranch })
+      : null
   },
 }
 

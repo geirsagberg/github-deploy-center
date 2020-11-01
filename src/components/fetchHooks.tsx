@@ -1,10 +1,11 @@
+import Axios from 'axios'
 import dayjs from 'dayjs'
 import { orderBy } from 'lodash-es'
 import { useQuery } from 'react-query'
 import { paths } from '../generated/github-types'
-import { DeploymentState } from '../generated/graphql'
+import { DeploymentState, RepoFragment } from '../generated/graphql'
 import { useOvermindState } from '../overmind'
-import { DeploymentModel, ReleaseModel } from '../overmind/state'
+import { DeploymentModel, ReleaseModel, RepoModel } from '../overmind/state'
 import graphQLApi from '../utils/graphQLApi'
 
 export const useFetchReleases = () => {
@@ -72,7 +73,9 @@ export const useFetchWorkflows = () => {
       if (!selectedRepo || !token) return []
 
       // TODO: Get all if over 100
-      const response = (await fetch(
+      const response = await Axios.get<
+        paths['/repos/{owner}/{repo}/actions/workflows']['get']['responses']['200']['application/json']
+      >(
         `https://api.github.com/repos/${selectedRepo.owner}/${selectedRepo.name}/actions/workflows`,
         {
           headers: {
@@ -80,13 +83,39 @@ export const useFetchWorkflows = () => {
             Accept: 'application/vnd.github.v3+json',
           },
         }
-      ).then((res) =>
-        res.json()
-      )) as paths['/repos/{owner}/{repo}/actions/workflows']['get']['responses']['200']['application/json']
+      )
 
       // TODO: Only return workflows with `workflow_dispatch` trigger
-      return orderBy(response.workflows ?? [], (w) => w.name)
+      return orderBy(response.data?.workflows ?? [], (w) => w.name)
     }
   )
+  return { data, isLoading, error }
+}
+
+export const useFetchRepos = () => {
+  const { data, isLoading, error } = useQuery('repos', async () => {
+    let after: string | null = null
+    let keepFetching = true
+    const repos: RepoFragment[] = []
+    while (keepFetching) {
+      const result = await graphQLApi.fetchReposWithWriteAccess({
+        after,
+      })
+      const { hasNextPage, endCursor } = result.viewer.repositories.pageInfo
+      const nodes =
+        result.viewer.repositories.nodes?.map((e) => e as RepoFragment) ?? []
+      repos.push(...nodes)
+      keepFetching = hasNextPage
+      after = endCursor as string | null
+    }
+    return repos.map(
+      (r): RepoModel => ({
+        id: r.id,
+        name: r.name,
+        owner: r.owner.login,
+        defaultBranch: r.defaultBranchRef?.name ?? '',
+      })
+    )
+  })
   return { data, isLoading, error }
 }

@@ -25,4 +25,7 @@ fragment Repo on Repository {
   owner {
     login
   }
+  defaultBranchRef {
+    name
+  }
 }
