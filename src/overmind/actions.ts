@@ -46,11 +46,19 @@ export const triggerDeployment: AsyncAction<{
       `Are you sure you want to deploy "${release}" to "${environment}" in "${selectedRepo.owner}/${selectedRepo.name}@${deploySettingsForSelectedRepo.ref}"?`
     )
   ) {
-    await effects.restApi.triggerDeployWorkflow({
-      deploySettings: deploySettingsForSelectedRepo,
-      environment,
-      release,
-      selectedRepo,
+    const { owner, name } = selectedRepo
+    const {
+      ref,
+      workflowId,
+      environmentKey,
+      releaseKey,
+    } = deploySettingsForSelectedRepo
+    await effects.restApi.octokit.actions.createWorkflowDispatch({
+      owner,
+      repo: name,
+      ref,
+      workflow_id: workflowId,
+      inputs: { [releaseKey]: release, [environmentKey]: environment },
     })
   }
 }

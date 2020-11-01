@@ -8,12 +8,12 @@ import {
   TableRow,
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
-import { groupBy, orderBy, uniq } from 'lodash-es'
+import { groupBy, keyBy, orderBy, uniq } from 'lodash-es'
 import React, { FC } from 'react'
 import { useMutation } from 'react-query'
 import { DeploymentState } from '../generated/graphql'
 import { useActions, useOvermindState } from '../overmind'
-import { DeploymentModel } from '../overmind/state'
+import { DeploymentModel, ReleaseModel } from '../overmind/state'
 import { useFetchDeployments, useFetchReleases } from './fetchHooks'
 
 const getButtonColor = (state: DeploymentState): string => {
@@ -24,6 +24,8 @@ const getButtonColor = (state: DeploymentState): string => {
       return colors.red[400]
     case DeploymentState.Pending:
       return colors.orange[400]
+    case DeploymentState.InProgress:
+      return colors.yellow[400]
     default:
       return colors.grey[50]
   }
@@ -60,13 +62,34 @@ export const ReleasesTableView: FC = () => {
     'desc'
   )
 
-  const deploymentsByTag = groupBy(deploymentResults.data, (d) => d.refName)
+  const releasesByTag = keyBy(releasesSorted, (r) => r.tagName)
+
+  const deployments = deploymentResults.data ?? []
+
+  const deploymentsByTag = groupBy(deployments, (d) => d.refName)
 
   const environmentsOrder = environmentOrderForSelectedRepo || []
 
   const environments = uniq(
-    environmentsOrder.concat(estimateEnvironmentsOrder(deploymentResults.data))
+    environmentsOrder.concat(estimateEnvironmentsOrder(deployments))
   )
+
+  const releasesByEnvironment = environments.reduce<
+    Record<string, ReleaseModel[]>
+  >((record, environment) => {
+    record[environment] = deployments
+      .filter((d) => d.environment === environment)
+      .map((d) => releasesByTag[d.refName])
+      .filter((d) => !!d)
+    return record
+  }, {})
+
+  const isLatestReleaseForEnvironment = (
+    release: ReleaseModel,
+    environment: string
+  ) => {
+    return releasesByEnvironment[environment]?.[0]?.tagName === release.tagName
+  }
 
   return (
     <>
@@ -90,6 +113,10 @@ export const ReleasesTableView: FC = () => {
                 const deployment = deploymentsByTag[release.tagName]?.find(
                   (d) => d.environment === environment
                 )
+                const isLatest = isLatestReleaseForEnvironment(
+                  release,
+                  environment
+                )
                 return (
                   <TableCell key={environment}>
                     {deployment ? (
@@ -108,8 +135,8 @@ export const ReleasesTableView: FC = () => {
                     ) : (
                       <Button
                         disabled={isLoading}
-                        variant="contained"
-                        color="primary"
+                        variant={isLatest ? 'contained' : 'outlined'}
+                        color={isLatest ? 'primary' : 'default'}
                         onClick={() =>
                           triggerDeploy({
                             release: release.tagName,

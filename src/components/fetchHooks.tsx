@@ -1,10 +1,8 @@
-import Axios from 'axios'
 import dayjs from 'dayjs'
 import { orderBy } from 'lodash-es'
 import { useQuery } from 'react-query'
-import { paths } from '../generated/github-types'
 import { DeploymentState, RepoFragment } from '../generated/graphql'
-import { useOvermindState } from '../overmind'
+import { useEffects, useOvermindState } from '../overmind'
 import { DeploymentModel, ReleaseModel, RepoModel } from '../overmind/state'
 import graphQLApi from '../utils/graphQLApi'
 
@@ -67,23 +65,19 @@ export const useFetchDeployments = () => {
 
 export const useFetchWorkflows = () => {
   const { selectedRepo, token } = useOvermindState()
+  const { restApi } = useEffects()
   const { data, isLoading, error } = useQuery(
     `${selectedRepo?.owner}/${selectedRepo?.name}-workflows`,
     async () => {
       if (!selectedRepo || !token) return []
 
-      // TODO: Get all if over 100
-      const response = await Axios.get<
-        paths['/repos/{owner}/{repo}/actions/workflows']['get']['responses']['200']['application/json']
-      >(
-        `https://api.github.com/repos/${selectedRepo.owner}/${selectedRepo.name}/actions/workflows`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/vnd.github.v3+json',
-          },
-        }
-      )
+      const { owner, name: repo } = selectedRepo
+
+      const response = await restApi.octokit.actions.listRepoWorkflows({
+        owner,
+        repo,
+        per_page: 100,
+      })
 
       // TODO: Only return workflows with `workflow_dispatch` trigger
       return orderBy(response.data?.workflows ?? [], (w) => w.name)
