@@ -9,11 +9,12 @@ import {
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
 import { groupBy, keyBy, orderBy, uniq } from 'lodash-es'
-import React, { FC } from 'react'
+import React, { FC, useState } from 'react'
 import { useMutation } from 'react-query'
 import { DeploymentState } from '../generated/graphql'
 import { useActions, useOvermindState } from '../overmind'
 import { DeploymentModel, ReleaseModel } from '../overmind/state'
+import { ApplicationSelector } from './ApplicationSelector'
 import { useFetchDeployments, useFetchReleases } from './fetchHooks'
 
 const getButtonColor = (state: DeploymentState): string => {
@@ -40,9 +41,32 @@ const estimateEnvironmentsOrder = (
 export const ReleasesTableView: FC = () => {
   const { environmentOrderForSelectedRepo } = useOvermindState()
   const { triggerDeployment } = useActions()
+  const allReleaseResultsForRepo = useFetchReleases()
+  const allDeploymentResultsForRepo = useFetchDeployments()
 
-  const releaseResults = useFetchReleases()
-  const deploymentResults = useFetchDeployments()
+  const [filterByApplication, setFilterByApplication] = useState(false)
+  const [currentApplication, setCurrentApplication] = useState<string>()
+
+  const appNames = new Set(
+    allReleaseResultsForRepo.data?.map((releaseData) =>
+      releaseData.tagName.substring(0, releaseData.tagName.indexOf('-'))
+    )
+  )
+
+  const releases =
+    filterByApplication && currentApplication
+      ? allReleaseResultsForRepo.data?.filter(
+          (releaseData) => releaseData.tagName.indexOf(currentApplication) > -1
+        ) || []
+      : allReleaseResultsForRepo.data || []
+
+  const deployments =
+    filterByApplication && currentApplication
+      ? allDeploymentResultsForRepo.data?.filter(
+          (deploymentData) =>
+            deploymentData.refName.indexOf(currentApplication) > -1
+        ) || []
+      : allDeploymentResultsForRepo.data || []
 
   const [triggerDeploy, { error, isLoading }] = useMutation(
     async ({
@@ -56,15 +80,9 @@ export const ReleasesTableView: FC = () => {
     }
   )
 
-  const releasesSorted = orderBy(
-    releaseResults.data,
-    (r) => r.createdAt,
-    'desc'
-  )
+  const releasesSorted = orderBy(releases, (r) => r.createdAt, 'desc')
 
   const releasesByTag = keyBy(releasesSorted, (r) => r.tagName)
-
-  const deployments = deploymentResults.data ?? []
 
   const deploymentsByTag = groupBy(deployments, (d) => d.refName)
 
@@ -97,6 +115,13 @@ export const ReleasesTableView: FC = () => {
       {error instanceof Error && (
         <Alert severity="error">{error.message}</Alert>
       )}
+      <ApplicationSelector
+        appNames={appNames}
+        isMonorepo={filterByApplication}
+        shouldFilterByApplication={setFilterByApplication}
+        currentApp={currentApplication}
+        setCurrentApp={setCurrentApplication}
+      />
       <Table>
         <TableHead>
           <TableRow>
