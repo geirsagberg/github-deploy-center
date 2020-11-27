@@ -1,12 +1,4 @@
-import {
-  Button,
-  colors,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-} from '@material-ui/core'
+import { Button, colors, Table, TableBody, TableCell, TableHead, TableRow, } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
 import { groupBy, keyBy, orderBy, uniq } from 'lodash-es'
 import React, { FC, useState } from 'react'
@@ -17,20 +9,26 @@ import { DeploymentModel, ReleaseModel } from '../overmind/state'
 import { ApplicationSelector } from './ApplicationSelector'
 import { useFetchDeployments, useFetchReleases } from './fetchHooks'
 
-const getButtonColor = (state: DeploymentState): string => {
+
+const getButtonStyle = (state: DeploymentState) => {
   switch (state) {
     case DeploymentState.Active:
-      return colors.blue[400]
+      return { backgroundColor: colors.blue[400] }
     case DeploymentState.Failure:
-      return colors.red[400]
+      return { color: colors.red[400] }
     case DeploymentState.Pending:
-      return colors.orange[400]
+      return { color: colors.orange[400] }
     case DeploymentState.InProgress:
-      return colors.yellow[400]
+      return { color: colors.yellow[400] }
     default:
-      return colors.grey[50]
+      return { color: colors.grey[50] }
   }
 }
+
+const getButtonVariant = (state: DeploymentState): "contained" | "outlined" => {
+  return state === DeploymentState.Active ? "contained" : "outlined"
+}
+
 const estimateEnvironmentsOrder = (
   deployments: DeploymentModel[] | null | undefined
 ) => {
@@ -38,6 +36,7 @@ const estimateEnvironmentsOrder = (
     orderBy(deployments || [], (d) => d.createdAt).map((d) => d.environment)
   )
 }
+
 export const ReleasesTableView: FC = () => {
   const { environmentOrderForSelectedRepo } = useOvermindState()
   const { triggerDeployment } = useActions()
@@ -56,16 +55,16 @@ export const ReleasesTableView: FC = () => {
   const releases =
     filterByApplication && currentApplication
       ? allReleaseResultsForRepo.data?.filter(
-          (releaseData) => releaseData.tagName.indexOf(currentApplication) > -1
-        ) || []
+        (releaseData) => releaseData.tagName.indexOf(currentApplication) > -1
+      ) || []
       : allReleaseResultsForRepo.data || []
 
   const deployments =
     filterByApplication && currentApplication
       ? allDeploymentResultsForRepo.data?.filter(
-          (deploymentData) =>
-            deploymentData.refName.indexOf(currentApplication) > -1
-        ) || []
+        (deploymentData) =>
+          deploymentData.refName.indexOf(currentApplication) > -1
+      ) || []
       : allDeploymentResultsForRepo.data || []
 
   const [triggerDeploy, { error, isLoading }] = useMutation(
@@ -110,6 +109,28 @@ export const ReleasesTableView: FC = () => {
     return !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
   }
 
+  const createButton = (deployment: DeploymentModel | undefined, release: ReleaseModel, environment: string) => {
+    const isLatest = isAfterLatestReleaseForEnvironment(
+      release,
+      environment
+    )
+    const deployButtonVariant = isLatest ? 'contained' : 'outlined'
+
+    return <Button
+      disabled={isLoading}
+      variant={deployment ? getButtonVariant(deployment.state) : deployButtonVariant}
+      color={!deployment && isLatest ? 'primary' : 'default'}
+      style={deployment ? getButtonStyle(deployment.state) : {}}
+      onClick={() =>
+        triggerDeploy({
+          release: release.tagName,
+          environment,
+        })
+      }>
+      {deployment?.state ?? "Deploy"}
+    </Button>
+  }
+
   return (
     <>
       {error instanceof Error && (
@@ -139,39 +160,9 @@ export const ReleasesTableView: FC = () => {
                 const deployment = deploymentsByTag[release.tagName]?.find(
                   (d) => d.environment === environment
                 )
-                const isLatest = isAfterLatestReleaseForEnvironment(
-                  release,
-                  environment
-                )
                 return (
                   <TableCell key={environment}>
-                    {deployment ? (
-                      <Button
-                        disabled={isLoading}
-                        variant="outlined"
-                        style={{ color: getButtonColor(deployment.state) }}
-                        onClick={() =>
-                          triggerDeploy({
-                            release: release.tagName,
-                            environment,
-                          })
-                        }>
-                        {deployment.state}
-                      </Button>
-                    ) : (
-                      <Button
-                        disabled={isLoading}
-                        variant={isLatest ? 'contained' : 'outlined'}
-                        color={isLatest ? 'primary' : 'default'}
-                        onClick={() =>
-                          triggerDeploy({
-                            release: release.tagName,
-                            environment,
-                          })
-                        }>
-                        Deploy
-                      </Button>
-                    )}
+                    {createButton(deployment, release, environment)}
                   </TableCell>
                 )
               })}
