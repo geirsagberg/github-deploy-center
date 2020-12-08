@@ -1,4 +1,4 @@
-import { Button, colors, Table, TableBody, TableCell, TableHead, TableRow, } from '@material-ui/core'
+import { Button, colors, Link, Table, TableBody, TableCell, TableHead, TableRow } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
 import { groupBy, keyBy, orderBy, uniq } from 'lodash-es'
 import React, { FC, useState } from 'react'
@@ -38,7 +38,7 @@ const estimateEnvironmentsOrder = (
 }
 
 export const ReleasesTableView: FC = () => {
-  const { environmentOrderForSelectedRepo } = useOvermindState()
+  const { environmentOrderForSelectedRepo, selectedRepo } = useOvermindState()
   const { triggerDeployment } = useActions()
   const allReleaseResultsForRepo = useFetchReleases()
   const allDeploymentResultsForRepo = useFetchDeployments()
@@ -155,7 +155,11 @@ export const ReleasesTableView: FC = () => {
         <TableBody>
           {releasesSorted.map((release) => (
             <TableRow key={release.id}>
-              <TableCell style={{ width: '20%' }}>{release.name}</TableCell>
+              <TableCell style={{ width: '20%' }}>
+                <Link href={`https://github.com/${selectedRepo?.owner}/${selectedRepo?.name}/releases/tag/${release.tagName}`} target="_blank" color="inherit">
+                  {release.name}
+                </Link>
+              </TableCell>
               {environments.map((environment) => {
                 const deployment = deploymentsByTag[release.tagName]?.find(
                   (d) => d.environment === environment
