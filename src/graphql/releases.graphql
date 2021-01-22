@@ -25,7 +25,7 @@ query fetchReleasesAndDeployments($repoName: String!, $repoOwner: String!) {
 
 query fetchReleases($repoName: String!, $repoOwner: String!) {
   repository(name: $repoName, owner: $repoOwner) {
-    releases(first: 20, orderBy: { field: CREATED_AT, direction: DESC }) {
+    releases(first: 100, orderBy: { field: CREATED_AT, direction: DESC }) {
       nodes {
         id
         name
@@ -38,7 +38,7 @@ query fetchReleases($repoName: String!, $repoOwner: String!) {
 
 query fetchDeployments($repoName: String!, $repoOwner: String!) {
   repository(name: $repoName, owner: $repoOwner) {
-    deployments(first: 20, orderBy: { field: CREATED_AT, direction: DESC }) {
+    deployments(first: 100, orderBy: { field: CREATED_AT, direction: DESC }) {
       nodes {
         id
         createdAt
