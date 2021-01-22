@@ -1,4 +1,13 @@
-import { Button, colors, Link, Table, TableBody, TableCell, TableHead, TableRow } from '@material-ui/core'
+import {
+  Button,
+  colors,
+  Link,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
 import { groupBy, keyBy, orderBy, uniq } from 'lodash-es'
 import React, { FC, useState } from 'react'
@@ -8,7 +17,6 @@ import { useActions, useOvermindState } from '../overmind'
 import { DeploymentModel, ReleaseModel } from '../overmind/state'
 import { ApplicationSelector } from './ApplicationSelector'
 import { useFetchDeployments, useFetchReleases } from './fetchHooks'
-
 
 const getButtonStyle = (state: DeploymentState) => {
   switch (state) {
@@ -25,8 +33,8 @@ const getButtonStyle = (state: DeploymentState) => {
   }
 }
 
-const getButtonVariant = (state: DeploymentState): "contained" | "outlined" => {
-  return state === DeploymentState.Active ? "contained" : "outlined"
+const getButtonVariant = (state: DeploymentState): 'contained' | 'outlined' => {
+  return state === DeploymentState.Active ? 'contained' : 'outlined'
 }
 
 const estimateEnvironmentsOrder = (
@@ -55,19 +63,19 @@ export const ReleasesTableView: FC = () => {
   const releases =
     filterByApplication && currentApplication
       ? allReleaseResultsForRepo.data?.filter(
-        (releaseData) => releaseData.tagName.indexOf(currentApplication) > -1
-      ) || []
+          (releaseData) => releaseData.tagName.indexOf(currentApplication) > -1
+        ) || []
       : allReleaseResultsForRepo.data || []
 
   const deployments =
     filterByApplication && currentApplication
       ? allDeploymentResultsForRepo.data?.filter(
-        (deploymentData) =>
-          deploymentData.refName.indexOf(currentApplication) > -1
-      ) || []
+          (deploymentData) =>
+            deploymentData.refName.indexOf(currentApplication) > -1
+        ) || []
       : allDeploymentResultsForRepo.data || []
 
-  const [triggerDeploy, { error, isLoading }] = useMutation(
+  const { mutate, error, isLoading } = useMutation(
     async ({
       release,
       environment,
@@ -109,26 +117,31 @@ export const ReleasesTableView: FC = () => {
     return !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
   }
 
-  const createButton = (deployment: DeploymentModel | undefined, release: ReleaseModel, environment: string) => {
-    const isLatest = isAfterLatestReleaseForEnvironment(
-      release,
-      environment
-    )
+  const createButton = (
+    deployment: DeploymentModel | undefined,
+    release: ReleaseModel,
+    environment: string
+  ) => {
+    const isLatest = isAfterLatestReleaseForEnvironment(release, environment)
     const deployButtonVariant = isLatest ? 'contained' : 'outlined'
 
-    return <Button
-      disabled={isLoading}
-      variant={deployment ? getButtonVariant(deployment.state) : deployButtonVariant}
-      color={!deployment && isLatest ? 'primary' : 'default'}
-      style={deployment ? getButtonStyle(deployment.state) : {}}
-      onClick={() =>
-        triggerDeploy({
-          release: release.tagName,
-          environment,
-        })
-      }>
-      {deployment?.state ?? "Deploy"}
-    </Button>
+    return (
+      <Button
+        disabled={isLoading}
+        variant={
+          deployment ? getButtonVariant(deployment.state) : deployButtonVariant
+        }
+        color={!deployment && isLatest ? 'primary' : 'default'}
+        style={deployment ? getButtonStyle(deployment.state) : {}}
+        onClick={() =>
+          mutate({
+            release: release.tagName,
+            environment,
+          })
+        }>
+        {deployment?.state ?? 'Deploy'}
+      </Button>
+    )
   }
 
   return (
@@ -156,7 +169,10 @@ export const ReleasesTableView: FC = () => {
           {releasesSorted.map((release) => (
             <TableRow key={release.id}>
               <TableCell style={{ width: '20%' }}>
-                <Link href={`https://github.com/${selectedRepo?.owner}/${selectedRepo?.name}/releases/tag/${release.tagName}`} target="_blank" color="inherit">
+                <Link
+                  href={`https://github.com/${selectedRepo?.owner}/${selectedRepo?.name}/releases/tag/${release.tagName}`}
+                  target="_blank"
+                  color="inherit">
                   {release.name}
                 </Link>
               </TableCell>

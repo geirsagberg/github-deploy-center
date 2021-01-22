@@ -2,24 +2,24 @@ import { CssBaseline, MuiThemeProvider } from '@material-ui/core'
 import { Provider } from 'overmind-react'
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { QueryCache, ReactQueryCacheProvider } from 'react-query'
+import { QueryClient, QueryClientProvider } from 'react-query'
 import App from './App'
 import { overmind } from './overmind'
 import * as serviceWorker from './serviceWorker'
 import { theme } from './theme'
 
-const queryCache = new QueryCache()
+const queryClient = new QueryClient()
 
 ReactDOM.render(
   <React.StrictMode>
-    <ReactQueryCacheProvider queryCache={queryCache}>
+    <QueryClientProvider client={queryClient}>
       <MuiThemeProvider theme={theme}>
         <CssBaseline />
         <Provider value={overmind}>
           <App />
         </Provider>
       </MuiThemeProvider>
-    </ReactQueryCacheProvider>
+    </QueryClientProvider>
   </React.StrictMode>,
   document.getElementById('root')
 )
