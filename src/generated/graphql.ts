@@ -19216,6 +19216,22 @@ export type FetchReleasesQuery = (
       & { nodes: Maybe<Array<Maybe<(
         { __typename: 'Release' }
         & Pick<Release, 'id' | 'name' | 'tagName' | 'createdAt'>
+        & { tag: Maybe<(
+          { __typename: 'Ref' }
+          & { target: Maybe<(
+            { __typename: 'Blob' }
+            & Pick<Blob, 'oid'>
+          ) | (
+            { __typename: 'Commit' }
+            & Pick<Commit, 'oid'>
+          ) | (
+            { __typename: 'Tag' }
+            & Pick<Tag, 'oid'>
+          ) | (
+            { __typename: 'Tree' }
+            & Pick<Tree, 'oid'>
+          )> }
+        )> }
       )>>> }
     ) }
   )> }
@@ -19236,7 +19252,10 @@ export type FetchDeploymentsQuery = (
       & { nodes: Maybe<Array<Maybe<(
         { __typename: 'Deployment' }
         & Pick<Deployment, 'id' | 'createdAt' | 'environment' | 'state'>
-        & { ref: Maybe<(
+        & { commit: Maybe<(
+          { __typename: 'Commit' }
+          & Pick<Commit, 'oid'>
+        )>, ref: Maybe<(
           { __typename: 'Ref' }
           & Pick<Ref, 'id' | 'name'>
         )> }
@@ -19337,6 +19356,11 @@ export const FetchReleasesDocument = gql`
         name
         tagName
         createdAt
+        tag {
+          target {
+            oid
+          }
+        }
       }
     }
   }
@@ -19351,6 +19375,9 @@ export const FetchDeploymentsDocument = gql`
         createdAt
         environment
         state
+        commit {
+          oid
+        }
         ref {
           id
           name

@@ -1,0 +1,19 @@
+query fetchDeployments($repoName: String!, $repoOwner: String!) {
+  repository(name: $repoName, owner: $repoOwner) {
+    deployments(first: 100, orderBy: { field: CREATED_AT, direction: DESC }) {
+      nodes {
+        id
+        createdAt
+        environment
+        state
+        commit {
+          oid
+        }
+        ref {
+          id
+          name
+        }
+      }
+    }
+  }
+}

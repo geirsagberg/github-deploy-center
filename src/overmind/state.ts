@@ -16,6 +16,7 @@ export type ReleaseModel = {
   name: string
   tagName: string
   createdAt: Dayjs
+  commit: string
 }
 
 export type DeploymentModel = {
@@ -24,6 +25,7 @@ export type DeploymentModel = {
   environment: string
   refName: string
   state: DeploymentState
+  commit: string
 }
 
 export const DeployWorkflowCodec = t.type({

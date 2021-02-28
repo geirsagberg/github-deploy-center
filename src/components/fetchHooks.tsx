@@ -19,12 +19,13 @@ export const useFetchReleases = () => {
         repoOwner: selectedRepo.owner,
       })
       const fragments = result.repository?.releases.nodes?.map((n) => n!) ?? []
-      const releases: ReleaseModel[] = fragments.map(
-        ({ id, name, tagName, createdAt }) => ({
+      const releases = fragments.map(
+        ({ id, name, tagName, createdAt, tag }): ReleaseModel => ({
           id,
           name: name || '',
           tagName,
           createdAt: dayjs(createdAt),
+          commit: tag?.target?.oid || '',
         })
       )
       return releases
@@ -47,12 +48,20 @@ export const useFetchDeployments = () => {
       })
       const fragments =
         result.repository?.deployments.nodes?.map((n) => n!) ?? []
-      const deployments: DeploymentModel[] = fragments.map(
-        ({ id, createdAt, environment, ref, state }) => ({
+      const deployments = fragments.map(
+        ({
+          id,
+          createdAt,
+          environment,
+          commit,
+          ref,
+          state,
+        }): DeploymentModel => ({
           id,
           createdAt: dayjs(createdAt),
           environment: environment || '',
           refName: ref?.name || '',
+          commit: commit?.oid || '',
           state: state || DeploymentState.Inactive,
         })
       )
