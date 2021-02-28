@@ -1,5 +1,5 @@
 import { Box, Container, Paper, TextField, Typography } from '@material-ui/core'
-import React, { FC } from 'react'
+import { FC } from 'react'
 import { RepoSearchView } from './components/RepoSearchView'
 import { RepoView } from './components/RepoView'
 import { useActions, useOvermindState } from './overmind'

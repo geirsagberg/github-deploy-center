@@ -1,11 +1,11 @@
 import {
+  Box,
   Checkbox,
   FormControlLabel,
-  RadioGroup,
   Radio,
-  Box,
+  RadioGroup,
 } from '@material-ui/core'
-import React, { FC } from 'react'
+import { FC } from 'react'
 
 type ApplicationSelectorProps = {
   appNames: Set<string>

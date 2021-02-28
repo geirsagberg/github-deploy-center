@@ -1,7 +1,7 @@
 import { Box, CircularProgress, TextField, Typography } from '@material-ui/core'
 import { Autocomplete } from '@material-ui/lab'
 import { orderBy } from 'lodash-es'
-import React, { FC } from 'react'
+import { FC } from 'react'
 import { useActions, useOvermindState } from '../overmind'
 import { useFetchRepos } from './fetchHooks'
 

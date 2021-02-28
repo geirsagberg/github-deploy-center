@@ -8,7 +8,7 @@ import {
   Typography,
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
-import React, { FC } from 'react'
+import { FC } from 'react'
 import { useOvermindState } from '../overmind'
 import { useFetchDeployments, useFetchReleases } from './fetchHooks'
 import { ReleasesTableView } from './ReleasesTableView'
