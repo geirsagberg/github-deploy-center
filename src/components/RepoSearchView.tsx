@@ -3,6 +3,7 @@ import { Autocomplete } from '@material-ui/lab'
 import { orderBy } from 'lodash-es'
 import { FC } from 'react'
 import { useActions, useOvermindState } from '../overmind'
+import { RepoModel } from '../overmind/state'
 import { useFetchRepos } from './fetchHooks'
 
 export const RepoSearchView: FC = () => {
@@ -18,36 +19,54 @@ export const RepoSearchView: FC = () => {
       {error instanceof Error ? (
         <Typography>Error: {error.message}</Typography>
       ) : (
-        <Autocomplete
-          loading={isLoading}
-          options={options}
-          id="search-repos"
-          renderInput={(params) => (
-            <TextField
-              variant="outlined"
-              label="Search"
-              {...params}
-              InputProps={{
-                ...params.InputProps,
-                startAdornment:
-                  isLoading && !selectedRepo ? (
-                    <Box
-                      maxWidth={24}
-                      maxHeight={24}
-                      ml={1}
-                      component={CircularProgress}></Box>
-                  ) : null,
-              }}
-            />
-          )}
-          groupBy={(r) => r.owner}
-          getOptionLabel={(r) => r.name}
-          getOptionSelected={(first, second) => first.id === second.id}
-          value={selectedRepo}
-          autoHighlight
-          onChange={(_, value) => setSelectedRepo(value)}
+        <RepoSearchBox
+          {...{ isLoading, options, selectedRepo, setSelectedRepo }}
         />
       )}
     </>
   )
 }
+
+interface RepoSearchBoxProps {
+  isLoading: boolean
+  options: RepoModel[]
+  selectedRepo: RepoModel | null
+  setSelectedRepo: (value: RepoModel | null) => void
+}
+
+export const RepoSearchBox: FC<RepoSearchBoxProps> = ({
+  isLoading,
+  options,
+  selectedRepo,
+  setSelectedRepo,
+}) => (
+  <Autocomplete
+    loading={isLoading}
+    options={options}
+    id="search-repos"
+    renderInput={(params) => (
+      <TextField
+        variant="outlined"
+        label="Search"
+        {...params}
+        InputProps={{
+          ...params.InputProps,
+          startAdornment:
+            isLoading && !selectedRepo ? (
+              <Box
+                maxWidth={24}
+                maxHeight={24}
+                ml={1}
+                component={CircularProgress}></Box>
+            ) : null,
+        }}
+      />
+    )}
+    groupBy={(r) => r.owner}
+    getOptionLabel={(r) => r.name}
+    getOptionSelected={(first, second) => first.id === second.id}
+    value={selectedRepo}
+    autoHighlight
+    onChange={(_, value) => setSelectedRepo(value)}
+  />
+)

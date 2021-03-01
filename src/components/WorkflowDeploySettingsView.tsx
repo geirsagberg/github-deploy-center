@@ -14,9 +14,9 @@ import { DeployWorkflowCodec } from '../overmind/state'
 import { useFetchWorkflows } from './fetchHooks'
 
 export const WorkflowDeploySettingsView: FC = () => {
-  const { deploySettingsForSelectedRepo } = useOvermindState()
+  const { deploySettingsForSelectedRepo, selectedRepo } = useOvermindState()
   const { updateWorkflowSettings } = useActions()
-  const { data, error, isLoading } = useFetchWorkflows()
+  const { data, error, isLoading } = useFetchWorkflows(selectedRepo!)
 
   if (!DeployWorkflowCodec.is(deploySettingsForSelectedRepo)) return null
 

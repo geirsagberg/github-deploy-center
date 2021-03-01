@@ -72,19 +72,19 @@ export const useFetchDeployments = () => {
   return { data, isLoading, error }
 }
 
-export const useFetchWorkflows = () => {
-  const { selectedRepo, token } = useOvermindState()
+export const useFetchWorkflows = (repo: RepoModel | undefined) => {
+  const { token } = useOvermindState()
   const { restApi } = useEffects()
   const { data, isLoading, error } = useQuery(
-    `${selectedRepo?.owner}/${selectedRepo?.name}-workflows`,
+    `${repo?.owner}/${repo?.name}-workflows`,
     async () => {
-      if (!selectedRepo || !token) return []
+      if (!token || !repo) return []
 
-      const { owner, name: repo } = selectedRepo
+      const { owner, name } = repo
 
       const response = await restApi.octokit.actions.listRepoWorkflows({
         owner,
-        repo,
+        repo: name,
         per_page: 100,
       })
 

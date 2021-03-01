@@ -10,12 +10,11 @@ import {
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
 import { groupBy, keyBy, orderBy, uniq } from 'lodash-es'
-import React, { FC, useState } from 'react'
+import { FC } from 'react'
 import { useMutation } from 'react-query'
 import { DeploymentState } from '../generated/graphql'
 import { useActions, useOvermindState } from '../overmind'
 import { DeploymentModel, ReleaseModel } from '../overmind/state'
-import { ApplicationSelector } from './ApplicationSelector'
 import { useFetchDeployments, useFetchReleases } from './fetchHooks'
 
 const getButtonStyle = (state: DeploymentState) => {
@@ -51,29 +50,9 @@ export const ReleasesTableView: FC = () => {
   const allReleaseResultsForRepo = useFetchReleases()
   const allDeploymentResultsForRepo = useFetchDeployments()
 
-  const [filterByApplication, setFilterByApplication] = useState(false)
-  const [currentApplication, setCurrentApplication] = useState<string>()
+  const releases = allReleaseResultsForRepo.data || []
 
-  const appNames = new Set(
-    allReleaseResultsForRepo.data?.map((releaseData) =>
-      releaseData.tagName.substring(0, releaseData.tagName.indexOf('-'))
-    )
-  )
-
-  const releases =
-    filterByApplication && currentApplication
-      ? allReleaseResultsForRepo.data?.filter(
-          (releaseData) => releaseData.tagName.indexOf(currentApplication) > -1
-        ) || []
-      : allReleaseResultsForRepo.data || []
-
-  const deployments =
-    filterByApplication && currentApplication
-      ? allDeploymentResultsForRepo.data?.filter(
-          (deploymentData) =>
-            deploymentData.refName.indexOf(currentApplication) > -1
-        ) || []
-      : allDeploymentResultsForRepo.data || []
+  const deployments = allDeploymentResultsForRepo.data || []
 
   const { mutate, error, isLoading } = useMutation(
     async ({
@@ -149,13 +128,6 @@ export const ReleasesTableView: FC = () => {
       {error instanceof Error && (
         <Alert severity="error">{error.message}</Alert>
       )}
-      <ApplicationSelector
-        appNames={appNames}
-        isMonorepo={filterByApplication}
-        shouldFilterByApplication={setFilterByApplication}
-        currentApp={currentApplication}
-        setCurrentApp={setCurrentApplication}
-      />
       <Table>
         <TableHead>
           <TableRow>

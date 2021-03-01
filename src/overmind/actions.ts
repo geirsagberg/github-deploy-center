@@ -1,5 +1,6 @@
 import { Action, AsyncAction } from 'overmind'
 import {
+  createApplicationConfig,
   createDeployWorkflowSettings,
   DeployWorkflowCodec,
   DeployWorkflowSettings,
@@ -14,19 +15,25 @@ export const setSelectedRepo: Action<RepoModel | null> = ({ state }, repo) => {
   state.selectedRepo = repo
 }
 
+export const showNewApplicationModal: Action = ({
+  state: { applicationDialog },
+}) => {
+  applicationDialog.open = true
+}
+
 export const updateWorkflowSettings: Action<
   (settings: DeployWorkflowSettings) => void
-> = ({ state: { deploySettingsByRepo, selectedRepo } }, update) => {
-  if (selectedRepo) {
-    let deploySettings = deploySettingsByRepo[selectedRepo.id]
+> = ({ state: { deploySettingsByRepo, selectedApplication } }, update) => {
+  if (selectedApplication) {
+    let deploySettings = selectedApplication.deploySettings
     if (DeployWorkflowCodec.is(deploySettings)) {
       update(deploySettings)
     } else {
       deploySettings = createDeployWorkflowSettings({
-        ref: selectedRepo.defaultBranch,
+        ref: selectedApplication.repo.defaultBranch,
       })
       update(deploySettings)
-      deploySettingsByRepo[selectedRepo.id] = deploySettings
+      deploySettingsByRepo[selectedApplication.id] = deploySettings
     }
   }
 }
@@ -41,11 +48,11 @@ export const triggerDeployment: AsyncAction<{
   if (!selectedRepo || !DeployWorkflowCodec.is(deploySettingsForSelectedRepo))
     return
 
-  const atlas_env = environment.split('-').pop() || environment
+  const env = environment.split('-').pop() || environment
 
   if (
     window.confirm(
-      `Are you sure you want to deploy "${release}" to "${atlas_env}" in "${selectedRepo.owner}/${selectedRepo.name}@${deploySettingsForSelectedRepo.ref}"?`
+      `Are you sure you want to deploy "${release}" to "${env}" in "${selectedRepo.owner}/${selectedRepo.name}@${deploySettingsForSelectedRepo.ref}"?`
     )
   ) {
     const { owner, name } = selectedRepo
@@ -60,7 +67,22 @@ export const triggerDeployment: AsyncAction<{
       repo: name,
       ref,
       workflow_id: workflowId,
-      inputs: { [releaseKey]: release, [environmentKey]: atlas_env },
+      inputs: { [releaseKey]: release, [environmentKey]: env },
     })
   }
+}
+
+export const createNewApplication: Action<RepoModel> = ({ state }, repo) => {
+  const appConfig = createApplicationConfig(repo)
+  state.applicationsById[appConfig.id] = appConfig
+  state.selectedApplicationId = appConfig.id
+  state.applicationDialog.open = false
+}
+
+export const cancelNewApplication: Action = ({ state }) => {
+  state.applicationDialog.open = false
+}
+
+export const selectApplication: Action<string> = ({ state }, id) => {
+  state.selectedApplicationId = id
 }
