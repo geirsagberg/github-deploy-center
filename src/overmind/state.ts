@@ -61,13 +61,6 @@ export const DeploySettingsCodec = t.union([
   DeployDeploymentCodec,
 ])
 
-export const ApplicationConfigCodec = t.type({
-  name: t.string,
-  releasePrefix: t.string,
-  environmentPrefix: t.string,
-  deploySettings: DeploySettingsCodec,
-})
-
 export const DeploySettingsByRepoCodec = t.record(t.string, DeploySettingsCodec)
 
 type DeploySettings = t.TypeOf<typeof DeploySettingsCodec>

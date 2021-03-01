@@ -1,4 +1,5 @@
 import { GraphQLClient } from 'graphql-request';
+import * as Dom from 'graphql-request/dist/types.dom';
 import { print } from 'graphql';
 import gql from 'graphql-tag';
 export type Maybe<T> = T | null;
@@ -19160,6 +19161,33 @@ export type ViewerHovercardContext = HovercardContext & {
 };
 
 
+export type FetchDeploymentsQueryVariables = Exact<{
+  repoName: Scalars['String'];
+  repoOwner: Scalars['String'];
+}>;
+
+
+export type FetchDeploymentsQuery = (
+  { __typename: 'Query' }
+  & { repository: Maybe<(
+    { __typename: 'Repository' }
+    & { deployments: (
+      { __typename: 'DeploymentConnection' }
+      & { nodes: Maybe<Array<Maybe<(
+        { __typename: 'Deployment' }
+        & Pick<Deployment, 'id' | 'createdAt' | 'environment' | 'state'>
+        & { commit: Maybe<(
+          { __typename: 'Commit' }
+          & Pick<Commit, 'oid'>
+        )>, ref: Maybe<(
+          { __typename: 'Ref' }
+          & Pick<Ref, 'id' | 'name'>
+        )> }
+      )>>> }
+    ) }
+  )> }
+);
+
 export type FetchCurrentUserIdQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -19169,36 +19197,6 @@ export type FetchCurrentUserIdQuery = (
     { __typename: 'User' }
     & Pick<User, 'id'>
   ) }
-);
-
-export type FetchReleasesAndDeploymentsQueryVariables = Exact<{
-  repoName: Scalars['String'];
-  repoOwner: Scalars['String'];
-}>;
-
-
-export type FetchReleasesAndDeploymentsQuery = (
-  { __typename: 'Query' }
-  & { repository: Maybe<(
-    { __typename: 'Repository' }
-    & { releases: (
-      { __typename: 'ReleaseConnection' }
-      & { nodes: Maybe<Array<Maybe<(
-        { __typename: 'Release' }
-        & Pick<Release, 'id' | 'name' | 'tagName' | 'createdAt' | 'updatedAt'>
-      )>>> }
-    ), deployments: (
-      { __typename: 'DeploymentConnection' }
-      & { nodes: Maybe<Array<Maybe<(
-        { __typename: 'Deployment' }
-        & Pick<Deployment, 'id' | 'createdAt' | 'environment'>
-        & { ref: Maybe<(
-          { __typename: 'Ref' }
-          & Pick<Ref, 'id' | 'name'>
-        )> }
-      )>>> }
-    ) }
-  )> }
 );
 
 export type FetchReleasesQueryVariables = Exact<{
@@ -19231,33 +19229,6 @@ export type FetchReleasesQuery = (
             { __typename: 'Tree' }
             & Pick<Tree, 'oid'>
           )> }
-        )> }
-      )>>> }
-    ) }
-  )> }
-);
-
-export type FetchDeploymentsQueryVariables = Exact<{
-  repoName: Scalars['String'];
-  repoOwner: Scalars['String'];
-}>;
-
-
-export type FetchDeploymentsQuery = (
-  { __typename: 'Query' }
-  & { repository: Maybe<(
-    { __typename: 'Repository' }
-    & { deployments: (
-      { __typename: 'DeploymentConnection' }
-      & { nodes: Maybe<Array<Maybe<(
-        { __typename: 'Deployment' }
-        & Pick<Deployment, 'id' | 'createdAt' | 'environment' | 'state'>
-        & { commit: Maybe<(
-          { __typename: 'Commit' }
-          & Pick<Commit, 'oid'>
-        )>, ref: Maybe<(
-          { __typename: 'Ref' }
-          & Pick<Ref, 'id' | 'name'>
         )> }
       )>>> }
     ) }
@@ -19314,36 +19285,31 @@ export const RepoFragmentDoc = gql`
   }
 }
     `;
-export const FetchCurrentUserIdDocument = gql`
-    query fetchCurrentUserId {
-  viewer {
-    id
-  }
-}
-    `;
-export const FetchReleasesAndDeploymentsDocument = gql`
-    query fetchReleasesAndDeployments($repoName: String!, $repoOwner: String!) {
+export const FetchDeploymentsDocument = gql`
+    query fetchDeployments($repoName: String!, $repoOwner: String!) {
   repository(name: $repoName, owner: $repoOwner) {
-    releases(first: 20, orderBy: {field: CREATED_AT, direction: DESC}) {
-      nodes {
-        id
-        name
-        tagName
-        createdAt
-        updatedAt
-      }
-    }
-    deployments(first: 20, orderBy: {field: CREATED_AT, direction: DESC}) {
+    deployments(first: 100, orderBy: {field: CREATED_AT, direction: DESC}) {
       nodes {
         id
         createdAt
         environment
+        state
+        commit {
+          oid
+        }
         ref {
           id
           name
         }
       }
     }
+  }
+}
+    `;
+export const FetchCurrentUserIdDocument = gql`
+    query fetchCurrentUserId {
+  viewer {
+    id
   }
 }
     `;
@@ -19360,27 +19326,6 @@ export const FetchReleasesDocument = gql`
           target {
             oid
           }
-        }
-      }
-    }
-  }
-}
-    `;
-export const FetchDeploymentsDocument = gql`
-    query fetchDeployments($repoName: String!, $repoOwner: String!) {
-  repository(name: $repoName, owner: $repoOwner) {
-    deployments(first: 100, orderBy: {field: CREATED_AT, direction: DESC}) {
-      nodes {
-        id
-        createdAt
-        environment
-        state
-        commit {
-          oid
-        }
-        ref {
-          id
-          name
         }
       }
     }
@@ -19416,19 +19361,16 @@ export type SdkFunctionWrapper = <T>(action: () => Promise<T>) => Promise<T>;
 const defaultWrapper: SdkFunctionWrapper = sdkFunction => sdkFunction();
 export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = defaultWrapper) {
   return {
-    fetchCurrentUserId(variables?: FetchCurrentUserIdQueryVariables, requestHeaders?: Headers): Promise<FetchCurrentUserIdQuery> {
-      return withWrapper(() => client.request<FetchCurrentUserIdQuery>(print(FetchCurrentUserIdDocument), variables, requestHeaders));
-    },
-    fetchReleasesAndDeployments(variables: FetchReleasesAndDeploymentsQueryVariables, requestHeaders?: Headers): Promise<FetchReleasesAndDeploymentsQuery> {
-      return withWrapper(() => client.request<FetchReleasesAndDeploymentsQuery>(print(FetchReleasesAndDeploymentsDocument), variables, requestHeaders));
-    },
-    fetchReleases(variables: FetchReleasesQueryVariables, requestHeaders?: Headers): Promise<FetchReleasesQuery> {
-      return withWrapper(() => client.request<FetchReleasesQuery>(print(FetchReleasesDocument), variables, requestHeaders));
-    },
-    fetchDeployments(variables: FetchDeploymentsQueryVariables, requestHeaders?: Headers): Promise<FetchDeploymentsQuery> {
+    fetchDeployments(variables: FetchDeploymentsQueryVariables, requestHeaders?: Dom.RequestInit["headers"]): Promise<FetchDeploymentsQuery> {
       return withWrapper(() => client.request<FetchDeploymentsQuery>(print(FetchDeploymentsDocument), variables, requestHeaders));
     },
-    fetchReposWithWriteAccess(variables?: FetchReposWithWriteAccessQueryVariables, requestHeaders?: Headers): Promise<FetchReposWithWriteAccessQuery> {
+    fetchCurrentUserId(variables?: FetchCurrentUserIdQueryVariables, requestHeaders?: Dom.RequestInit["headers"]): Promise<FetchCurrentUserIdQuery> {
+      return withWrapper(() => client.request<FetchCurrentUserIdQuery>(print(FetchCurrentUserIdDocument), variables, requestHeaders));
+    },
+    fetchReleases(variables: FetchReleasesQueryVariables, requestHeaders?: Dom.RequestInit["headers"]): Promise<FetchReleasesQuery> {
+      return withWrapper(() => client.request<FetchReleasesQuery>(print(FetchReleasesDocument), variables, requestHeaders));
+    },
+    fetchReposWithWriteAccess(variables?: FetchReposWithWriteAccessQueryVariables, requestHeaders?: Dom.RequestInit["headers"]): Promise<FetchReposWithWriteAccessQuery> {
       return withWrapper(() => client.request<FetchReposWithWriteAccessQuery>(print(FetchReposWithWriteAccessDocument), variables, requestHeaders));
     }
   };

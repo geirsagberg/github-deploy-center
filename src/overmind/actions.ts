@@ -41,11 +41,11 @@ export const triggerDeployment: AsyncAction<{
   if (!selectedRepo || !DeployWorkflowCodec.is(deploySettingsForSelectedRepo))
     return
 
-  const atlas_env = environment.split('-').pop() || environment
+  const env = environment.split('-').pop() || environment
 
   if (
     window.confirm(
-      `Are you sure you want to deploy "${release}" to "${atlas_env}" in "${selectedRepo.owner}/${selectedRepo.name}@${deploySettingsForSelectedRepo.ref}"?`
+      `Are you sure you want to deploy "${release}" to "${env}" in "${selectedRepo.owner}/${selectedRepo.name}@${deploySettingsForSelectedRepo.ref}"?`
     )
   ) {
     const { owner, name } = selectedRepo
@@ -60,7 +60,7 @@ export const triggerDeployment: AsyncAction<{
       repo: name,
       ref,
       workflow_id: workflowId,
-      inputs: { [releaseKey]: release, [environmentKey]: atlas_env },
+      inputs: { [releaseKey]: release, [environmentKey]: env },
     })
   }
 }
