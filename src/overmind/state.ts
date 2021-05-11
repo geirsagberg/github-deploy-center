@@ -1,6 +1,6 @@
 import { Dayjs } from 'dayjs'
 import * as t from 'io-ts'
-import { uniqueId } from 'lodash-es'
+import { v4 as uuid } from 'uuid'
 import { DeploymentState } from '../generated/graphql'
 
 export const RepoCodec = t.type({
@@ -72,10 +72,11 @@ export const ApplicationConfigCodec = t.type({
 })
 
 export const createApplicationConfig = (
-  repo: RepoModel
+  repo: RepoModel,
+  name: string
 ): ApplicationConfig => ({
-  id: uniqueId(),
-  name: repo.name,
+  id: uuid(),
+  name: name || repo.name,
   releasePrefix: '',
   environmentPrefix: '',
   repo,
@@ -88,10 +89,13 @@ export const ApplicationsByIdCodec = t.record(t.string, ApplicationConfigCodec)
 
 export const DeploySettingsByRepoCodec = t.record(t.string, DeploySettingsCodec)
 
-type DeploySettings = t.TypeOf<typeof DeploySettingsCodec>
+export type DeploySettings = t.TypeOf<typeof DeploySettingsCodec>
 
 export type ApplicationDialogState = {
   open: boolean
+  repo: RepoModel | null
+  name: string
+  warning?: string
 }
 
 export type AppState = {
@@ -99,13 +103,8 @@ export type AppState = {
   applicationsById: Record<string, ApplicationConfig>
   selectedApplicationId: string
   selectedApplication: ApplicationConfig | null
-  selectedRepo: RepoModel | null
-  selectedRepoId: string | null
-  environmentOrderByRepo: Record<string, string[]>
-  environmentOrderForSelectedRepo: Readonly<string[]> | null
-  deploySettingsByRepo: Record<string, DeploySettings>
-  deploySettingsForSelectedRepo: Readonly<DeploySettings | null>
-  applicationDialog: ApplicationDialogState
+  newApplicationDialog: ApplicationDialogState
+  editApplicationDialog: ApplicationDialogState
 }
 
 const state: AppState = {
@@ -115,26 +114,8 @@ const state: AppState = {
   get selectedApplication() {
     return this.applicationsById[this.selectedApplicationId] ?? null
   },
-  selectedRepo: null,
-  get selectedRepoId() {
-    return this.selectedRepo ? this.selectedRepo.id : null
-  },
-  environmentOrderByRepo: {},
-  get environmentOrderForSelectedRepo() {
-    return (
-      (this.selectedRepoId &&
-        this.environmentOrderByRepo[this.selectedRepoId]) ||
-      null
-    )
-  },
-  deploySettingsByRepo: {},
-  get deploySettingsForSelectedRepo() {
-    return this.selectedRepo
-      ? this.deploySettingsByRepo[this.selectedRepo.id] ??
-          createDeployWorkflowSettings({ ref: this.selectedRepo.defaultBranch })
-      : null
-  },
-  applicationDialog: { open: false },
+  newApplicationDialog: { open: false, repo: null, name: '' },
+  editApplicationDialog: { open: false, repo: null, name: '' },
 }
 
 export default state
