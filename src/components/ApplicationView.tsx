@@ -32,12 +32,8 @@ export const ApplicationView: FC = () => {
     return <Alert severity="error">{error.message}</Alert>
   }
 
-  const {
-    workflowId,
-    releaseKey,
-    environmentKey,
-    ref,
-  } = selectedApplication.deploySettings
+  const { workflowId, releaseKey, environmentKey, ref } =
+    selectedApplication.deploySettings
 
   return (
     <>

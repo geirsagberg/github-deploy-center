@@ -45,7 +45,8 @@ const estimateEnvironmentsOrder = (
 }
 
 export const ReleasesTableView: FC = () => {
-  const { environmentOrderForSelectedRepo, selectedRepo } = useOvermindState()
+  const { selectedApplication } = useOvermindState()
+  const repo = selectedApplication?.repo
   const { triggerDeployment } = useActions()
   const allReleaseResultsForRepo = useFetchReleases()
   const allDeploymentResultsForRepo = useFetchDeployments()
@@ -72,7 +73,7 @@ export const ReleasesTableView: FC = () => {
 
   const deploymentsByTag = groupBy(deployments, (d) => d.refName)
 
-  const environmentsOrder = environmentOrderForSelectedRepo || []
+  const environmentsOrder: string[] = []
 
   const environments = uniq(
     environmentsOrder.concat(estimateEnvironmentsOrder(deployments))
@@ -142,7 +143,7 @@ export const ReleasesTableView: FC = () => {
             <TableRow key={release.id}>
               <TableCell style={{ width: '20%' }}>
                 <Link
-                  href={`https://github.com/${selectedRepo?.owner}/${selectedRepo?.name}/releases/tag/${release.tagName}`}
+                  href={`https://github.com/${repo?.owner}/${repo?.name}/releases/tag/${release.tagName}`}
                   target="_blank"
                   color="inherit">
                   {release.name}

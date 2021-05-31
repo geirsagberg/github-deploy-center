@@ -1,31 +1,7 @@
-import { Box, CircularProgress, TextField, Typography } from '@material-ui/core'
+import { Box, CircularProgress, TextField } from '@material-ui/core'
 import { Autocomplete } from '@material-ui/lab'
-import { orderBy } from 'lodash-es'
 import { FC } from 'react'
-import { useActions, useOvermindState } from '../overmind'
 import { RepoModel } from '../overmind/state'
-import { useFetchRepos } from './fetchHooks'
-
-export const RepoSearchView: FC = () => {
-  const { data, error, isLoading } = useFetchRepos()
-  const { selectedRepo } = useOvermindState()
-  const { setSelectedRepo } = useActions()
-
-  const options = orderBy(data ?? [], (d) => d.owner.toLowerCase())
-
-  return (
-    <>
-      <Typography variant="h2">Repositories</Typography>
-      {error instanceof Error ? (
-        <Typography>Error: {error.message}</Typography>
-      ) : (
-        <RepoSearchBox
-          {...{ isLoading, options, selectedRepo, setSelectedRepo }}
-        />
-      )}
-    </>
-  )
-}
 
 interface RepoSearchBoxProps {
   isLoading: boolean
