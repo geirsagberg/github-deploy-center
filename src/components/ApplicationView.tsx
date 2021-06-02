@@ -12,14 +12,14 @@ import { Alert } from '@material-ui/lab'
 import React, { FC } from 'react'
 import { useActions, useOvermindState } from '../overmind'
 import { DeployWorkflowCodec } from '../overmind/state'
-import { useFetchWorkflows } from './fetchHooks'
+import { useFetchEnvironments, useFetchWorkflows } from './fetchHooks'
 
 export const ApplicationView: FC = () => {
   const { selectedApplication } = useOvermindState()
   const { updateWorkflowSettings } = useActions()
-  const { data, error, isLoading } = useFetchWorkflows(
-    selectedApplication?.repo
-  )
+
+  const workflows = useFetchWorkflows(selectedApplication?.repo)
+  const environments = useFetchEnvironments(selectedApplication?.repo)
 
   if (
     !selectedApplication ||
@@ -28,8 +28,12 @@ export const ApplicationView: FC = () => {
     return null
   }
 
-  if (error instanceof Error) {
-    return <Alert severity="error">{error.message}</Alert>
+  if (workflows.error instanceof Error) {
+    return <Alert severity="error">{workflows.error.message}</Alert>
+  }
+
+  if (environments.error instanceof Error) {
+    return <Alert severity="error">{environments.error.message}</Alert>
   }
 
   const { workflowId, releaseKey, environmentKey, ref } =
@@ -41,9 +45,9 @@ export const ApplicationView: FC = () => {
       <Box display="grid" gridTemplateColumns="repeat(4, 1fr)" gridGap="1rem">
         <FormControl variant="outlined">
           <InputLabel id="workflow-select-label">Workflow</InputLabel>
-          {isLoading ? (
+          {workflows.isLoading ? (
             <CircularProgress />
-          ) : data ? (
+          ) : workflows.data ? (
             <Select
               labelId="workflow-select-label"
               id="workflow-select"
@@ -61,7 +65,7 @@ export const ApplicationView: FC = () => {
               <MenuItem value={0}>
                 <em>None</em>
               </MenuItem>
-              {data.map((workflow) => (
+              {workflows.data.map((workflow) => (
                 <MenuItem key={workflow.id} value={workflow.id}>
                   {workflow.name}
                 </MenuItem>
@@ -96,6 +100,17 @@ export const ApplicationView: FC = () => {
             )
           }
         />
+        <FormControl variant="outlined">
+          <InputLabel id="environments-select-label">Environments</InputLabel>
+          {environments.isLoading ? (
+            <CircularProgress />
+          ) : environments.data ? (
+            <Select
+              labelId="environments-select-label"
+              id="environments-select"
+              multiple></Select>
+          ) : null}
+        </FormControl>
       </Box>
     </>
   )

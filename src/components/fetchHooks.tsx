@@ -100,6 +100,26 @@ export const useFetchWorkflows = (repo: RepoModel | undefined) => {
   return { data, isLoading, error }
 }
 
+export const useFetchEnvironments = (repo: RepoModel | undefined) => {
+  const { token } = useOvermindState()
+  const { restApi } = useEffects()
+  const { data, isLoading, error } = useQuery(
+    `${repo?.owner}/${repo?.name}-environments`,
+    async () => {
+      if (!token || !repo) return []
+
+      const { owner, name } = repo
+      const response = await restApi.octokit.repos.getAllEnvironments({
+        owner,
+        repo: name,
+      })
+
+      return response.data?.environments ?? []
+    }
+  )
+  return { data, isLoading, error }
+}
+
 export const useFetchRepos = () => {
   const { data, isLoading, error } = useQuery('repos', async () => {
     let after: string | null = null

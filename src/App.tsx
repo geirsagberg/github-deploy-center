@@ -12,7 +12,6 @@ import {
   EditApplicationDialog,
   NewApplicationDialog,
 } from './components/NewApplicationDialog'
-import { ReleasesTableView } from './components/ReleasesTableView'
 import { SelectApplicationView } from './components/SelectApplicationView'
 import { useActions, useOvermindState } from './overmind'
 
@@ -39,7 +38,6 @@ const App: FC = () => {
             </Button>
             <SelectApplicationView />
             <ApplicationView />
-            <ReleasesTableView />
           </>
         )}
       </Box>
