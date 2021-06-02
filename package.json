@@ -5,15 +5,15 @@
   "dependencies": {
     "@material-ui/core": "^4.11.4",
     "@material-ui/lab": "^4.0.0-alpha.58",
-    "@octokit/rest": "^18.5.3",
+    "@octokit/rest": "^18.5.6",
     "@testing-library/jest-dom": "^5.12.0",
-    "@testing-library/react": "^11.2.6",
-    "@testing-library/user-event": "^13.1.8",
+    "@testing-library/react": "^11.2.7",
+    "@testing-library/user-event": "^13.1.9",
     "@types/jest": "^26.0.23",
-    "@types/node": "^15.0.1",
-    "@types/react": "^17.0.4",
-    "@types/react-dom": "^17.0.3",
-    "dayjs": "^1.10.4",
+    "@types/node": "^15.6.2",
+    "@types/react": "^17.0.9",
+    "@types/react-dom": "^17.0.6",
+    "dayjs": "^1.10.5",
     "fp-ts": "^2.10.5",
     "graphql": "^15.5.0",
     "graphql-request": "^3.4.0",
@@ -24,9 +24,9 @@
     "overmind-react": "^28.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-query": "^3.15.2",
-    "react-scripts": "4.0.3",
-    "typescript": "~4.2.4",
+    "react-query": "^3.16.0",
+    "react-scripts": "^4.0.3",
+    "typescript": "~4.3.2",
     "uuid": "^8.3.2"
   },
   "scripts": {
@@ -54,15 +54,15 @@
     ]
   },
   "devDependencies": {
-    "@graphql-codegen/cli": "1.21.4",
+    "@graphql-codegen/cli": "^1.21.5",
     "@graphql-codegen/introspection": "1.18.2",
-    "@graphql-codegen/typescript": "1.22.0",
-    "@graphql-codegen/typescript-graphql-request": "^3.1.1",
-    "@graphql-codegen/typescript-operations": "1.17.16",
+    "@graphql-codegen/typescript": "1.22.1",
+    "@graphql-codegen/typescript-graphql-request": "^3.2.1",
+    "@graphql-codegen/typescript-operations": "1.18.0",
     "@types/lodash-es": "^4.17.4",
     "@types/react-select": "^4.0.15",
     "@types/uuid": "^8.3.0",
     "json-format-cli": "^1.1.1",
-    "type-fest": "^1.0.2"
+    "type-fest": "^1.2.0"
   }
 }
