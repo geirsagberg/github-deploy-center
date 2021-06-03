@@ -7,16 +7,18 @@ import { DeploymentModel, ReleaseModel, RepoModel } from '../overmind/state'
 import graphQLApi from '../utils/graphQLApi'
 
 export const useFetchReleases = () => {
-  const { selectedRepo } = useOvermindState()
+  const { selectedApplication } = useOvermindState()
+
+  const repo = selectedApplication?.repo
 
   const { data, isLoading, error } = useQuery(
-    `${selectedRepo?.owner}/${selectedRepo?.name}-releases`,
+    `${repo?.owner}/${repo?.name}-releases`,
     async () => {
-      if (!selectedRepo) return []
+      if (!repo) return []
 
       const result = await graphQLApi.fetchReleases({
-        repoName: selectedRepo.name,
-        repoOwner: selectedRepo.owner,
+        repoName: repo.name,
+        repoOwner: repo.owner,
       })
       const fragments = result.repository?.releases.nodes?.map((n) => n!) ?? []
       const releases = fragments.map(
@@ -36,15 +38,18 @@ export const useFetchReleases = () => {
 }
 
 export const useFetchDeployments = () => {
-  const { selectedRepo } = useOvermindState()
+  const { selectedApplication } = useOvermindState()
+
+  const repo = selectedApplication?.repo
+
   const { data, isLoading, error } = useQuery(
-    `${selectedRepo?.owner}/${selectedRepo?.name}-deployments`,
+    `${repo?.owner}/${repo?.name}-deployments`,
     async () => {
-      if (!selectedRepo) return []
+      if (!repo) return []
 
       const result = await graphQLApi.fetchDeployments({
-        repoName: selectedRepo.name,
-        repoOwner: selectedRepo.owner,
+        repoName: repo.name,
+        repoOwner: repo.owner,
       })
       const fragments =
         result.repository?.deployments.nodes?.map((n) => n!) ?? []
@@ -73,23 +78,49 @@ export const useFetchDeployments = () => {
 }
 
 export const useFetchWorkflows = () => {
-  const { selectedRepo, token } = useOvermindState()
+  const { token, selectedApplication } = useOvermindState()
   const { restApi } = useEffects()
-  const { data, isLoading, error } = useQuery(
-    `${selectedRepo?.owner}/${selectedRepo?.name}-workflows`,
-    async () => {
-      if (!selectedRepo || !token) return []
 
-      const { owner, name: repo } = selectedRepo
+  const repo = selectedApplication?.repo
+
+  const { data, isLoading, error } = useQuery(
+    `${repo?.owner}/${repo?.name}-workflows`,
+    async () => {
+      if (!token || !repo) return []
+
+      const { owner, name } = repo
 
       const response = await restApi.octokit.actions.listRepoWorkflows({
         owner,
-        repo,
+        repo: name,
         per_page: 100,
       })
 
       // TODO: Only return workflows with `workflow_dispatch` trigger
       return orderBy(response.data?.workflows ?? [], (w) => w.name)
+    }
+  )
+  return { data, isLoading, error }
+}
+
+export const useFetchEnvironments = () => {
+  const { token, selectedApplication } = useOvermindState()
+  const { restApi } = useEffects()
+
+  const repo = selectedApplication?.repo
+
+  const { data, isLoading, error } = useQuery(
+    `${repo?.owner}/${repo?.name}-environments`,
+    async () => {
+      if (!token || !repo) return []
+
+      const { owner, name } = repo
+      const response = await restApi.octokit.repos.getAllEnvironments({
+        owner,
+        repo: name,
+      })
+
+      return response.data?.environments ?? []
     }
   )
   return { data, isLoading, error }

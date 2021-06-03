@@ -1,6 +1,9 @@
 import {
   Button,
+  CircularProgress,
   colors,
+  Icon,
+  IconButton,
   Link,
   Table,
   TableBody,
@@ -9,13 +12,16 @@ import {
   TableRow,
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
-import { groupBy, keyBy, orderBy, uniq } from 'lodash-es'
-import React, { FC, useState } from 'react'
+import { groupBy, keyBy, orderBy, values } from 'lodash-es'
+import { FC } from 'react'
 import { useMutation } from 'react-query'
 import { DeploymentState } from '../generated/graphql'
 import { useActions, useOvermindState } from '../overmind'
-import { DeploymentModel, ReleaseModel } from '../overmind/state'
-import { ApplicationSelector } from './ApplicationSelector'
+import {
+  DeploymentModel,
+  EnvironmentSettings,
+  ReleaseModel,
+} from '../overmind/state'
 import { useFetchDeployments, useFetchReleases } from './fetchHooks'
 
 const getButtonStyle = (state: DeploymentState) => {
@@ -37,93 +43,72 @@ const getButtonVariant = (state: DeploymentState): 'contained' | 'outlined' => {
   return state === DeploymentState.Active ? 'contained' : 'outlined'
 }
 
-const estimateEnvironmentsOrder = (
-  deployments: DeploymentModel[] | null | undefined
-) => {
-  return uniq(
-    orderBy(deployments || [], (d) => d.createdAt).map((d) => d.environment)
-  )
-}
-
 export const ReleasesTableView: FC = () => {
-  const { environmentOrderForSelectedRepo, selectedRepo } = useOvermindState()
-  const { triggerDeployment } = useActions()
+  const { selectedApplication } = useOvermindState()
+  const repo = selectedApplication?.repo
+  const { triggerDeployment, removeEnvironment } = useActions()
   const allReleaseResultsForRepo = useFetchReleases()
   const allDeploymentResultsForRepo = useFetchDeployments()
 
-  const [filterByApplication, setFilterByApplication] = useState(false)
-  const [currentApplication, setCurrentApplication] = useState<string>()
-
-  const appNames = new Set(
-    allReleaseResultsForRepo.data?.map((releaseData) =>
-      releaseData.tagName.substring(0, releaseData.tagName.indexOf('-'))
-    )
-  )
-
-  const releases =
-    filterByApplication && currentApplication
-      ? allReleaseResultsForRepo.data?.filter(
-          (releaseData) => releaseData.tagName.indexOf(currentApplication) > -1
-        ) || []
-      : allReleaseResultsForRepo.data || []
-
-  const deployments =
-    filterByApplication && currentApplication
-      ? allDeploymentResultsForRepo.data?.filter(
-          (deploymentData) =>
-            deploymentData.refName.indexOf(currentApplication) > -1
-        ) || []
-      : allDeploymentResultsForRepo.data || []
+  const releases = allReleaseResultsForRepo.data || []
+  const deployments = allDeploymentResultsForRepo.data || []
 
   const { mutate, error, isLoading } = useMutation(
     async ({
       release,
-      environment,
+      environmentId,
     }: {
       release: string
-      environment: string
+      environmentId: number
     }) => {
-      await triggerDeployment({ release, environment })
+      await triggerDeployment({ release, environmentId })
     }
   )
 
-  const releasesSorted = orderBy(releases, (r) => r.createdAt, 'desc')
+  if (!selectedApplication) return null
 
-  const releasesByTag = keyBy(releasesSorted, (r) => r.tagName)
+  if (
+    allReleaseResultsForRepo.isLoading ||
+    allDeploymentResultsForRepo.isLoading
+  ) {
+    return <CircularProgress />
+  }
 
-  const deploymentsByTag = groupBy(deployments, (d) => d.refName)
-
-  const environmentsOrder = environmentOrderForSelectedRepo || []
-
-  const environments = uniq(
-    environmentsOrder.concat(estimateEnvironmentsOrder(deployments))
+  const releasesSorted = orderBy(
+    releases.filter((r) =>
+      r.name.startsWith(selectedApplication.releaseFilter)
+    ),
+    (r) => r.createdAt,
+    'desc'
   )
 
-  const releasesByEnvironment = environments.reduce<
-    Record<string, ReleaseModel[]>
+  const releasesByCommit = keyBy(releasesSorted, (r) => r.commit)
+
+  const deploymentsByCommit = groupBy(deployments, (d) => d.commit)
+
+  const selectedEnvironments = values(
+    selectedApplication.environmentSettingsById
+  )
+
+  const releasesByEnvironment = selectedEnvironments.reduce<
+    Record<number, ReleaseModel[]>
   >((record, environment) => {
-    record[environment] = deployments
-      .filter((d) => d.environment === environment)
-      .map((d) => releasesByTag[d.refName])
+    record[environment.id] = deployments
+      .filter((d) => d.environment === environment.name)
+      .map((d) => releasesByCommit[d.commit])
       .filter((d) => !!d)
     return record
   }, {})
 
-  const isAfterLatestReleaseForEnvironment = (
-    release: ReleaseModel,
-    environment: string
-  ) => {
-    const latestRelease = releasesByEnvironment[environment]?.[0]
-    return !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
-  }
-
   const createButton = (
     deployment: DeploymentModel | undefined,
     release: ReleaseModel,
-    environment: string
+    environment: EnvironmentSettings
   ) => {
-    const isLatest = isAfterLatestReleaseForEnvironment(release, environment)
-    const deployButtonVariant = isLatest ? 'contained' : 'outlined'
+    const latestRelease = releasesByEnvironment[environment.id]?.[0]
+    const isAfterLatest =
+      !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
+    const deployButtonVariant = isAfterLatest ? 'contained' : 'outlined'
 
     return (
       <Button
@@ -131,12 +116,12 @@ export const ReleasesTableView: FC = () => {
         variant={
           deployment ? getButtonVariant(deployment.state) : deployButtonVariant
         }
-        color={!deployment && isLatest ? 'primary' : 'default'}
+        color={!deployment && isAfterLatest ? 'primary' : 'default'}
         style={deployment ? getButtonStyle(deployment.state) : {}}
         onClick={() =>
           mutate({
             release: release.tagName,
-            environment,
+            environmentId: environment.id,
           })
         }>
         {deployment?.state ?? 'Deploy'}
@@ -149,19 +134,17 @@ export const ReleasesTableView: FC = () => {
       {error instanceof Error && (
         <Alert severity="error">{error.message}</Alert>
       )}
-      <ApplicationSelector
-        appNames={appNames}
-        isMonorepo={filterByApplication}
-        shouldFilterByApplication={setFilterByApplication}
-        currentApp={currentApplication}
-        setCurrentApp={setCurrentApplication}
-      />
       <Table>
         <TableHead>
           <TableRow>
             <TableCell>Release name</TableCell>
-            {environments.map((environment) => (
-              <TableCell key={environment}>{environment}</TableCell>
+            {selectedEnvironments.map((environment) => (
+              <TableCell key={environment.id}>
+                {environment.name}
+                <IconButton onClick={() => removeEnvironment(environment.id)}>
+                  <Icon>delete</Icon>
+                </IconButton>
+              </TableCell>
             ))}
           </TableRow>
         </TableHead>
@@ -170,18 +153,18 @@ export const ReleasesTableView: FC = () => {
             <TableRow key={release.id}>
               <TableCell style={{ width: '20%' }}>
                 <Link
-                  href={`https://github.com/${selectedRepo?.owner}/${selectedRepo?.name}/releases/tag/${release.tagName}`}
+                  href={`https://github.com/${repo?.owner}/${repo?.name}/releases/tag/${release.tagName}`}
                   target="_blank"
                   color="inherit">
                   {release.name}
                 </Link>
               </TableCell>
-              {environments.map((environment) => {
-                const deployment = deploymentsByTag[release.tagName]?.find(
-                  (d) => d.environment === environment
+              {selectedEnvironments.map((environment) => {
+                const deployment = deploymentsByCommit[release.commit]?.find(
+                  (d) => d.environment === environment.name
                 )
                 return (
-                  <TableCell key={environment}>
+                  <TableCell key={environment.id}>
                     {createButton(deployment, release, environment)}
                   </TableCell>
                 )

@@ -1,12 +1,25 @@
-import { Box, Container, Paper, TextField, Typography } from '@material-ui/core'
-import { FC } from 'react'
-import { RepoSearchView } from './components/RepoSearchView'
-import { RepoView } from './components/RepoView'
+import {
+  Box,
+  Button,
+  Container,
+  Paper,
+  TextField,
+  Typography,
+} from '@material-ui/core'
+import React, { FC } from 'react'
+import {
+  EditApplicationDialog,
+  NewApplicationDialog,
+} from './components/ApplicationDialog'
+import { ApplicationView } from './components/ApplicationView'
+import { EnvironmentsView } from './components/EnvironmentsView'
+import { ReleasesTableView } from './components/ReleasesTableView'
+import { SelectApplicationView } from './components/SelectApplicationView'
 import { useActions, useOvermindState } from './overmind'
 
 const App: FC = () => {
-  const { token, selectedRepo } = useOvermindState()
-  const { setToken } = useActions()
+  const { token } = useOvermindState()
+  const { setToken, showNewApplicationModal } = useActions()
   return (
     <Container>
       <Box p={4} display="grid" gridGap="1rem" component={Paper}>
@@ -17,9 +30,23 @@ const App: FC = () => {
           onChange={(e) => setToken(e.target.value)}
           type="password"
         />
-        {token && <RepoSearchView />}
-        {selectedRepo && <RepoView />}
+        {token && (
+          <>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={showNewApplicationModal}>
+              New application
+            </Button>
+            <SelectApplicationView />
+            <ApplicationView />
+            <EnvironmentsView />
+            <ReleasesTableView />
+          </>
+        )}
       </Box>
+      <NewApplicationDialog />
+      <EditApplicationDialog />
     </Container>
   )
 }

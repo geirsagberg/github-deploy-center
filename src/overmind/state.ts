@@ -1,5 +1,6 @@
 import { Dayjs } from 'dayjs'
 import * as t from 'io-ts'
+import { v4 as uuid } from 'uuid'
 import { DeploymentState } from '../generated/graphql'
 
 export const RepoCodec = t.type({
@@ -34,6 +35,7 @@ export const DeployWorkflowCodec = t.type({
   releaseKey: t.string,
   environmentKey: t.string,
   ref: t.string,
+  extraArgs: t.record(t.string, t.string),
 })
 
 export type DeployWorkflowSettings = t.TypeOf<typeof DeployWorkflowCodec>
@@ -47,9 +49,10 @@ export const createDeployWorkflowSettings = ({
 }): DeployWorkflowSettings => ({
   type: 'workflow',
   environmentKey: 'environment',
-  releaseKey: 'release',
+  releaseKey: 'ref',
   workflowId,
   ref,
+  extraArgs: {},
 })
 
 export const DeployDeploymentCodec = t.type({
@@ -61,41 +64,83 @@ export const DeploySettingsCodec = t.union([
   DeployDeploymentCodec,
 ])
 
+export const EnvironmentSettingsCodec = t.type({
+  id: t.number,
+  name: t.string,
+  workflowInputValue: t.string,
+})
+
+export type EnvironmentSettings = t.TypeOf<typeof EnvironmentSettingsCodec>
+
+export const ApplicationConfigCodec = t.type({
+  id: t.string,
+  name: t.string,
+  releaseFilter: t.string,
+  environmentSettingsById: t.record(t.string, EnvironmentSettingsCodec),
+  repo: RepoCodec,
+  deploySettings: DeploySettingsCodec,
+})
+
+export const createApplicationConfig = (
+  repo: RepoModel,
+  name: string
+): ApplicationConfig => ({
+  id: uuid(),
+  name: name || repo.name,
+  releaseFilter: '',
+  environmentSettingsById: {},
+  repo,
+  deploySettings: createDeployWorkflowSettings({ ref: repo.defaultBranch }),
+})
+
+export type ApplicationConfig = t.TypeOf<typeof ApplicationConfigCodec>
+
+export const ApplicationsByIdCodec = t.record(t.string, ApplicationConfigCodec)
+
 export const DeploySettingsByRepoCodec = t.record(t.string, DeploySettingsCodec)
 
-type DeploySettings = t.TypeOf<typeof DeploySettingsCodec>
+export type DeploySettings = t.TypeOf<typeof DeploySettingsCodec>
+
+export type ApplicationDialogState = {
+  repo: RepoModel | null
+  name: string
+  releaseFilter: string
+  warning?: string
+}
+
+export const createApplicationDialogState = (): ApplicationDialogState => ({
+  name: '',
+  releaseFilter: '',
+  repo: null,
+})
+
+export type EnvironmentDialogState = {
+  environmentId: number | null
+  workflowInputValue: string
+}
 
 export type AppState = {
   token: string
-  selectedRepo: RepoModel | null
-  selectedRepoId: string | null
-  environmentOrderByRepo: Record<string, string[]>
-  environmentOrderForSelectedRepo: Readonly<string[]> | null
-  deploySettingsByRepo: Record<string, DeploySettings>
-  deploySettingsForSelectedRepo: Readonly<DeploySettings | null>
+  applicationsById: Record<string, ApplicationConfig>
+  selectedApplicationId: string
+  selectedApplication: ApplicationConfig | null
+  newApplicationDialog: ApplicationDialogState | null
+  editApplicationDialog: ApplicationDialogState | null
+  addEnvironmentDialog: EnvironmentDialogState | null
+  editEnvironmentDialog: EnvironmentDialogState | null
 }
 
 const state: AppState = {
   token: '',
-  selectedRepo: null,
-  get selectedRepoId() {
-    return this.selectedRepo ? this.selectedRepo.id : null
+  applicationsById: {},
+  selectedApplicationId: '',
+  get selectedApplication() {
+    return this.applicationsById[this.selectedApplicationId] ?? null
   },
-  environmentOrderByRepo: {},
-  get environmentOrderForSelectedRepo() {
-    return (
-      (this.selectedRepoId &&
-        this.environmentOrderByRepo[this.selectedRepoId]) ||
-      null
-    )
-  },
-  deploySettingsByRepo: {},
-  get deploySettingsForSelectedRepo() {
-    return this.selectedRepo
-      ? this.deploySettingsByRepo[this.selectedRepo.id] ??
-          createDeployWorkflowSettings({ ref: this.selectedRepo.defaultBranch })
-      : null
-  },
+  newApplicationDialog: null,
+  editApplicationDialog: null,
+  addEnvironmentDialog: null,
+  editEnvironmentDialog: null,
 }
 
 export default state

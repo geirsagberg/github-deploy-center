@@ -13,3 +13,15 @@ class GitHubRestApi {
 }
 
 export const restApi = new GitHubRestApi()
+
+class Storage {
+  save = (key: string, value: any) => {
+    localStorage.setItem(key, JSON.stringify(value))
+  }
+  load = (key: string) => {
+    const value = localStorage.getItem(key)
+    return value ? JSON.parse(value) : null
+  }
+}
+
+export const storage = new Storage()

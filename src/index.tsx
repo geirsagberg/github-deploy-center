@@ -3,6 +3,7 @@ import { Provider } from 'overmind-react'
 import React from 'react'
 import ReactDOM from 'react-dom'
 import { QueryClient, QueryClientProvider } from 'react-query'
+import { ReactQueryDevtools } from 'react-query/devtools'
 import App from './App'
 import { overmind } from './overmind'
 import * as serviceWorker from './serviceWorker'
@@ -19,6 +20,7 @@ ReactDOM.render(
           <App />
         </Provider>
       </MuiThemeProvider>
+      <ReactQueryDevtools />
     </QueryClientProvider>
   </React.StrictMode>,
   document.getElementById('root')
