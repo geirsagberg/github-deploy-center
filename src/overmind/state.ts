@@ -35,6 +35,7 @@ export const DeployWorkflowCodec = t.type({
   releaseKey: t.string,
   environmentKey: t.string,
   ref: t.string,
+  extraArgs: t.record(t.string, t.string),
 })
 
 export type DeployWorkflowSettings = t.TypeOf<typeof DeployWorkflowCodec>
@@ -51,6 +52,7 @@ export const createDeployWorkflowSettings = ({
   releaseKey: 'ref',
   workflowId,
   ref,
+  extraArgs: {},
 })
 
 export const DeployDeploymentCodec = t.type({

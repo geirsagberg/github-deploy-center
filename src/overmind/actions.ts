@@ -63,7 +63,8 @@ export const triggerDeployment: AsyncAction<{
     )
   ) {
     const { owner, name } = repo
-    const { ref, workflowId, environmentKey, releaseKey } = deploySettings
+    const { ref, workflowId, environmentKey, releaseKey, extraArgs } =
+      deploySettings
     await effects.restApi.octokit.actions.createWorkflowDispatch({
       owner,
       repo: name,
@@ -72,6 +73,7 @@ export const triggerDeployment: AsyncAction<{
       inputs: {
         [releaseKey]: release,
         [environmentKey]: environmentSettings.workflowInputValue,
+        ...extraArgs,
       },
     })
   }
@@ -191,4 +193,10 @@ export const addEnvironment: Action<EnvironmentSettings> = (
     ] = settings
   }
   state.addEnvironmentDialog = null
+}
+
+export const removeEnvironment: Action<number> = ({ state }, id) => {
+  if (state.selectedApplication) {
+    delete state.selectedApplication.environmentSettingsById[id]
+  }
 }

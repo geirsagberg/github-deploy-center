@@ -2,6 +2,8 @@ import {
   Button,
   CircularProgress,
   colors,
+  Icon,
+  IconButton,
   Link,
   Table,
   TableBody,
@@ -44,7 +46,7 @@ const getButtonVariant = (state: DeploymentState): 'contained' | 'outlined' => {
 export const ReleasesTableView: FC = () => {
   const { selectedApplication } = useOvermindState()
   const repo = selectedApplication?.repo
-  const { triggerDeployment } = useActions()
+  const { triggerDeployment, removeEnvironment } = useActions()
   const allReleaseResultsForRepo = useFetchReleases()
   const allDeploymentResultsForRepo = useFetchDeployments()
 
@@ -137,7 +139,12 @@ export const ReleasesTableView: FC = () => {
           <TableRow>
             <TableCell>Release name</TableCell>
             {selectedEnvironments.map((environment) => (
-              <TableCell key={environment.id}>{environment.name}</TableCell>
+              <TableCell key={environment.id}>
+                {environment.name}
+                <IconButton onClick={() => removeEnvironment(environment.id)}>
+                  <Icon>delete</Icon>
+                </IconButton>
+              </TableCell>
             ))}
           </TableRow>
         </TableHead>

@@ -8,7 +8,8 @@ import {
   TextField,
   Typography,
 } from '@material-ui/core'
-import { Alert } from '@material-ui/lab'
+import { Alert, Autocomplete } from '@material-ui/lab'
+import { fromPairs } from 'lodash-es'
 import React, { FC } from 'react'
 import { useActions, useOvermindState } from '../overmind'
 import { DeployWorkflowCodec } from '../overmind/state'
@@ -31,7 +32,7 @@ export const ApplicationView: FC = () => {
     return <Alert severity="error">{workflows.error.message}</Alert>
   }
 
-  const { workflowId, releaseKey, environmentKey, ref } =
+  const { workflowId, releaseKey, environmentKey, ref, extraArgs } =
     selectedApplication.deploySettings
 
   return (
@@ -94,6 +95,26 @@ export const ApplicationView: FC = () => {
               (settings) => (settings.ref = e.target.value)
             )
           }
+        />
+        <Autocomplete
+          style={{ gridColumn: '1 / span 5' }}
+          multiple
+          options={[]}
+          freeSolo
+          value={Object.entries(extraArgs).map(
+            ([key, value]) => `${key}=${value}`
+          )}
+          renderInput={(params) => (
+            <TextField label="Extra args" placeholder="key=value" {...params} />
+          )}
+          onChange={(_, newValue) => {
+            const pairs = newValue
+              .filter((x): x is string => typeof x === 'string')
+              .map((x) => x.split('='))
+              .filter(([key, value]) => key && value)
+            const newArgs = fromPairs(pairs)
+            updateWorkflowSettings((settings) => (settings.extraArgs = newArgs))
+          }}
         />
       </Box>
     </>
