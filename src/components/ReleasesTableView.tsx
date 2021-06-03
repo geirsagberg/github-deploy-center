@@ -1,5 +1,6 @@
 import {
   Button,
+  CircularProgress,
   colors,
   Link,
   Table,
@@ -64,6 +65,13 @@ export const ReleasesTableView: FC = () => {
 
   if (!selectedApplication) return null
 
+  if (
+    allReleaseResultsForRepo.isLoading ||
+    allDeploymentResultsForRepo.isLoading
+  ) {
+    return <CircularProgress />
+  }
+
   const releasesSorted = orderBy(
     releases.filter((r) =>
       r.name.startsWith(selectedApplication.releaseFilter)
@@ -72,9 +80,9 @@ export const ReleasesTableView: FC = () => {
     'desc'
   )
 
-  const releasesByTag = keyBy(releasesSorted, (r) => r.tagName)
+  const releasesByCommit = keyBy(releasesSorted, (r) => r.commit)
 
-  const deploymentsByTag = groupBy(deployments, (d) => d.refName)
+  const deploymentsByCommit = groupBy(deployments, (d) => d.commit)
 
   const selectedEnvironments = values(
     selectedApplication.environmentSettingsById
@@ -85,7 +93,7 @@ export const ReleasesTableView: FC = () => {
   >((record, environment) => {
     record[environment.id] = deployments
       .filter((d) => d.environment === environment.name)
-      .map((d) => releasesByTag[d.refName])
+      .map((d) => releasesByCommit[d.commit])
       .filter((d) => !!d)
     return record
   }, {})
@@ -145,7 +153,7 @@ export const ReleasesTableView: FC = () => {
                 </Link>
               </TableCell>
               {selectedEnvironments.map((environment) => {
-                const deployment = deploymentsByTag[release.tagName]?.find(
+                const deployment = deploymentsByCommit[release.commit]?.find(
                   (d) => d.environment === environment.name
                 )
                 return (
