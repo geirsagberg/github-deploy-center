@@ -12,6 +12,7 @@ import {
   NewApplicationDialog,
 } from './components/ApplicationDialog'
 import { ApplicationView } from './components/ApplicationView'
+import { EnvironmentsView } from './components/EnvironmentsView'
 import { SelectApplicationView } from './components/SelectApplicationView'
 import { useActions, useOvermindState } from './overmind'
 
@@ -38,6 +39,7 @@ const App: FC = () => {
             </Button>
             <SelectApplicationView />
             <ApplicationView />
+            <EnvironmentsView />
           </>
         )}
       </Box>

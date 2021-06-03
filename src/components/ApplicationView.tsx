@@ -1,40 +1,24 @@
 import {
   Box,
-  Chip,
   CircularProgress,
   FormControl,
-  Input,
   InputLabel,
-  makeStyles,
   MenuItem,
   Select,
   TextField,
   Typography,
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
-import { keyBy } from 'lodash-es'
 import React, { FC } from 'react'
 import { useActions, useOvermindState } from '../overmind'
 import { DeployWorkflowCodec } from '../overmind/state'
-import { useFetchEnvironments, useFetchWorkflows } from './fetchHooks'
-
-const useStyles = makeStyles({
-  chips: {
-    display: 'flex',
-    flexWrap: 'wrap',
-  },
-  chip: {
-    margin: 2,
-  },
-})
+import { useFetchWorkflows } from './fetchHooks'
 
 export const ApplicationView: FC = () => {
   const { selectedApplication } = useOvermindState()
   const { updateWorkflowSettings } = useActions()
 
-  const workflows = useFetchWorkflows(selectedApplication?.repo)
-  const environments = useFetchEnvironments(selectedApplication?.repo)
-  const classes = useStyles()
+  const workflows = useFetchWorkflows()
 
   if (
     !selectedApplication ||
@@ -47,15 +31,8 @@ export const ApplicationView: FC = () => {
     return <Alert severity="error">{workflows.error.message}</Alert>
   }
 
-  if (environments.error instanceof Error) {
-    return <Alert severity="error">{environments.error.message}</Alert>
-  }
-
   const { workflowId, releaseKey, environmentKey, ref } =
     selectedApplication.deploySettings
-
-  const { environmentIds } = selectedApplication
-  const environmentsById = keyBy(environments.data, (e) => e.id)
 
   return (
     <>
@@ -118,39 +95,6 @@ export const ApplicationView: FC = () => {
             )
           }
         />
-        <FormControl variant="outlined">
-          <InputLabel id="environments-select-label">Environments</InputLabel>
-          {environments.isLoading ? (
-            <CircularProgress />
-          ) : environments.data ? (
-            <Select
-              labelId="environments-select-label"
-              id="environments-select"
-              multiple
-              value={environmentIds}
-              label="Environments"
-              input={<Input id="select-multiple-chip" />}
-              renderValue={(selected) => (
-                <div className={classes.chips}>
-                  {(selected as string[])
-                    .filter((id) => id in environmentsById)
-                    .map((value) => (
-                      <Chip
-                        key={value}
-                        label={environmentsById[value].name}
-                        className={classes.chip}
-                      />
-                    ))}
-                </div>
-              )}>
-              {environments.data.map((env) => (
-                <MenuItem key={env.id} value={env.id}>
-                  {env.name}
-                </MenuItem>
-              ))}
-            </Select>
-          ) : null}
-        </FormControl>
       </Box>
     </>
   )

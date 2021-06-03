@@ -9,7 +9,7 @@ import {
   TextField,
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
-import { keyBy, orderBy } from 'lodash-es'
+import { orderBy } from 'lodash-es'
 import { FC } from 'react'
 import { useActions, useOvermindState } from '../overmind'
 import { ApplicationDialogState, RepoModel } from '../overmind/state'
@@ -20,19 +20,17 @@ export const ApplicationDialog: FC<{
   dialogState: ApplicationDialogState
   updateDialogState: (update: (state: ApplicationDialogState) => void) => void
   title: string
-  onSave: ({ repo, name }: { repo: RepoModel; name: string }) => boolean
+  onSave: ({ repo, name }: { repo: RepoModel; name: string }) => void
   onCancel: () => void
 }> = ({
-  dialogState: { open, repoId, name, warning },
+  dialogState: { open, repo, name, warning },
   updateDialogState,
   title,
   onSave,
   onCancel,
 }) => {
   const { data, error, isLoading } = useFetchRepos()
-  const reposById = keyBy(data ?? [], (r) => r.id)
   const options = orderBy(data ?? [], (d) => d.owner.toLowerCase())
-  const repo = reposById[repoId]
   return (
     <Dialog open={open} fullWidth>
       <form
@@ -52,7 +50,7 @@ export const ApplicationDialog: FC<{
                 options={options}
                 selectedRepo={repo}
                 setSelectedRepo={(repo) =>
-                  updateDialogState((state) => (state.repoId = repo?.id ?? ''))
+                  updateDialogState((state) => (state.repo = repo))
                 }></RepoSearchBox>
               <br />
               <TextField

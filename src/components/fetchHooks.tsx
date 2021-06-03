@@ -77,9 +77,12 @@ export const useFetchDeployments = () => {
   return { data, isLoading, error }
 }
 
-export const useFetchWorkflows = (repo: RepoModel | undefined) => {
-  const { token } = useOvermindState()
+export const useFetchWorkflows = () => {
+  const { token, selectedApplication } = useOvermindState()
   const { restApi } = useEffects()
+
+  const repo = selectedApplication?.repo
+
   const { data, isLoading, error } = useQuery(
     `${repo?.owner}/${repo?.name}-workflows`,
     async () => {
@@ -100,9 +103,12 @@ export const useFetchWorkflows = (repo: RepoModel | undefined) => {
   return { data, isLoading, error }
 }
 
-export const useFetchEnvironments = (repo: RepoModel | undefined) => {
-  const { token } = useOvermindState()
+export const useFetchEnvironments = () => {
+  const { token, selectedApplication } = useOvermindState()
   const { restApi } = useEffects()
+
+  const repo = selectedApplication?.repo
+
   const { data, isLoading, error } = useQuery(
     `${repo?.owner}/${repo?.name}-environments`,
     async () => {

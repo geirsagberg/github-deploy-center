@@ -9,13 +9,17 @@ import {
   TableRow,
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
-import { groupBy, keyBy, orderBy, uniq } from 'lodash-es'
+import { groupBy, keyBy, orderBy } from 'lodash-es'
 import { FC } from 'react'
 import { useMutation } from 'react-query'
 import { DeploymentState } from '../generated/graphql'
 import { useActions, useOvermindState } from '../overmind'
 import { DeploymentModel, ReleaseModel } from '../overmind/state'
-import { useFetchDeployments, useFetchReleases } from './fetchHooks'
+import {
+  useFetchDeployments,
+  useFetchEnvironments,
+  useFetchReleases,
+} from './fetchHooks'
 
 const getButtonStyle = (state: DeploymentState) => {
   switch (state) {
@@ -36,24 +40,17 @@ const getButtonVariant = (state: DeploymentState): 'contained' | 'outlined' => {
   return state === DeploymentState.Active ? 'contained' : 'outlined'
 }
 
-const estimateEnvironmentsOrder = (
-  deployments: DeploymentModel[] | null | undefined
-) => {
-  return uniq(
-    orderBy(deployments || [], (d) => d.createdAt).map((d) => d.environment)
-  )
-}
-
 export const ReleasesTableView: FC = () => {
   const { selectedApplication } = useOvermindState()
   const repo = selectedApplication?.repo
   const { triggerDeployment } = useActions()
   const allReleaseResultsForRepo = useFetchReleases()
   const allDeploymentResultsForRepo = useFetchDeployments()
+  const allEnvironmentsForRepo = useFetchEnvironments()
 
   const releases = allReleaseResultsForRepo.data || []
-
   const deployments = allDeploymentResultsForRepo.data || []
+  const environments = allEnvironmentsForRepo.data || []
 
   const { mutate, error, isLoading } = useMutation(
     async ({
@@ -73,17 +70,11 @@ export const ReleasesTableView: FC = () => {
 
   const deploymentsByTag = groupBy(deployments, (d) => d.refName)
 
-  const environmentsOrder: string[] = []
-
-  const environments = uniq(
-    environmentsOrder.concat(estimateEnvironmentsOrder(deployments))
-  )
-
   const releasesByEnvironment = environments.reduce<
     Record<string, ReleaseModel[]>
   >((record, environment) => {
-    record[environment] = deployments
-      .filter((d) => d.environment === environment)
+    record[environment.name] = deployments
+      .filter((d) => d.environment === environment.name)
       .map((d) => releasesByTag[d.refName])
       .filter((d) => !!d)
     return record
@@ -134,7 +125,7 @@ export const ReleasesTableView: FC = () => {
           <TableRow>
             <TableCell>Release name</TableCell>
             {environments.map((environment) => (
-              <TableCell key={environment}>{environment}</TableCell>
+              <TableCell key={environment.id}>{environment.name}</TableCell>
             ))}
           </TableRow>
         </TableHead>
@@ -151,11 +142,11 @@ export const ReleasesTableView: FC = () => {
               </TableCell>
               {environments.map((environment) => {
                 const deployment = deploymentsByTag[release.tagName]?.find(
-                  (d) => d.environment === environment
+                  (d) => d.environment === environment.name
                 )
                 return (
-                  <TableCell key={environment}>
-                    {createButton(deployment, release, environment)}
+                  <TableCell key={environment.id}>
+                    {createButton(deployment, release, environment.name)}
                   </TableCell>
                 )
               })}

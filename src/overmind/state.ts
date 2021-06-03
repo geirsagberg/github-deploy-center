@@ -62,11 +62,18 @@ export const DeploySettingsCodec = t.union([
   DeployDeploymentCodec,
 ])
 
+export const EnvironmentSettingsCodec = t.type({
+  id: t.number,
+  workflowInputValue: t.string,
+})
+
+export type EnvironmentSettings = t.TypeOf<typeof EnvironmentSettingsCodec>
+
 export const ApplicationConfigCodec = t.type({
   id: t.string,
   name: t.string,
   releasePrefix: t.string,
-  environmentIds: t.array(t.string),
+  environmentSettingsById: t.record(t.string, EnvironmentSettingsCodec),
   repo: RepoCodec,
   deploySettings: DeploySettingsCodec,
 })
@@ -78,7 +85,7 @@ export const createApplicationConfig = (
   id: uuid(),
   name: name || repo.name,
   releasePrefix: '',
-  environmentIds: [],
+  environmentSettingsById: {},
   repo,
   deploySettings: createDeployWorkflowSettings({ ref: repo.defaultBranch }),
 })
@@ -93,9 +100,14 @@ export type DeploySettings = t.TypeOf<typeof DeploySettingsCodec>
 
 export type ApplicationDialogState = {
   open: boolean
-  repoId: string
+  repo: RepoModel | null
   name: string
   warning?: string
+}
+
+export type EnvironmentDialogState = {
+  environmentId: number | null
+  workflowInputValue: string
 }
 
 export type AppState = {
@@ -105,6 +117,8 @@ export type AppState = {
   selectedApplication: ApplicationConfig | null
   newApplicationDialog: ApplicationDialogState
   editApplicationDialog: ApplicationDialogState
+  addEnvironmentDialog: EnvironmentDialogState | null
+  editEnvironmentDialog: EnvironmentDialogState | null
 }
 
 const state: AppState = {
@@ -114,8 +128,10 @@ const state: AppState = {
   get selectedApplication() {
     return this.applicationsById[this.selectedApplicationId] ?? null
   },
-  newApplicationDialog: { open: false, repoId: '', name: '' },
-  editApplicationDialog: { open: false, repoId: '', name: '' },
+  newApplicationDialog: { open: false, repo: null, name: '' },
+  editApplicationDialog: { open: false, repo: null, name: '' },
+  addEnvironmentDialog: null,
+  editEnvironmentDialog: null,
 }
 
 export default state

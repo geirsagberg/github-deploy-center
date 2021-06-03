@@ -1,4 +1,5 @@
 import { some } from 'lodash'
+import { clone } from 'lodash-es'
 import { Action, AsyncAction } from 'overmind'
 import {
   ApplicationDialogState,
@@ -6,6 +7,7 @@ import {
   createDeployWorkflowSettings,
   DeployWorkflowCodec,
   DeployWorkflowSettings,
+  EnvironmentDialogState,
   RepoModel,
 } from './state'
 
@@ -16,10 +18,12 @@ export const setToken: Action<string> = ({ state }, token) => {
 export const showNewApplicationModal: Action = ({
   state: { newApplicationDialog: applicationDialog, selectedApplication },
 }) => {
-  applicationDialog.open = true
-  applicationDialog.repoId = selectedApplication?.repo?.id || ''
-  applicationDialog.name = ''
-  applicationDialog.warning = undefined
+  if (selectedApplication) {
+    applicationDialog.open = true
+    applicationDialog.repo = clone(selectedApplication.repo)
+    applicationDialog.name = ''
+    applicationDialog.warning = undefined
+  }
 }
 
 export const updateWorkflowSettings: Action<
@@ -97,7 +101,7 @@ export const selectApplication: Action<string> = ({ state }, id) => {
 
 export const editApplication: Action = ({ state }) => {
   if (state.selectedApplication) {
-    state.editApplicationDialog.repoId = state.selectedApplication.repo.id
+    state.editApplicationDialog.repo = clone(state.selectedApplication.repo)
     state.editApplicationDialog.name = state.selectedApplication.name
   }
   state.editApplicationDialog.open = true
@@ -122,7 +126,7 @@ export const saveApplication: Action<
       'App with same name and repo already exists!'
     return false
   }
-  state.applicationsById[id].repo = repo
+  state.applicationsById[id].repo = clone(repo)
   state.applicationsById[id].name = name
   state.editApplicationDialog.open = false
   return true
@@ -138,4 +142,40 @@ export const updateApplicationDialog: Action<{
       : state.editApplicationDialog
   dialogState.warning = undefined
   update(dialogState)
+}
+
+export const showAddEnvironmentModal: Action = ({ state }) => {
+  state.addEnvironmentDialog = {
+    environmentId: null,
+    workflowInputValue: '',
+  }
+}
+
+export const updateEnvironmentDialog: Action<{
+  addOrEdit: 'add' | 'edit'
+  update: (state: EnvironmentDialogState) => void
+}> = ({ state }, { addOrEdit, update }) => {
+  const dialogState =
+    addOrEdit === 'add'
+      ? state.addEnvironmentDialog
+      : state.editEnvironmentDialog
+  if (dialogState) {
+    update(dialogState)
+  }
+}
+
+export const cancelAddEnvironment: Action = ({ state }) => {
+  state.addEnvironmentDialog = null
+}
+
+export const addEnvironment: Action = ({ state }) => {
+  if (state.selectedApplication && state.addEnvironmentDialog?.environmentId) {
+    state.selectedApplication.environmentSettingsById[
+      state.addEnvironmentDialog.environmentId
+    ] = {
+      id: state.addEnvironmentDialog.environmentId,
+      workflowInputValue: state.addEnvironmentDialog.workflowInputValue,
+    }
+  }
+  state.addEnvironmentDialog = null
 }
