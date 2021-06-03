@@ -4,10 +4,12 @@ import { Action, AsyncAction } from 'overmind'
 import {
   ApplicationDialogState,
   createApplicationConfig,
+  createApplicationDialogState,
   createDeployWorkflowSettings,
   DeployWorkflowCodec,
   DeployWorkflowSettings,
   EnvironmentDialogState,
+  EnvironmentSettings,
   RepoModel,
 } from './state'
 
@@ -15,14 +17,11 @@ export const setToken: Action<string> = ({ state }, token) => {
   state.token = token
 }
 
-export const showNewApplicationModal: Action = ({
-  state: { newApplicationDialog: applicationDialog, selectedApplication },
-}) => {
-  if (selectedApplication) {
-    applicationDialog.open = true
-    applicationDialog.repo = clone(selectedApplication.repo)
-    applicationDialog.name = ''
-    applicationDialog.warning = undefined
+export const showNewApplicationModal: Action = ({ state }) => {
+  state.newApplicationDialog = createApplicationDialogState()
+
+  if (state.selectedApplication) {
+    state.newApplicationDialog.repo = clone(state.selectedApplication.repo)
   }
 }
 
@@ -44,37 +43,45 @@ export const updateWorkflowSettings: Action<
 
 export const triggerDeployment: AsyncAction<{
   release: string
-  environment: string
-}> = async ({ effects, state }, { release, environment }) => {
-  // if (!selectedRepo || !DeployWorkflowCodec.is(deploySettingsForSelectedRepo))
-  //   return
-  // const env = environment.split('-').pop() || environment
-  // if (
-  //   window.confirm(
-  //     `Are you sure you want to deploy "${release}" to "${env}" in "${selectedRepo.owner}/${selectedRepo.name}@${deploySettingsForSelectedRepo.ref}"?`
-  //   )
-  // ) {
-  //   const { owner, name } = selectedRepo
-  //   const {
-  //     ref,
-  //     workflowId,
-  //     environmentKey,
-  //     releaseKey,
-  //   } = deploySettingsForSelectedRepo
-  //   await effects.restApi.octokit.actions.createWorkflowDispatch({
-  //     owner,
-  //     repo: name,
-  //     ref,
-  //     workflow_id: workflowId,
-  //     inputs: { [releaseKey]: release, [environmentKey]: env },
-  //   })
-  // }
+  environmentId: number
+}> = async ({ effects, state }, { release, environmentId }) => {
+  const { selectedApplication } = state
+
+  if (!selectedApplication) return
+  const { deploySettings, environmentSettingsById } = selectedApplication
+  if (!DeployWorkflowCodec.is(deploySettings)) return
+
+  if (!(environmentId in environmentSettingsById)) return
+
+  const environmentSettings = environmentSettingsById[environmentId]
+
+  const repo = selectedApplication.repo
+
+  if (
+    window.confirm(
+      `Are you sure you want to deploy "${release}" to "${environmentSettings.name}" in "${repo.owner}/${repo.name}@${deploySettings.ref}"?`
+    )
+  ) {
+    const { owner, name } = repo
+    const { ref, workflowId, environmentKey, releaseKey } = deploySettings
+    await effects.restApi.octokit.actions.createWorkflowDispatch({
+      owner,
+      repo: name,
+      ref,
+      workflow_id: workflowId,
+      inputs: {
+        [releaseKey]: release,
+        [environmentKey]: environmentSettings.workflowInputValue,
+      },
+    })
+  }
 }
 
-export const createNewApplication: Action<
-  { repo: RepoModel; name: string },
-  boolean
-> = ({ state }, { repo, name }) => {
+export const createNewApplication: Action<{ repo: RepoModel; name: string }> = (
+  { state },
+  { repo, name }
+) => {
+  if (!state.newApplicationDialog) return
   if (
     Object.values(state.applicationsById).some(
       (app) => app.repo.id === repo.id && app.name === name
@@ -82,17 +89,16 @@ export const createNewApplication: Action<
   ) {
     state.newApplicationDialog.warning =
       'App with same name and repo already exists!'
-    return false
+    return
   }
   const appConfig = createApplicationConfig(repo, name)
   state.applicationsById[appConfig.id] = appConfig
   state.selectedApplicationId = appConfig.id
-  state.newApplicationDialog.open = false
-  return true
+  state.newApplicationDialog = null
 }
 
 export const cancelNewApplication: Action = ({ state }) => {
-  state.newApplicationDialog.open = false
+  state.newApplicationDialog = null
 }
 
 export const selectApplication: Action<string> = ({ state }, id) => {
@@ -100,21 +106,25 @@ export const selectApplication: Action<string> = ({ state }, id) => {
 }
 
 export const editApplication: Action = ({ state }) => {
+  state.editApplicationDialog = createApplicationDialogState()
   if (state.selectedApplication) {
     state.editApplicationDialog.repo = clone(state.selectedApplication.repo)
     state.editApplicationDialog.name = state.selectedApplication.name
+    state.editApplicationDialog.releaseFilter =
+      state.selectedApplication.releaseFilter
   }
-  state.editApplicationDialog.open = true
 }
 
 export const cancelEditApplication: Action = ({ state }) => {
-  state.editApplicationDialog.open = false
+  state.editApplicationDialog = null
 }
 
-export const saveApplication: Action<
-  { repo: RepoModel; name: string },
-  boolean
-> = ({ state }, { repo, name }) => {
+export const saveApplication: Action<{
+  repo: RepoModel
+  name: string
+  releaseFilter: string
+}> = ({ state }, { repo, name, releaseFilter }) => {
+  if (!state.editApplicationDialog) return
   const id = state.selectedApplicationId
   if (
     some(
@@ -124,12 +134,13 @@ export const saveApplication: Action<
   ) {
     state.editApplicationDialog.warning =
       'App with same name and repo already exists!'
-    return false
+    return
   }
+
   state.applicationsById[id].repo = clone(repo)
   state.applicationsById[id].name = name
-  state.editApplicationDialog.open = false
-  return true
+  state.applicationsById[id].releaseFilter = releaseFilter
+  state.editApplicationDialog = null
 }
 
 export const updateApplicationDialog: Action<{
@@ -140,8 +151,10 @@ export const updateApplicationDialog: Action<{
     newOrEdit === 'new'
       ? state.newApplicationDialog
       : state.editApplicationDialog
-  dialogState.warning = undefined
-  update(dialogState)
+  if (dialogState) {
+    dialogState.warning = undefined
+    update(dialogState)
+  }
 }
 
 export const showAddEnvironmentModal: Action = ({ state }) => {
@@ -168,14 +181,14 @@ export const cancelAddEnvironment: Action = ({ state }) => {
   state.addEnvironmentDialog = null
 }
 
-export const addEnvironment: Action = ({ state }) => {
+export const addEnvironment: Action<EnvironmentSettings> = (
+  { state },
+  settings
+) => {
   if (state.selectedApplication && state.addEnvironmentDialog?.environmentId) {
     state.selectedApplication.environmentSettingsById[
       state.addEnvironmentDialog.environmentId
-    ] = {
-      id: state.addEnvironmentDialog.environmentId,
-      workflowInputValue: state.addEnvironmentDialog.workflowInputValue,
-    }
+    ] = settings
   }
   state.addEnvironmentDialog = null
 }

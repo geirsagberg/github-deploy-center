@@ -15,20 +15,14 @@ import { orderBy } from 'lodash'
 import { keyBy } from 'lodash-es'
 import { FC } from 'react'
 import { useActions, useOvermindState } from '../overmind'
-import { EnvironmentDialogState } from '../overmind/state'
+import { EnvironmentDialogState, EnvironmentSettings } from '../overmind/state'
 import { useFetchEnvironments } from './fetchHooks'
 
 const EnvironmentDialog: FC<{
   dialogState: EnvironmentDialogState | null
   updateDialogState: (update: (state: EnvironmentDialogState) => void) => void
   title: string
-  onSave: ({
-    environmentId,
-    workflowInputValue,
-  }: {
-    environmentId: number
-    workflowInputValue: string
-  }) => void
+  onSave: (settings: EnvironmentSettings) => void
   onCancel: () => void
 }> = ({ dialogState, onSave, onCancel, title, updateDialogState }) => {
   const { data, isLoading, error } = useFetchEnvironments()
@@ -46,7 +40,11 @@ const EnvironmentDialog: FC<{
             const { environmentId, workflowInputValue } = dialogState
             environmentId &&
               workflowInputValue &&
-              onSave({ environmentId, workflowInputValue })
+              onSave({
+                id: environmentId,
+                workflowInputValue,
+                name: environmentsById[environmentId].name,
+              })
           }}>
           <DialogTitle>{title}</DialogTitle>
           <DialogContent>

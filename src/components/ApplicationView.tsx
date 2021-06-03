@@ -37,8 +37,8 @@ export const ApplicationView: FC = () => {
   return (
     <>
       <Typography variant="h4">Deploy workflow settings</Typography>
-      <Box display="grid" gridTemplateColumns="repeat(4, 1fr)" gridGap="1rem">
-        <FormControl variant="outlined">
+      <Box display="grid" gridTemplateColumns="repeat(5, 1fr)" gridGap="1rem">
+        <FormControl variant="outlined" style={{ gridColumn: '1 / span 2' }}>
           <InputLabel id="workflow-select-label">Workflow</InputLabel>
           {workflows.isLoading ? (
             <CircularProgress />

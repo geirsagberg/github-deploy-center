@@ -64,6 +64,7 @@ export const DeploySettingsCodec = t.union([
 
 export const EnvironmentSettingsCodec = t.type({
   id: t.number,
+  name: t.string,
   workflowInputValue: t.string,
 })
 
@@ -72,7 +73,7 @@ export type EnvironmentSettings = t.TypeOf<typeof EnvironmentSettingsCodec>
 export const ApplicationConfigCodec = t.type({
   id: t.string,
   name: t.string,
-  releasePrefix: t.string,
+  releaseFilter: t.string,
   environmentSettingsById: t.record(t.string, EnvironmentSettingsCodec),
   repo: RepoCodec,
   deploySettings: DeploySettingsCodec,
@@ -84,7 +85,7 @@ export const createApplicationConfig = (
 ): ApplicationConfig => ({
   id: uuid(),
   name: name || repo.name,
-  releasePrefix: '',
+  releaseFilter: '',
   environmentSettingsById: {},
   repo,
   deploySettings: createDeployWorkflowSettings({ ref: repo.defaultBranch }),
@@ -99,11 +100,17 @@ export const DeploySettingsByRepoCodec = t.record(t.string, DeploySettingsCodec)
 export type DeploySettings = t.TypeOf<typeof DeploySettingsCodec>
 
 export type ApplicationDialogState = {
-  open: boolean
   repo: RepoModel | null
   name: string
+  releaseFilter: string
   warning?: string
 }
+
+export const createApplicationDialogState = (): ApplicationDialogState => ({
+  name: '',
+  releaseFilter: '',
+  repo: null,
+})
 
 export type EnvironmentDialogState = {
   environmentId: number | null
@@ -115,8 +122,8 @@ export type AppState = {
   applicationsById: Record<string, ApplicationConfig>
   selectedApplicationId: string
   selectedApplication: ApplicationConfig | null
-  newApplicationDialog: ApplicationDialogState
-  editApplicationDialog: ApplicationDialogState
+  newApplicationDialog: ApplicationDialogState | null
+  editApplicationDialog: ApplicationDialogState | null
   addEnvironmentDialog: EnvironmentDialogState | null
   editEnvironmentDialog: EnvironmentDialogState | null
 }
@@ -128,8 +135,8 @@ const state: AppState = {
   get selectedApplication() {
     return this.applicationsById[this.selectedApplicationId] ?? null
   },
-  newApplicationDialog: { open: false, repo: null, name: '' },
-  editApplicationDialog: { open: false, repo: null, name: '' },
+  newApplicationDialog: null,
+  editApplicationDialog: null,
   addEnvironmentDialog: null,
   editEnvironmentDialog: null,
 }

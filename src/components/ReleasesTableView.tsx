@@ -9,17 +9,17 @@ import {
   TableRow,
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
-import { groupBy, keyBy, orderBy } from 'lodash-es'
+import { groupBy, keyBy, orderBy, values } from 'lodash-es'
 import { FC } from 'react'
 import { useMutation } from 'react-query'
 import { DeploymentState } from '../generated/graphql'
 import { useActions, useOvermindState } from '../overmind'
-import { DeploymentModel, ReleaseModel } from '../overmind/state'
 import {
-  useFetchDeployments,
-  useFetchEnvironments,
-  useFetchReleases,
-} from './fetchHooks'
+  DeploymentModel,
+  EnvironmentSettings,
+  ReleaseModel,
+} from '../overmind/state'
+import { useFetchDeployments, useFetchReleases } from './fetchHooks'
 
 const getButtonStyle = (state: DeploymentState) => {
   switch (state) {
@@ -46,55 +46,59 @@ export const ReleasesTableView: FC = () => {
   const { triggerDeployment } = useActions()
   const allReleaseResultsForRepo = useFetchReleases()
   const allDeploymentResultsForRepo = useFetchDeployments()
-  const allEnvironmentsForRepo = useFetchEnvironments()
 
   const releases = allReleaseResultsForRepo.data || []
   const deployments = allDeploymentResultsForRepo.data || []
-  const environments = allEnvironmentsForRepo.data || []
 
   const { mutate, error, isLoading } = useMutation(
     async ({
       release,
-      environment,
+      environmentId,
     }: {
       release: string
-      environment: string
+      environmentId: number
     }) => {
-      await triggerDeployment({ release, environment })
+      await triggerDeployment({ release, environmentId })
     }
   )
 
-  const releasesSorted = orderBy(releases, (r) => r.createdAt, 'desc')
+  if (!selectedApplication) return null
+
+  const releasesSorted = orderBy(
+    releases.filter((r) =>
+      r.name.startsWith(selectedApplication.releaseFilter)
+    ),
+    (r) => r.createdAt,
+    'desc'
+  )
 
   const releasesByTag = keyBy(releasesSorted, (r) => r.tagName)
 
   const deploymentsByTag = groupBy(deployments, (d) => d.refName)
 
-  const releasesByEnvironment = environments.reduce<
-    Record<string, ReleaseModel[]>
+  const selectedEnvironments = values(
+    selectedApplication.environmentSettingsById
+  )
+
+  const releasesByEnvironment = selectedEnvironments.reduce<
+    Record<number, ReleaseModel[]>
   >((record, environment) => {
-    record[environment.name] = deployments
+    record[environment.id] = deployments
       .filter((d) => d.environment === environment.name)
       .map((d) => releasesByTag[d.refName])
       .filter((d) => !!d)
     return record
   }, {})
 
-  const isAfterLatestReleaseForEnvironment = (
-    release: ReleaseModel,
-    environment: string
-  ) => {
-    const latestRelease = releasesByEnvironment[environment]?.[0]
-    return !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
-  }
-
   const createButton = (
     deployment: DeploymentModel | undefined,
     release: ReleaseModel,
-    environment: string
+    environment: EnvironmentSettings
   ) => {
-    const isLatest = isAfterLatestReleaseForEnvironment(release, environment)
-    const deployButtonVariant = isLatest ? 'contained' : 'outlined'
+    const latestRelease = releasesByEnvironment[environment.id]?.[0]
+    const isAfterLatest =
+      !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
+    const deployButtonVariant = isAfterLatest ? 'contained' : 'outlined'
 
     return (
       <Button
@@ -102,12 +106,12 @@ export const ReleasesTableView: FC = () => {
         variant={
           deployment ? getButtonVariant(deployment.state) : deployButtonVariant
         }
-        color={!deployment && isLatest ? 'primary' : 'default'}
+        color={!deployment && isAfterLatest ? 'primary' : 'default'}
         style={deployment ? getButtonStyle(deployment.state) : {}}
         onClick={() =>
           mutate({
             release: release.tagName,
-            environment,
+            environmentId: environment.id,
           })
         }>
         {deployment?.state ?? 'Deploy'}
@@ -124,7 +128,7 @@ export const ReleasesTableView: FC = () => {
         <TableHead>
           <TableRow>
             <TableCell>Release name</TableCell>
-            {environments.map((environment) => (
+            {selectedEnvironments.map((environment) => (
               <TableCell key={environment.id}>{environment.name}</TableCell>
             ))}
           </TableRow>
@@ -140,13 +144,13 @@ export const ReleasesTableView: FC = () => {
                   {release.name}
                 </Link>
               </TableCell>
-              {environments.map((environment) => {
+              {selectedEnvironments.map((environment) => {
                 const deployment = deploymentsByTag[release.tagName]?.find(
                   (d) => d.environment === environment.name
                 )
                 return (
                   <TableCell key={environment.id}>
-                    {createButton(deployment, release, environment.name)}
+                    {createButton(deployment, release, environment)}
                   </TableCell>
                 )
               })}

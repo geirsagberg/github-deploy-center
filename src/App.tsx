@@ -13,6 +13,7 @@ import {
 } from './components/ApplicationDialog'
 import { ApplicationView } from './components/ApplicationView'
 import { EnvironmentsView } from './components/EnvironmentsView'
+import { ReleasesTableView } from './components/ReleasesTableView'
 import { SelectApplicationView } from './components/SelectApplicationView'
 import { useActions, useOvermindState } from './overmind'
 
@@ -40,6 +41,7 @@ const App: FC = () => {
             <SelectApplicationView />
             <ApplicationView />
             <EnvironmentsView />
+            <ReleasesTableView />
           </>
         )}
       </Box>
