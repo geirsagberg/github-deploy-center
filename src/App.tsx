@@ -7,11 +7,11 @@ import {
   Typography,
 } from '@material-ui/core'
 import React, { FC } from 'react'
-import { ApplicationView } from './components/ApplicationView'
 import {
   EditApplicationDialog,
   NewApplicationDialog,
-} from './components/NewApplicationDialog'
+} from './components/ApplicationDialog'
+import { ApplicationView } from './components/ApplicationView'
 import { SelectApplicationView } from './components/SelectApplicationView'
 import { useActions, useOvermindState } from './overmind'
 

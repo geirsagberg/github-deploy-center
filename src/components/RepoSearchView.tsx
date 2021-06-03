@@ -27,7 +27,7 @@ export const RepoSearchBox: FC<RepoSearchBoxProps> = ({
         {...params}
         InputProps={{
           ...params.InputProps,
-          startAdornment:
+          endAdornment:
             isLoading && !selectedRepo ? (
               <Box
                 maxWidth={24}

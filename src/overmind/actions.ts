@@ -17,7 +17,7 @@ export const showNewApplicationModal: Action = ({
   state: { newApplicationDialog: applicationDialog, selectedApplication },
 }) => {
   applicationDialog.open = true
-  applicationDialog.repo = selectedApplication?.repo || null
+  applicationDialog.repoId = selectedApplication?.repo?.id || ''
   applicationDialog.name = ''
   applicationDialog.warning = undefined
 }
@@ -96,6 +96,10 @@ export const selectApplication: Action<string> = ({ state }, id) => {
 }
 
 export const editApplication: Action = ({ state }) => {
+  if (state.selectedApplication) {
+    state.editApplicationDialog.repoId = state.selectedApplication.repo.id
+    state.editApplicationDialog.name = state.selectedApplication.name
+  }
   state.editApplicationDialog.open = true
 }
 

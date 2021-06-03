@@ -9,28 +9,30 @@ import {
   TextField,
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
-import { orderBy } from 'lodash-es'
+import { keyBy, orderBy } from 'lodash-es'
 import { FC } from 'react'
 import { useActions, useOvermindState } from '../overmind'
 import { ApplicationDialogState, RepoModel } from '../overmind/state'
 import { useFetchRepos } from './fetchHooks'
 import { RepoSearchBox } from './RepoSearchView'
 
-const ApplicationDialog: FC<{
+export const ApplicationDialog: FC<{
   dialogState: ApplicationDialogState
   updateDialogState: (update: (state: ApplicationDialogState) => void) => void
   title: string
   onSave: ({ repo, name }: { repo: RepoModel; name: string }) => boolean
   onCancel: () => void
 }> = ({
-  dialogState: { open, repo, name, warning },
+  dialogState: { open, repoId, name, warning },
   updateDialogState,
   title,
   onSave,
   onCancel,
 }) => {
   const { data, error, isLoading } = useFetchRepos()
+  const reposById = keyBy(data ?? [], (r) => r.id)
   const options = orderBy(data ?? [], (d) => d.owner.toLowerCase())
+  const repo = reposById[repoId]
   return (
     <Dialog open={open} fullWidth>
       <form
@@ -50,7 +52,7 @@ const ApplicationDialog: FC<{
                 options={options}
                 selectedRepo={repo}
                 setSelectedRepo={(repo) =>
-                  updateDialogState((state) => (state.repo = repo))
+                  updateDialogState((state) => (state.repoId = repo?.id ?? ''))
                 }></RepoSearchBox>
               <br />
               <TextField
@@ -112,11 +114,8 @@ export const NewApplicationDialog: FC = () => {
 
 export const EditApplicationDialog: FC = () => {
   const { editApplicationDialog } = useOvermindState()
-  const {
-    saveApplication,
-    updateApplicationDialog,
-    cancelEditApplication,
-  } = useActions()
+  const { saveApplication, updateApplicationDialog, cancelEditApplication } =
+    useActions()
   return (
     <ApplicationDialog
       dialogState={editApplicationDialog}

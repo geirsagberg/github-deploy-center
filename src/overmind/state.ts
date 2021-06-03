@@ -66,7 +66,7 @@ export const ApplicationConfigCodec = t.type({
   id: t.string,
   name: t.string,
   releasePrefix: t.string,
-  environmentPrefix: t.string,
+  environmentIds: t.array(t.string),
   repo: RepoCodec,
   deploySettings: DeploySettingsCodec,
 })
@@ -78,7 +78,7 @@ export const createApplicationConfig = (
   id: uuid(),
   name: name || repo.name,
   releasePrefix: '',
-  environmentPrefix: '',
+  environmentIds: [],
   repo,
   deploySettings: createDeployWorkflowSettings({ ref: repo.defaultBranch }),
 })
@@ -93,7 +93,7 @@ export type DeploySettings = t.TypeOf<typeof DeploySettingsCodec>
 
 export type ApplicationDialogState = {
   open: boolean
-  repo: RepoModel | null
+  repoId: string
   name: string
   warning?: string
 }
@@ -114,8 +114,8 @@ const state: AppState = {
   get selectedApplication() {
     return this.applicationsById[this.selectedApplicationId] ?? null
   },
-  newApplicationDialog: { open: false, repo: null, name: '' },
-  editApplicationDialog: { open: false, repo: null, name: '' },
+  newApplicationDialog: { open: false, repoId: '', name: '' },
+  editApplicationDialog: { open: false, repoId: '', name: '' },
 }
 
 export default state
