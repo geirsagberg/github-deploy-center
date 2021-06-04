@@ -137,7 +137,16 @@ export const ReleasesTableView: FC = () => {
             <TableCell>Release name</TableCell>
             {selectedEnvironments.map((environment) => (
               <TableCell key={environment.id}>
-                {environment.name}
+                <Link
+                  href={`https://github.com/${repo?.owner}/${
+                    repo?.name
+                  }/deployments/activity_log?environment=${encodeURIComponent(
+                    environment.name
+                  )}`}
+                  target="_blank"
+                  color="inherit">
+                  {environment.name}
+                </Link>
                 <IconButton onClick={() => removeEnvironment(environment.id)}>
                   <Icon>delete</Icon>
                 </IconButton>
