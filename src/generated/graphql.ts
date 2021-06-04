@@ -21105,25 +21105,25 @@ export type FetchReleasesQuery = (
       & { nodes: Maybe<Array<Maybe<(
         { __typename: 'Release' }
         & Pick<Release, 'id' | 'name' | 'tagName' | 'createdAt'>
-        & { tag: Maybe<(
-          { __typename: 'Ref' }
-          & { target: Maybe<(
-            { __typename: 'Blob' }
-            & Pick<Blob, 'oid'>
-          ) | (
-            { __typename: 'Commit' }
-            & Pick<Commit, 'oid'>
-          ) | (
-            { __typename: 'Tag' }
-            & Pick<Tag, 'oid'>
-          ) | (
-            { __typename: 'Tree' }
-            & Pick<Tree, 'oid'>
+        & { tagCommit: Maybe<(
+          { __typename: 'Commit' }
+          & Pick<Commit, 'oid'>
+          & { deployments: Maybe<(
+            { __typename: 'DeploymentConnection' }
+            & { nodes: Maybe<Array<Maybe<(
+              { __typename: 'Deployment' }
+              & DeployFragment
+            )>>> }
           )> }
         )> }
       )>>> }
     ) }
   )> }
+);
+
+export type DeployFragment = (
+  { __typename: 'Deployment' }
+  & Pick<Deployment, 'id' | 'createdAt' | 'environment' | 'state'>
 );
 
 export type FetchReposWithWriteAccessQueryVariables = Exact<{
@@ -21164,6 +21164,14 @@ export type RepoFragment = (
   )> }
 );
 
+export const DeployFragmentDoc = gql`
+    fragment Deploy on Deployment {
+  id
+  createdAt
+  environment
+  state
+}
+    `;
 export const RepoFragmentDoc = gql`
     fragment Repo on Repository {
   id
@@ -21213,16 +21221,19 @@ export const FetchReleasesDocument = gql`
         name
         tagName
         createdAt
-        tag {
-          target {
-            oid
+        tagCommit {
+          oid
+          deployments {
+            nodes {
+              ...Deploy
+            }
           }
         }
       }
     }
   }
 }
-    `;
+    ${DeployFragmentDoc}`;
 export const FetchReposWithWriteAccessDocument = gql`
     query fetchReposWithWriteAccess($after: String) {
   viewer {

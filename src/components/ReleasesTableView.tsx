@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
-import { groupBy, keyBy, orderBy, values } from 'lodash-es'
+import { orderBy, values } from 'lodash-es'
 import { FC } from 'react'
 import { useMutation } from 'react-query'
 import { DeploymentState } from '../generated/graphql'
@@ -23,7 +23,7 @@ import {
   EnvironmentSettings,
   ReleaseModel,
 } from '../overmind/state'
-import { useFetchDeployments, useFetchReleases } from './fetchHooks'
+import { useFetchReleases } from './fetchHooks'
 
 const getButtonStyle = (state: DeploymentState) => {
   switch (state) {
@@ -49,10 +49,8 @@ export const ReleasesTableView: FC = () => {
   const repo = selectedApplication?.repo
   const { triggerDeployment, removeEnvironment } = useActions()
   const allReleaseResultsForRepo = useFetchReleases()
-  const allDeploymentResultsForRepo = useFetchDeployments()
 
   const releases = allReleaseResultsForRepo.data || []
-  const deployments = allDeploymentResultsForRepo.data || []
 
   const { mutate, error, isLoading } = useMutation(
     async ({
@@ -74,10 +72,7 @@ export const ReleasesTableView: FC = () => {
     return null
   }
 
-  if (
-    allReleaseResultsForRepo.isLoading ||
-    allDeploymentResultsForRepo.isLoading
-  ) {
+  if (allReleaseResultsForRepo.isLoading) {
     return <CircularProgress />
   }
 
@@ -89,10 +84,6 @@ export const ReleasesTableView: FC = () => {
     'desc'
   )
 
-  const releasesByCommit = keyBy(releasesSorted, (r) => r.commit)
-
-  const deploymentsByCommit = groupBy(deployments, (d) => d.commit)
-
   const selectedEnvironments = values(
     selectedApplication.environmentSettingsById
   )
@@ -100,10 +91,9 @@ export const ReleasesTableView: FC = () => {
   const releasesByEnvironment = selectedEnvironments.reduce<
     Record<number, ReleaseModel[]>
   >((record, environment) => {
-    record[environment.id] = deployments
-      .filter((d) => d.environment === environment.name)
-      .map((d) => releasesByCommit[d.commit])
-      .filter((d) => !!d)
+    record[environment.id] = releasesSorted.filter((r) =>
+      r.deployments.some((d) => d.environment === environment.name)
+    )
     return record
   }, {})
 
@@ -167,7 +157,7 @@ export const ReleasesTableView: FC = () => {
                 </Link>
               </TableCell>
               {selectedEnvironments.map((environment) => {
-                const deployment = deploymentsByCommit[release.commit]?.find(
+                const deployment = release.deployments.find(
                   (d) => d.environment === environment.name
                 )
                 return (

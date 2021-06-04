@@ -18,15 +18,14 @@ export type ReleaseModel = {
   tagName: string
   createdAt: Dayjs
   commit: string
+  deployments: DeploymentModel[]
 }
 
 export type DeploymentModel = {
   id: string
   createdAt: Dayjs
   environment: string
-  refName: string
   state: DeploymentState
-  commit: string
 }
 
 export const DeployWorkflowCodec = t.type({

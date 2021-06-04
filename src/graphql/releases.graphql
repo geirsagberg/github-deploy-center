@@ -6,12 +6,22 @@ query fetchReleases($repoName: String!, $repoOwner: String!) {
         name
         tagName
         createdAt
-        tag {
-          target {
-            oid
+        tagCommit {
+          oid
+          deployments {
+            nodes {
+              ...Deploy
+            }
           }
         }
       }
     }
   }
+}
+
+fragment Deploy on Deployment {
+  id
+  createdAt
+  environment
+  state
 }

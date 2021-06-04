@@ -1,7 +1,11 @@
 import dayjs from 'dayjs'
 import { orderBy } from 'lodash-es'
 import { useQuery } from 'react-query'
-import { DeploymentState, RepoFragment } from '../generated/graphql'
+import {
+  DeployFragment,
+  DeploymentState,
+  RepoFragment,
+} from '../generated/graphql'
 import { useEffects, useOvermindState } from '../overmind'
 import {
   DeploymentModel,
@@ -27,55 +31,27 @@ export const useFetchReleases = () => {
       })
       const fragments = result.repository?.releases.nodes?.map((n) => n!) ?? []
       const releases = fragments.map(
-        ({ id, name, tagName, createdAt, tag }): ReleaseModel => ({
+        ({ id, name, tagName, createdAt, tagCommit }): ReleaseModel => ({
           id,
           name: name || '',
           tagName,
           createdAt: dayjs(createdAt),
-          commit: tag?.target?.oid || '',
+          commit: tagCommit?.oid || '',
+          deployments:
+            tagCommit?.deployments?.nodes
+              ?.filter((node) => !!node)
+              .map((n) => n! as DeployFragment)
+              .map(
+                ({ id, createdAt, environment, state }): DeploymentModel => ({
+                  id,
+                  createdAt: dayjs(createdAt),
+                  environment: environment || '',
+                  state: state || DeploymentState.Inactive,
+                })
+              ) || [],
         })
       )
       return releases
-    }
-  )
-
-  return { data, isLoading, error }
-}
-
-export const useFetchDeployments = () => {
-  const { selectedApplication } = useOvermindState()
-
-  const repo = selectedApplication?.repo
-
-  const { data, isLoading, error } = useQuery(
-    `${repo?.owner}/${repo?.name}-deployments`,
-    async () => {
-      if (!repo) return []
-
-      const result = await graphQLApi.fetchDeployments({
-        repoName: repo.name,
-        repoOwner: repo.owner,
-      })
-      const fragments =
-        result.repository?.deployments.nodes?.map((n) => n!) ?? []
-      const deployments = fragments.map(
-        ({
-          id,
-          createdAt,
-          environment,
-          commit,
-          ref,
-          state,
-        }): DeploymentModel => ({
-          id,
-          createdAt: dayjs(createdAt),
-          environment: environment || '',
-          refName: ref?.name || '',
-          commit: commit?.oid || '',
-          state: state || DeploymentState.Inactive,
-        })
-      )
-      return deployments
     }
   )
 
