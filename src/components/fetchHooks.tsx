@@ -48,7 +48,8 @@ export const useFetchReleases = () => {
                   environment: environment || '',
                   state: state || DeploymentState.Inactive,
                 })
-              ) || [],
+              )
+              .orderBy((n) => n.createdAt, 'desc') || [],
         })
       )
       return releases
