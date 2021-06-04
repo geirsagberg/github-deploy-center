@@ -3,7 +3,12 @@ import { orderBy } from 'lodash-es'
 import { useQuery } from 'react-query'
 import { DeploymentState, RepoFragment } from '../generated/graphql'
 import { useEffects, useOvermindState } from '../overmind'
-import { DeploymentModel, ReleaseModel, RepoModel } from '../overmind/state'
+import {
+  DeploymentModel,
+  GitHubEnvironment,
+  ReleaseModel,
+  RepoModel,
+} from '../overmind/state'
 import graphQLApi from '../utils/graphQLApi'
 
 export const useFetchReleases = () => {
@@ -113,14 +118,26 @@ export const useFetchEnvironments = () => {
     `${repo?.owner}/${repo?.name}-environments`,
     async () => {
       if (!token || !repo) return []
-
       const { owner, name } = repo
-      const response = await restApi.octokit.repos.getAllEnvironments({
-        owner,
-        repo: name,
-      })
 
-      return response.data?.environments ?? []
+      let keepFetching = true
+      const environments: GitHubEnvironment[] = []
+
+      while (keepFetching) {
+        const response = await restApi.octokit.repos.getAllEnvironments({
+          owner,
+          repo: name,
+          per_page: 100,
+        })
+
+        environments.push(...(response.data?.environments ?? []))
+
+        keepFetching =
+          !!response.data.total_count &&
+          environments.length < response.data.total_count
+      }
+
+      return environments
     }
   )
   return { data, isLoading, error }

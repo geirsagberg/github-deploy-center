@@ -64,11 +64,19 @@ export const DeploySettingsCodec = t.union([
   DeployDeploymentCodec,
 ])
 
-export const EnvironmentSettingsCodec = t.type({
+export const GitHubEnvironmentCodec = t.type({
   id: t.number,
   name: t.string,
-  workflowInputValue: t.string,
 })
+
+export type GitHubEnvironment = t.TypeOf<typeof GitHubEnvironmentCodec>
+
+export const EnvironmentSettingsCodec = t.intersection([
+  GitHubEnvironmentCodec,
+  t.type({
+    workflowInputValue: t.string,
+  }),
+])
 
 export type EnvironmentSettings = t.TypeOf<typeof EnvironmentSettingsCodec>
 
