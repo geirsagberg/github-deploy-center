@@ -43,7 +43,6 @@ const EnvironmentDialog: FC<{
             event.preventDefault()
             const { environmentId, workflowInputValue } = dialogState
             environmentId &&
-              workflowInputValue &&
               onSave({
                 id: environmentId,
                 workflowInputValue,
@@ -51,7 +50,7 @@ const EnvironmentDialog: FC<{
               })
           }}>
           <DialogTitle>{title}</DialogTitle>
-          <DialogContent>
+          <DialogContent style={{ height: '12rem' }}>
             {error instanceof Error ? (
               <Alert severity="error">{error.message}</Alert>
             ) : (
@@ -91,8 +90,8 @@ const EnvironmentDialog: FC<{
                     />
                   )}
                 />
-                <br />
                 <TextField
+                  style={{ marginTop: '1rem' }}
                   label="Workflow input value (defaults to environment name)"
                   fullWidth
                   variant="outlined"
