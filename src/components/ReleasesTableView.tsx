@@ -13,7 +13,7 @@ import {
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
 import { orderBy, values } from 'lodash-es'
-import { FC } from 'react'
+import React, { FC } from 'react'
 import { useMutation } from 'react-query'
 import { DeploymentState } from '../generated/graphql'
 import { useActions, useOvermindState } from '../overmind'

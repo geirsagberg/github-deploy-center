@@ -42,11 +42,11 @@ const App: FC = () => {
             <ApplicationView />
             <EnvironmentsView />
             <ReleasesTableView />
+            <NewApplicationDialog />
+            <EditApplicationDialog />
           </>
         )}
       </Box>
-      <NewApplicationDialog />
-      <EditApplicationDialog />
     </Container>
   )
 }

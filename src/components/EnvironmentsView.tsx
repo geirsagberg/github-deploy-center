@@ -13,7 +13,7 @@ import {
 import { Alert, Autocomplete } from '@material-ui/lab'
 import { orderBy } from 'lodash'
 import { keyBy } from 'lodash-es'
-import { FC } from 'react'
+import React, { FC } from 'react'
 import { useActions, useOvermindState } from '../overmind'
 import {
   DeployWorkflowCodec,

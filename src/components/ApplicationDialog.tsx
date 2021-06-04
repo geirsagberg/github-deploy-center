@@ -10,7 +10,7 @@ import {
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
 import { orderBy } from 'lodash-es'
-import { FC } from 'react'
+import React, { FC } from 'react'
 import { useActions, useOvermindState } from '../overmind'
 import { ApplicationDialogState, RepoModel } from '../overmind/state'
 import { useFetchRepos } from './fetchHooks'

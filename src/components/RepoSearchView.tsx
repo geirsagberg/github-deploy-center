@@ -1,6 +1,6 @@
 import { Box, CircularProgress, TextField } from '@material-ui/core'
 import { Autocomplete } from '@material-ui/lab'
-import { FC } from 'react'
+import React, { FC } from 'react'
 import { RepoModel } from '../overmind/state'
 
 interface RepoSearchBoxProps {
