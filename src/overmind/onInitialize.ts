@@ -16,7 +16,7 @@ const onInitialize: OnInitialize = (
     options: { nested: boolean },
     onValueChanged: (value: T) => void = noop
   ) {
-    const key = getState.toString()
+    const key = getState.toString().replace(/^.*\./, 'gdc.')
     instance.reaction(
       getState,
       (data) => {
