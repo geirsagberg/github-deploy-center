@@ -50,7 +50,7 @@ const EnvironmentDialog: FC<{
               })
           }}>
           <DialogTitle>{title}</DialogTitle>
-          <DialogContent style={{ height: '12rem' }}>
+          <DialogContent style={{ height: '14rem' }}>
             {error instanceof Error ? (
               <Alert severity="error">{error.message}</Alert>
             ) : (
