@@ -1,5 +1,6 @@
 import { getOrElse } from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/function'
+import { noop } from 'lodash-es'
 import { OnInitialize, RootState } from 'overmind'
 import graphQLApi from '../utils/graphQLApi'
 import { restApi } from './effects'
@@ -11,16 +12,24 @@ const onInitialize: OnInitialize = (
 ) => {
   function sync<T>(
     getState: (state: RootState) => T,
-    setValue: (value: T) => void,
-    options: { nested: boolean }
+    onValueLoaded: (value: T) => void,
+    options: { nested: boolean },
+    onValueChanged: (value: T) => void = noop
   ) {
     const key = getState.toString()
-    instance.reaction(getState, (data) => storage.save(key, data), {
-      nested: options.nested,
-    })
+    instance.reaction(
+      getState,
+      (data) => {
+        onValueChanged(data)
+        storage.save(key, data)
+      },
+      {
+        nested: options.nested,
+      }
+    )
     const value = storage.load(key)
     if (value) {
-      setValue(value)
+      onValueLoaded(value)
     }
   }
 
@@ -28,10 +37,12 @@ const onInitialize: OnInitialize = (
     (state) => state.token,
     (token) => {
       state.token = token || ''
+    },
+    { nested: false },
+    (token) => {
       graphQLApi.setToken(token)
       restApi.setToken(token)
-    },
-    { nested: false }
+    }
   )
 
   sync(
