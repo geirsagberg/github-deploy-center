@@ -91,11 +91,12 @@ export const ApplicationConfigCodec = t.type({
 
 export const createApplicationConfig = (
   repo: RepoModel,
-  name: string
+  name: string,
+  releaseFilter: string
 ): ApplicationConfig => ({
   id: uuid(),
   name: name || repo.name,
-  releaseFilter: '',
+  releaseFilter,
   environmentSettingsById: {},
   repo,
   deploySettings: createDeployWorkflowSettings({ ref: repo.defaultBranch }),

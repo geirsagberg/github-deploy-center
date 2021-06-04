@@ -19,6 +19,7 @@ import { DeploymentState } from '../generated/graphql'
 import { useActions, useOvermindState } from '../overmind'
 import {
   DeploymentModel,
+  DeployWorkflowCodec,
   EnvironmentSettings,
   ReleaseModel,
 } from '../overmind/state'
@@ -65,7 +66,13 @@ export const ReleasesTableView: FC = () => {
     }
   )
 
-  if (!selectedApplication) return null
+  if (
+    !selectedApplication ||
+    !DeployWorkflowCodec.is(selectedApplication.deploySettings) ||
+    !selectedApplication.deploySettings.workflowId
+  ) {
+    return null
+  }
 
   if (
     allReleaseResultsForRepo.isLoading ||

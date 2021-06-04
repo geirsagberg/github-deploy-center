@@ -79,10 +79,11 @@ export const triggerDeployment: AsyncAction<{
   }
 }
 
-export const createNewApplication: Action<{ repo: RepoModel; name: string }> = (
-  { state },
-  { repo, name }
-) => {
+export const createNewApplication: Action<{
+  repo: RepoModel
+  name: string
+  releaseFilter: string
+}> = ({ state }, { repo, name, releaseFilter }) => {
   if (!state.newApplicationDialog) return
   if (
     Object.values(state.applicationsById).some(
@@ -93,7 +94,7 @@ export const createNewApplication: Action<{ repo: RepoModel; name: string }> = (
       'App with same name and repo already exists!'
     return
   }
-  const appConfig = createApplicationConfig(repo, name)
+  const appConfig = createApplicationConfig(repo, name, releaseFilter)
   state.applicationsById[appConfig.id] = appConfig
   state.selectedApplicationId = appConfig.id
   state.newApplicationDialog = null

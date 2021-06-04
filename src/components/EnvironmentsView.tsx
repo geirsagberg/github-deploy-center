@@ -15,7 +15,11 @@ import { orderBy } from 'lodash'
 import { keyBy } from 'lodash-es'
 import { FC } from 'react'
 import { useActions, useOvermindState } from '../overmind'
-import { EnvironmentDialogState, EnvironmentSettings } from '../overmind/state'
+import {
+  DeployWorkflowCodec,
+  EnvironmentDialogState,
+  EnvironmentSettings,
+} from '../overmind/state'
 import { useFetchEnvironments } from './fetchHooks'
 
 const EnvironmentDialog: FC<{
@@ -143,7 +147,11 @@ export const EnvironmentsView: FC = () => {
   const { selectedApplication } = useOvermindState()
   const { showAddEnvironmentModal } = useActions()
 
-  if (!selectedApplication) {
+  if (
+    !selectedApplication ||
+    !DeployWorkflowCodec.is(selectedApplication.deploySettings) ||
+    !selectedApplication.deploySettings.workflowId
+  ) {
     return null
   }
 

@@ -105,7 +105,11 @@ export const ApplicationView: FC = () => {
             ([key, value]) => `${key}=${value}`
           )}
           renderInput={(params) => (
-            <TextField label="Extra args" placeholder="key=value" {...params} />
+            <TextField
+              label="Extra workflow args"
+              placeholder="key=value"
+              {...params}
+            />
           )}
           onChange={(_, newValue) => {
             const pairs = newValue
