@@ -3,7 +3,7 @@ name: Deploy
 on:
   workflow_dispatch:
     inputs:
-      release:
+      ref:
         description: Which release version to deploy (e.g. v1.0.3)
         required: true
       environment:
@@ -13,7 +13,7 @@ on:
 env:
   GITHUB_TOKEN: ${{ github.token }}
   ENVIRONMENT: ${{ github.event.inputs.environment }}
-  RELEASE: ${{ github.event.inputs.release }}
+  RELEASE: ${{ github.event.inputs.ref }}
 
 jobs:
   deploy:

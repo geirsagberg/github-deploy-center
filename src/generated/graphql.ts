@@ -21052,33 +21052,6 @@ export type WorkflowRunPendingDeploymentRequestsArgs = {
 };
 
 
-export type FetchDeploymentsQueryVariables = Exact<{
-  repoName: Scalars['String'];
-  repoOwner: Scalars['String'];
-}>;
-
-
-export type FetchDeploymentsQuery = (
-  { __typename: 'Query' }
-  & { repository: Maybe<(
-    { __typename: 'Repository' }
-    & { deployments: (
-      { __typename: 'DeploymentConnection' }
-      & { nodes: Maybe<Array<Maybe<(
-        { __typename: 'Deployment' }
-        & Pick<Deployment, 'id' | 'createdAt' | 'environment' | 'state'>
-        & { commit: Maybe<(
-          { __typename: 'Commit' }
-          & Pick<Commit, 'oid'>
-        )>, ref: Maybe<(
-          { __typename: 'Ref' }
-          & Pick<Ref, 'id' | 'name'>
-        )> }
-      )>>> }
-    ) }
-  )> }
-);
-
 export type FetchCurrentUserIdQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -21113,7 +21086,10 @@ export type FetchReleasesQuery = (
             & { nodes: Maybe<Array<Maybe<(
               { __typename: 'Deployment' }
               & DeployFragment
-            )>>> }
+            )>>>, pageInfo: (
+              { __typename: 'PageInfo' }
+              & Pick<PageInfo, 'endCursor' | 'hasNextPage'>
+            ) }
           )> }
         )> }
       )>>> }
@@ -21184,27 +21160,6 @@ export const RepoFragmentDoc = gql`
   }
 }
     `;
-export const FetchDeploymentsDocument = gql`
-    query fetchDeployments($repoName: String!, $repoOwner: String!) {
-  repository(name: $repoName, owner: $repoOwner) {
-    deployments(first: 100, orderBy: {field: CREATED_AT, direction: DESC}) {
-      nodes {
-        id
-        createdAt
-        environment
-        state
-        commit {
-          oid
-        }
-        ref {
-          id
-          name
-        }
-      }
-    }
-  }
-}
-    `;
 export const FetchCurrentUserIdDocument = gql`
     query fetchCurrentUserId {
   viewer {
@@ -21223,9 +21178,13 @@ export const FetchReleasesDocument = gql`
         createdAt
         tagCommit {
           oid
-          deployments {
+          deployments(first: 100) {
             nodes {
               ...Deploy
+            }
+            pageInfo {
+              endCursor
+              hasNextPage
             }
           }
         }
@@ -21264,9 +21223,6 @@ const defaultWrapper: SdkFunctionWrapper = (action, _operationName) => action();
 
 export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = defaultWrapper) {
   return {
-    fetchDeployments(variables: FetchDeploymentsQueryVariables, requestHeaders?: Dom.RequestInit["headers"]): Promise<FetchDeploymentsQuery> {
-      return withWrapper((wrappedRequestHeaders) => client.request<FetchDeploymentsQuery>(FetchDeploymentsDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'fetchDeployments');
-    },
     fetchCurrentUserId(variables?: FetchCurrentUserIdQueryVariables, requestHeaders?: Dom.RequestInit["headers"]): Promise<FetchCurrentUserIdQuery> {
       return withWrapper((wrappedRequestHeaders) => client.request<FetchCurrentUserIdQuery>(FetchCurrentUserIdDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'fetchCurrentUserId');
     },

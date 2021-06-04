@@ -8,9 +8,13 @@ query fetchReleases($repoName: String!, $repoOwner: String!) {
         createdAt
         tagCommit {
           oid
-          deployments {
+          deployments(first: 100) {
             nodes {
               ...Deploy
+            }
+            pageInfo {
+              endCursor
+              hasNextPage
             }
           }
         }

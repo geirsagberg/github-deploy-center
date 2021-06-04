@@ -72,7 +72,8 @@ export const triggerDeployment: AsyncAction<{
       workflow_id: workflowId,
       inputs: {
         [releaseKey]: release,
-        [environmentKey]: environmentSettings.workflowInputValue,
+        [environmentKey]:
+          environmentSettings.workflowInputValue || environmentSettings.name,
         ...extraArgs,
       },
     })

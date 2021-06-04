@@ -93,7 +93,7 @@ const EnvironmentDialog: FC<{
                 />
                 <br />
                 <TextField
-                  label="Workflow input value"
+                  label="Workflow input value (defaults to environment name)"
                   fullWidth
                   variant="outlined"
                   value={dialogState.workflowInputValue}
@@ -110,9 +110,7 @@ const EnvironmentDialog: FC<{
             <DialogActions>
               <Button
                 type="submit"
-                disabled={
-                  !dialogState.environmentId || !dialogState.workflowInputValue
-                }
+                disabled={!dialogState.environmentId}
                 variant="contained"
                 color="primary">
                 Save
