@@ -1,8 +1,11 @@
+import { getOrElse } from 'fp-ts/lib/Either'
+import { pipe } from 'fp-ts/lib/function'
 import { some } from 'lodash'
 import { clone } from 'lodash-es'
 import { Action, AsyncAction } from 'overmind'
 import {
   ApplicationDialogState,
+  ApplicationsByIdCodec,
   createApplicationConfig,
   createApplicationDialogState,
   createDeployWorkflowSettings,
@@ -200,5 +203,27 @@ export const addEnvironment: Action<EnvironmentSettings> = (
 export const removeEnvironment: Action<number> = ({ state }, id) => {
   if (state.selectedApplication) {
     delete state.selectedApplication.environmentSettingsById[id]
+  }
+}
+
+export const exportApplications: AsyncAction = async ({ state, effects }) => {
+  await effects.downloadJson(state.applicationsById, 'gdc-applications.json')
+}
+
+export const importApplications: AsyncAction = async ({ state, effects }) => {
+  const json = await effects.uploadJson()
+  if (json) {
+    const imported = JSON.parse(json)
+    const applications = pipe(
+      ApplicationsByIdCodec.decode(imported),
+      getOrElse((e) => {
+        console.error(e)
+        return {}
+      })
+    )
+    state.applicationsById = {
+      ...state.applicationsById,
+      ...applications,
+    }
   }
 }

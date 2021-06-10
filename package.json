@@ -6,13 +6,7 @@
     "@material-ui/core": "^4.11.4",
     "@material-ui/lab": "^4.0.0-alpha.58",
     "@octokit/rest": "^18.5.6",
-    "@testing-library/jest-dom": "^5.13.0",
-    "@testing-library/react": "^11.2.7",
-    "@testing-library/user-event": "^13.1.9",
-    "@types/jest": "^26.0.23",
-    "@types/node": "^15.12.2",
-    "@types/react": "^17.0.11",
-    "@types/react-dom": "^17.0.7",
+    "browser-fs-access": "^0.17.3",
     "dayjs": "^1.10.5",
     "fp-ts": "^2.10.5",
     "graphql": "^15.5.0",
@@ -26,7 +20,6 @@
     "react-dom": "^17.0.2",
     "react-query": "^3.16.1",
     "react-scripts": "^4.0.3",
-    "typescript": "~4.3.2",
     "uuid": "^8.3.2"
   },
   "scripts": {
@@ -60,11 +53,20 @@
     "@graphql-codegen/typescript": "1.22.1",
     "@graphql-codegen/typescript-graphql-request": "^3.2.1",
     "@graphql-codegen/typescript-operations": "1.18.0",
+    "@testing-library/jest-dom": "^5.13.0",
+    "@testing-library/react": "^11.2.7",
+    "@testing-library/user-event": "^13.1.9",
+    "@types/file-saver": "^2.0.2",
+    "@types/jest": "^26.0.23",
     "@types/lodash-es": "^4.17.4",
+    "@types/node": "^15.12.2",
+    "@types/react": "^17.0.11",
+    "@types/react-dom": "^17.0.7",
     "@types/react-select": "^4.0.15",
     "@types/uuid": "^8.3.0",
     "craco-esbuild": "^0.3.2",
     "json-format-cli": "^1.1.1",
-    "type-fest": "^1.2.0"
+    "type-fest": "^1.2.0",
+    "typescript": "~4.3.2"
   }
 }

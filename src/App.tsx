@@ -1,11 +1,4 @@
-import {
-  Box,
-  Button,
-  Container,
-  Paper,
-  TextField,
-  Typography,
-} from '@material-ui/core'
+import { Box, Container, Paper, TextField, Typography } from '@material-ui/core'
 import React, { FC } from 'react'
 import {
   EditApplicationDialog,
@@ -13,13 +6,14 @@ import {
 } from './components/ApplicationDialog'
 import { ApplicationView } from './components/ApplicationView'
 import { EnvironmentsView } from './components/EnvironmentsView'
+import { ManageApplicationsView } from './components/ManageApplicationsView'
 import { ReleasesTableView } from './components/ReleasesTableView'
 import { SelectApplicationView } from './components/SelectApplicationView'
 import { useActions, useOvermindState } from './overmind'
 
 const App: FC = () => {
   const { token } = useOvermindState()
-  const { setToken, showNewApplicationModal } = useActions()
+  const { setToken } = useActions()
   return (
     <Container>
       <Box p={4} display="grid" gridGap="1rem" component={Paper}>
@@ -32,12 +26,7 @@ const App: FC = () => {
         />
         {token && (
           <>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={showNewApplicationModal}>
-              New application
-            </Button>
+            <ManageApplicationsView />
             <SelectApplicationView />
             <ApplicationView />
             <EnvironmentsView />

@@ -2410,6 +2410,11 @@
   resolved "https://registry.npmjs.org/@types/estree/-/estree-0.0.39.tgz"
   integrity sha512-EYNwp3bU+98cpU4lAWYYL7Zz+2gryWH1qbdDTidVd6hkiR6weksdbMadyXKXNPEkQFhXM+hVO9ZygomHXp+AIw==
 
+"@types/file-saver@^2.0.2":
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/@types/file-saver/-/file-saver-2.0.2.tgz#bd593ccfaee42ff94a5c1c83bf69ae9be83493b9"
+  integrity sha512-xbqnZmGrCEqi/KUzOkeUSe77p7APvLuyellGaAoeww3CHJ1AbjQWjPSCFtKIzZn8L7LpEax4NXnC+gfa6nM7IA==
+
 "@types/glob@^7.1.1":
   version "7.1.3"
   resolved "https://registry.npmjs.org/@types/glob/-/glob-7.1.3.tgz"
@@ -3768,6 +3773,11 @@ brorand@^1.0.1, brorand@^1.1.0:
   version "1.1.0"
   resolved "https://registry.npmjs.org/brorand/-/brorand-1.1.0.tgz"
   integrity sha1-EsJe/kCkXjwyPrhnWgoM5XsiNx8=
+
+browser-fs-access@^0.17.3:
+  version "0.17.3"
+  resolved "https://registry.yarnpkg.com/browser-fs-access/-/browser-fs-access-0.17.3.tgz#f91447b0b74bb8d224a8b01a7d18bd090468ef1d"
+  integrity sha512-zrEWlsaQf3RKAeLjA6veRzTtf8ge3dFfun50RI74kSWKQKnJaioPc4I8oPzO6rDNiR0CJUI+oORuPOFMUkr0+g==
 
 browser-process-hrtime@^1.0.0:
   version "1.0.0"
