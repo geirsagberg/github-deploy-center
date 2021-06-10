@@ -9,7 +9,7 @@ import {
   Typography,
 } from '@material-ui/core'
 import { Alert, Autocomplete } from '@material-ui/lab'
-import { fromPairs, groupBy } from 'lodash-es'
+import { concat, fromPairs, groupBy } from 'lodash-es'
 import React, { FC } from 'react'
 import { useFetchWorkflows } from '../api/fetchHooks'
 import { useActions, useOvermindState } from '../overmind'
@@ -56,10 +56,12 @@ export const ApplicationView: FC = () => {
       : WorkflowRelevance.None
   })
 
-  const workflowsSorted = workflowsByRelevance[WorkflowRelevance.NameAndDeploy]
-    .concat(workflowsByRelevance[WorkflowRelevance.Name])
-    .concat(workflowsByRelevance[WorkflowRelevance.Deploy])
-    .concat(workflowsByRelevance[WorkflowRelevance.None])
+  const workflowsSorted = concat(
+    workflowsByRelevance[WorkflowRelevance.NameAndDeploy],
+    workflowsByRelevance[WorkflowRelevance.Name],
+    workflowsByRelevance[WorkflowRelevance.Deploy],
+    workflowsByRelevance[WorkflowRelevance.None]
+  )
 
   return (
     <>

@@ -30,9 +30,18 @@ const EnvironmentDialog: FC<{
   onCancel: () => void
 }> = ({ dialogState, onSave, onCancel, title, updateDialogState }) => {
   const { data, isLoading, error } = useFetchEnvironments()
+  const { selectedApplication } = useOvermindState()
   const filteredEnvironments = orderBy(
     (data || []).filter((d) => d.name !== 'github-pages'),
-    (e) => e.name
+    [
+      (e) =>
+        e.name
+          .toLowerCase()
+          .includes(selectedApplication?.name.split(' ')[0].toLowerCase() || '')
+          ? 1
+          : 2,
+      (e) => e.name,
+    ]
   )
   const environmentsById = keyBy(filteredEnvironments, (e) => e.id)
   return (
