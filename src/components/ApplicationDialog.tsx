@@ -14,6 +14,7 @@ import React, { FC } from 'react'
 import { useFetchRepos } from '../api/fetchHooks'
 import { useActions, useOvermindState } from '../overmind'
 import { ApplicationDialogState, RepoModel } from '../overmind/state'
+import Expander from './Expander'
 import { RepoSearchBox } from './RepoSearchView'
 
 export const ApplicationDialog: FC<{
@@ -53,39 +54,48 @@ export const ApplicationDialog: FC<{
             ) : (
               <>
                 <DialogContentText>Select repository</DialogContentText>
-                <RepoSearchBox
-                  isLoading={isLoading}
-                  options={options}
-                  selectedRepo={dialogState.repo}
-                  setSelectedRepo={(repo) =>
-                    updateDialogState((state) => (state.repo = repo))
-                  }></RepoSearchBox>
-                <TextField
-                  style={{ marginTop: '1rem' }}
-                  variant="outlined"
-                  label="Name"
-                  placeholder="Defaults to same as repository"
-                  value={dialogState.name}
-                  fullWidth
-                  onChange={(event) => {
-                    updateDialogState(
-                      (state) => (state.name = event.target.value)
-                    )
-                  }}
-                />
-                <TextField
-                  style={{ marginTop: '1rem' }}
-                  variant="outlined"
-                  label="Release filter prefix"
-                  placeholder="Filter which release tags to show for this application"
-                  value={dialogState.releaseFilter}
-                  fullWidth
-                  onChange={(event) =>
-                    updateDialogState(
-                      (state) => (state.releaseFilter = event.target.value)
-                    )
-                  }
-                />
+                <Box
+                  display="flex"
+                  flexDirection="column"
+                  style={{ gap: '1rem' }}>
+                  <RepoSearchBox
+                    isLoading={isLoading}
+                    options={options}
+                    selectedRepo={dialogState.repo}
+                    setSelectedRepo={(repo) =>
+                      updateDialogState((state) => (state.repo = repo))
+                    }></RepoSearchBox>
+                  <TextField
+                    variant="outlined"
+                    label="Name"
+                    placeholder="Defaults to same as repository"
+                    value={dialogState.name}
+                    fullWidth
+                    onChange={(event) => {
+                      updateDialogState(
+                        (state) => (state.name = event.target.value)
+                      )
+                    }}
+                  />
+                  <Box display="flex" style={{ gap: '1rem' }}>
+                    <TextField
+                      style={{ flex: 2 }}
+                      variant="outlined"
+                      label="Release filter prefix"
+                      placeholder="Filter which release tags to show for this application"
+                      value={dialogState.releaseFilter}
+                      fullWidth
+                      onChange={(event) =>
+                        updateDialogState(
+                          (state) =>
+                            (state.releaseFilter =
+                              event.target.value.toLowerCase())
+                        )
+                      }
+                    />
+                  </Box>
+                </Box>
+
                 {dialogState.warning && (
                   <Box mt={2}>
                     <Alert severity="warning">{dialogState.warning}</Alert>
@@ -96,6 +106,19 @@ export const ApplicationDialog: FC<{
           </DialogContent>
           <Box p={2} pt={1}>
             <DialogActions>
+              <Button
+                color="secondary"
+                variant="contained"
+                onClick={() =>
+                  updateDialogState(
+                    (state) =>
+                      (state.releaseFilter =
+                        state.name.toLowerCase().replace(' ', '-') + '-v')
+                  )
+                }>
+                Set filter from name
+              </Button>
+              <Expander />
               <Button
                 type="submit"
                 disabled={!dialogState.repo || !!dialogState.warning}

@@ -78,7 +78,9 @@ export const ReleasesTableView: FC = () => {
 
   const releasesSorted = orderBy(
     releases.filter((r) =>
-      r.name.startsWith(selectedApplication.releaseFilter)
+      r.name
+        .toLowerCase()
+        .startsWith(selectedApplication.releaseFilter.toLowerCase())
     ),
     (r) => r.createdAt,
     'desc'
