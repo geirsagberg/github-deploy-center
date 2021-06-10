@@ -65,6 +65,7 @@
     "@types/react-select": "^4.0.15",
     "@types/uuid": "^8.3.0",
     "craco-esbuild": "^0.3.2",
+    "esbuild": "^0.12.8",
     "json-format-cli": "^1.1.1",
     "type-fest": "^1.2.0",
     "typescript": "~4.3.2"
