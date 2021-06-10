@@ -14,13 +14,13 @@ import { Alert, Autocomplete } from '@material-ui/lab'
 import { orderBy } from 'lodash'
 import { keyBy } from 'lodash-es'
 import React, { FC } from 'react'
+import { useFetchEnvironments } from '../api/fetchHooks'
 import { useActions, useOvermindState } from '../overmind'
 import {
   DeployWorkflowCodec,
   EnvironmentDialogState,
   EnvironmentSettings,
 } from '../overmind/state'
-import { useFetchEnvironments } from './fetchHooks'
 
 const EnvironmentDialog: FC<{
   dialogState: EnvironmentDialogState | null

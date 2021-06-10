@@ -11,9 +11,9 @@ import {
 import { Alert, Autocomplete } from '@material-ui/lab'
 import { fromPairs } from 'lodash-es'
 import React, { FC } from 'react'
+import { useFetchWorkflows } from '../api/fetchHooks'
 import { useActions, useOvermindState } from '../overmind'
 import { DeployWorkflowCodec } from '../overmind/state'
-import { useFetchWorkflows } from './fetchHooks'
 
 export const ApplicationView: FC = () => {
   const { selectedApplication } = useOvermindState()

@@ -15,6 +15,7 @@ import { Alert } from '@material-ui/lab'
 import { orderBy, values } from 'lodash-es'
 import React, { FC } from 'react'
 import { useMutation } from 'react-query'
+import { useFetchReleases } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
 import { useActions, useOvermindState } from '../overmind'
 import {
@@ -23,7 +24,6 @@ import {
   EnvironmentSettings,
   ReleaseModel,
 } from '../overmind/state'
-import { useFetchReleases } from './fetchHooks'
 
 const getButtonStyle = (state: DeploymentState) => {
   switch (state) {
@@ -48,9 +48,9 @@ export const ReleasesTableView: FC = () => {
   const { selectedApplication } = useOvermindState()
   const repo = selectedApplication?.repo
   const { triggerDeployment, removeEnvironment } = useActions()
-  const allReleaseResultsForRepo = useFetchReleases()
+  const allReleaseResultsForTag = useFetchReleases()
 
-  const releases = allReleaseResultsForRepo.data || []
+  const releases = allReleaseResultsForTag.data || []
 
   const { mutate, error, isLoading } = useMutation(
     async ({
@@ -72,7 +72,7 @@ export const ReleasesTableView: FC = () => {
     return null
   }
 
-  if (allReleaseResultsForRepo.isLoading) {
+  if (allReleaseResultsForTag.isLoading) {
     return <CircularProgress />
   }
 

@@ -1,24 +1,29 @@
-query fetchReleases($repoName: String!, $repoOwner: String!) {
+query fetchReleases($repoName: String!, $repoOwner: String!, $prefix: String!) {
   repository(name: $repoName, owner: $repoOwner) {
-    releases(first: 100, orderBy: { field: CREATED_AT, direction: DESC }) {
+    refs(refPrefix: "refs/tags/", first: 100, query: $prefix) {
       nodes {
         id
         name
-        tagName
-        createdAt
-        tagCommit {
-          oid
-          deployments(first: 100) {
-            nodes {
-              ...Deploy
-            }
-            pageInfo {
-              endCursor
-              hasNextPage
-            }
-          }
+        target {
+          ...CommitFragment
         }
       }
+    }
+  }
+}
+
+fragment CommitFragment on Commit {
+  __typename
+  oid
+  pushedDate
+  committedDate
+  deployments(first: 100, orderBy: { field: CREATED_AT, direction: DESC }) {
+    nodes {
+      ...Deploy
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
     }
   }
 }

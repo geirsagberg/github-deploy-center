@@ -21066,6 +21066,7 @@ export type FetchCurrentUserIdQuery = (
 export type FetchReleasesQueryVariables = Exact<{
   repoName: Scalars['String'];
   repoOwner: Scalars['String'];
+  prefix: Scalars['String'];
 }>;
 
 
@@ -21073,26 +21074,31 @@ export type FetchReleasesQuery = (
   { __typename: 'Query' }
   & { repository: Maybe<(
     { __typename: 'Repository' }
-    & { releases: (
-      { __typename: 'ReleaseConnection' }
+    & { refs: Maybe<(
+      { __typename: 'RefConnection' }
       & { nodes: Maybe<Array<Maybe<(
-        { __typename: 'Release' }
-        & Pick<Release, 'id' | 'name' | 'tagName' | 'createdAt'>
-        & { tagCommit: Maybe<(
+        { __typename: 'Ref' }
+        & Pick<Ref, 'id' | 'name'>
+        & { target: Maybe<{ __typename: 'Blob' } | (
           { __typename: 'Commit' }
-          & Pick<Commit, 'oid'>
-          & { deployments: Maybe<(
-            { __typename: 'DeploymentConnection' }
-            & { nodes: Maybe<Array<Maybe<(
-              { __typename: 'Deployment' }
-              & DeployFragment
-            )>>>, pageInfo: (
-              { __typename: 'PageInfo' }
-              & Pick<PageInfo, 'endCursor' | 'hasNextPage'>
-            ) }
-          )> }
-        )> }
+          & CommitFragmentFragment
+        ) | { __typename: 'Tag' } | { __typename: 'Tree' }> }
       )>>> }
+    )> }
+  )> }
+);
+
+export type CommitFragmentFragment = (
+  { __typename: 'Commit' }
+  & Pick<Commit, 'oid' | 'pushedDate' | 'committedDate'>
+  & { deployments: Maybe<(
+    { __typename: 'DeploymentConnection' }
+    & { nodes: Maybe<Array<Maybe<(
+      { __typename: 'Deployment' }
+      & DeployFragment
+    )>>>, pageInfo: (
+      { __typename: 'PageInfo' }
+      & Pick<PageInfo, 'endCursor' | 'hasNextPage'>
     ) }
   )> }
 );
@@ -21148,6 +21154,23 @@ export const DeployFragmentDoc = gql`
   state
 }
     `;
+export const CommitFragmentFragmentDoc = gql`
+    fragment CommitFragment on Commit {
+  __typename
+  oid
+  pushedDate
+  committedDate
+  deployments(first: 100, orderBy: {field: CREATED_AT, direction: DESC}) {
+    nodes {
+      ...Deploy
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+  }
+}
+    ${DeployFragmentDoc}`;
 export const RepoFragmentDoc = gql`
     fragment Repo on Repository {
   id
@@ -21168,31 +21191,20 @@ export const FetchCurrentUserIdDocument = gql`
 }
     `;
 export const FetchReleasesDocument = gql`
-    query fetchReleases($repoName: String!, $repoOwner: String!) {
+    query fetchReleases($repoName: String!, $repoOwner: String!, $prefix: String!) {
   repository(name: $repoName, owner: $repoOwner) {
-    releases(first: 100, orderBy: {field: CREATED_AT, direction: DESC}) {
+    refs(refPrefix: "refs/tags/", first: 100, query: $prefix) {
       nodes {
         id
         name
-        tagName
-        createdAt
-        tagCommit {
-          oid
-          deployments(first: 100) {
-            nodes {
-              ...Deploy
-            }
-            pageInfo {
-              endCursor
-              hasNextPage
-            }
-          }
+        target {
+          ...CommitFragment
         }
       }
     }
   }
 }
-    ${DeployFragmentDoc}`;
+    ${CommitFragmentFragmentDoc}`;
 export const FetchReposWithWriteAccessDocument = gql`
     query fetchReposWithWriteAccess($after: String) {
   viewer {

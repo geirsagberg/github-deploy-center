@@ -19,39 +19,50 @@ export const useFetchReleases = () => {
   const { selectedApplication } = useOvermindState()
 
   const repo = selectedApplication?.repo
+  const prefix = selectedApplication?.releaseFilter ?? ''
 
   const { data, isLoading, error } = useQuery(
-    `${repo?.owner}/${repo?.name}-releases`,
+    `${repo?.owner}/${repo?.name}/releases/${prefix}`,
     async () => {
       if (!repo) return []
 
       const result = await graphQLApi.fetchReleases({
         repoName: repo.name,
         repoOwner: repo.owner,
+        prefix,
       })
-      const fragments = result.repository?.releases.nodes?.map((n) => n!) ?? []
-      const releases = fragments.map(
-        ({ id, name, tagName, createdAt, tagCommit }): ReleaseModel => ({
-          id,
-          name: name || '',
-          tagName,
-          createdAt: dayjs(createdAt),
-          commit: tagCommit?.oid || '',
-          deployments:
-            tagCommit?.deployments?.nodes
-              ?.filter((node) => !!node)
-              .map((n) => n! as DeployFragment)
-              .map(
-                ({ id, createdAt, environment, state }): DeploymentModel => ({
-                  id,
-                  createdAt: dayjs(createdAt),
-                  environment: environment || '',
-                  state: state || DeploymentState.Inactive,
-                })
-              )
-              .orderBy((n) => n.createdAt, 'desc') || [],
-        })
-      )
+      const fragments = result.repository?.refs?.nodes?.map((n) => n!) ?? []
+      const releases = fragments
+        .map(({ id, name, target }): ReleaseModel | null =>
+          target?.__typename === 'Commit'
+            ? {
+                id,
+                name,
+                tagName: name,
+                createdAt: dayjs(target.pushedDate ?? target.committedDate),
+                commit: target.oid,
+                deployments:
+                  target.deployments?.nodes
+                    ?.filter((node) => !!node)
+                    .map((n) => n! as DeployFragment)
+                    .map(
+                      ({
+                        id,
+                        createdAt,
+                        environment,
+                        state,
+                      }): DeploymentModel => ({
+                        id,
+                        createdAt: dayjs(createdAt),
+                        environment: environment || '',
+                        state: state || DeploymentState.Inactive,
+                      })
+                    )
+                    .orderBy((n) => n.createdAt, 'desc') || [],
+              }
+            : null
+        )
+        .filter((n): n is ReleaseModel => !!n)
       return releases
     }
   )

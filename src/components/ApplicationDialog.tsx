@@ -11,9 +11,9 @@ import {
 import { Alert } from '@material-ui/lab'
 import { orderBy } from 'lodash-es'
 import React, { FC } from 'react'
+import { useFetchRepos } from '../api/fetchHooks'
 import { useActions, useOvermindState } from '../overmind'
 import { ApplicationDialogState, RepoModel } from '../overmind/state'
-import { useFetchRepos } from './fetchHooks'
 import { RepoSearchBox } from './RepoSearchView'
 
 export const ApplicationDialog: FC<{
