@@ -9,11 +9,18 @@ import {
   Typography,
 } from '@material-ui/core'
 import { Alert, Autocomplete } from '@material-ui/lab'
-import { fromPairs } from 'lodash-es'
+import { fromPairs, groupBy } from 'lodash-es'
 import React, { FC } from 'react'
 import { useFetchWorkflows } from '../api/fetchHooks'
 import { useActions, useOvermindState } from '../overmind'
 import { DeployWorkflowCodec } from '../overmind/state'
+
+enum WorkflowRelevance {
+  None,
+  Deploy,
+  Name,
+  NameAndDeploy,
+}
 
 export const ApplicationView: FC = () => {
   const { selectedApplication } = useOvermindState()
@@ -34,6 +41,25 @@ export const ApplicationView: FC = () => {
 
   const { workflowId, releaseKey, environmentKey, ref, extraArgs } =
     selectedApplication.deploySettings
+
+  const workflowsByRelevance = groupBy(workflows.data, (workflow) => {
+    const containsName = workflow.name
+      .toLowerCase()
+      .includes(selectedApplication.name.toLowerCase().split(' ')[0])
+    const containsDeploy = workflow.name.toLowerCase().includes('deploy')
+    return containsDeploy && containsName
+      ? WorkflowRelevance.NameAndDeploy
+      : containsName
+      ? WorkflowRelevance.Name
+      : containsDeploy
+      ? WorkflowRelevance.Deploy
+      : WorkflowRelevance.None
+  })
+
+  const workflowsSorted = workflowsByRelevance[WorkflowRelevance.NameAndDeploy]
+    .concat(workflowsByRelevance[WorkflowRelevance.Name])
+    .concat(workflowsByRelevance[WorkflowRelevance.Deploy])
+    .concat(workflowsByRelevance[WorkflowRelevance.None])
 
   return (
     <>
@@ -61,7 +87,7 @@ export const ApplicationView: FC = () => {
               <MenuItem value={0}>
                 <em>None</em>
               </MenuItem>
-              {workflows.data.map((workflow) => (
+              {workflowsSorted.map((workflow) => (
                 <MenuItem key={workflow.id} value={workflow.id}>
                   {workflow.name}
                 </MenuItem>
