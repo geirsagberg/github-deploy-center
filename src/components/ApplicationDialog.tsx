@@ -113,7 +113,7 @@ export const ApplicationDialog: FC<{
                   updateDialogState(
                     (state) =>
                       (state.releaseFilter =
-                        state.name.toLowerCase().replace(' ', '-') + '-v')
+                        state.name.toLowerCase().replaceAll(' ', '-') + '-v')
                   )
                 }>
                 Set filter from name
@@ -135,7 +135,7 @@ export const ApplicationDialog: FC<{
   )
 }
 
-export const NewApplicationDialog: FC = () => {
+export const NewApplicationDialog = () => {
   const { newApplicationDialog } = useOvermindState()
   const {
     createNewApplication,
@@ -155,7 +155,7 @@ export const NewApplicationDialog: FC = () => {
   )
 }
 
-export const EditApplicationDialog: FC = () => {
+export const EditApplicationDialog = () => {
   const { editApplicationDialog } = useOvermindState()
   const { saveApplication, updateApplicationDialog, cancelEditApplication } =
     useActions()

@@ -13,7 +13,7 @@ import {
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
 import { orderBy, values } from 'lodash-es'
-import React, { FC } from 'react'
+import React from 'react'
 import { useMutation } from 'react-query'
 import { useFetchReleases } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
@@ -44,7 +44,7 @@ const getButtonVariant = (state: DeploymentState): 'contained' | 'outlined' => {
   return state === DeploymentState.Active ? 'contained' : 'outlined'
 }
 
-export const ReleasesTableView: FC = () => {
+export const ReleasesTableView = () => {
   const { selectedApplication } = useOvermindState()
   const repo = selectedApplication?.repo
   const { triggerDeployment, removeEnvironment } = useActions()

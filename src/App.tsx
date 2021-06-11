@@ -1,5 +1,5 @@
 import { Box, Container, Paper, TextField, Typography } from '@material-ui/core'
-import React, { FC } from 'react'
+import React from 'react'
 import {
   EditApplicationDialog,
   NewApplicationDialog,
@@ -11,7 +11,7 @@ import { ReleasesTableView } from './components/ReleasesTableView'
 import { SelectApplicationView } from './components/SelectApplicationView'
 import { useActions, useOvermindState } from './overmind'
 
-const App: FC = () => {
+const App = () => {
   const { token } = useOvermindState()
   const { setToken } = useActions()
   return (

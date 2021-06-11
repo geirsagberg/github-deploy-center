@@ -132,7 +132,7 @@ const EnvironmentDialog: FC<{
   )
 }
 
-const AddEnvironmentDialog: FC = () => {
+const AddEnvironmentDialog = () => {
   const { addEnvironmentDialog } = useOvermindState()
   const { cancelAddEnvironment, addEnvironment, updateEnvironmentDialog } =
     useActions()
@@ -149,7 +149,7 @@ const AddEnvironmentDialog: FC = () => {
   )
 }
 
-export const EnvironmentsView: FC = () => {
+export const EnvironmentsView = () => {
   const { selectedApplication } = useOvermindState()
   const { showAddEnvironmentModal } = useActions()
 

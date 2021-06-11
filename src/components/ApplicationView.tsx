@@ -10,7 +10,7 @@ import {
 } from '@material-ui/core'
 import { Alert, Autocomplete } from '@material-ui/lab'
 import { concat, fromPairs, groupBy } from 'lodash-es'
-import React, { FC } from 'react'
+import React from 'react'
 import { useFetchWorkflows } from '../api/fetchHooks'
 import { useActions, useOvermindState } from '../overmind'
 import { DeployWorkflowCodec } from '../overmind/state'
@@ -22,7 +22,7 @@ enum WorkflowRelevance {
   NameAndDeploy,
 }
 
-export const ApplicationView: FC = () => {
+export const ApplicationView = () => {
   const { selectedApplication } = useOvermindState()
   const { updateWorkflowSettings } = useActions()
 

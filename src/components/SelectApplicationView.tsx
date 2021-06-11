@@ -7,10 +7,10 @@ import {
   Select,
 } from '@material-ui/core'
 import { map, size } from 'lodash-es'
-import React, { FC } from 'react'
+import React from 'react'
 import { useActions, useOvermindState } from '../overmind'
 
-export const SelectApplicationView: FC = () => {
+export const SelectApplicationView = () => {
   const { applicationsById, selectedApplicationId } = useOvermindState()
   const { selectApplication, editApplication } = useActions()
   return size(applicationsById) ? (
