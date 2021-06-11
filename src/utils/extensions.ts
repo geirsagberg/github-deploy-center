@@ -11,6 +11,9 @@ Array.prototype['orderBy'] = function <T>(
 
 declare global {
   interface Array<T> {
-    orderBy(selector: (t: T) => any, order?: 'asc' | 'desc'): Array<T>
+    orderBy(
+      selector: Many<(t: T) => any>,
+      order?: Many<'asc' | 'desc'>
+    ): Array<T>
   }
 }

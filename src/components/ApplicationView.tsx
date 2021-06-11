@@ -9,17 +9,17 @@ import {
   Typography,
 } from '@material-ui/core'
 import { Alert, Autocomplete } from '@material-ui/lab'
-import { concat, fromPairs, groupBy } from 'lodash-es'
+import { fromPairs } from 'lodash-es'
 import React from 'react'
 import { useFetchWorkflows } from '../api/fetchHooks'
 import { useActions, useOvermindState } from '../overmind'
 import { DeployWorkflowCodec } from '../overmind/state'
 
 enum WorkflowRelevance {
-  None,
-  Deploy,
-  Name,
-  NameAndDeploy,
+  None = 0,
+  Deploy = 1,
+  Name = 2,
+  NameAndDeploy = 3,
 }
 
 export const ApplicationView = () => {
@@ -42,26 +42,25 @@ export const ApplicationView = () => {
   const { workflowId, releaseKey, environmentKey, ref, extraArgs } =
     selectedApplication.deploySettings
 
-  const workflowsByRelevance = groupBy(workflows.data, (workflow) => {
-    const containsName = workflow.name
-      .toLowerCase()
-      .includes(selectedApplication.name.toLowerCase().split(' ')[0])
-    const containsDeploy = workflow.name.toLowerCase().includes('deploy')
-    return containsDeploy && containsName
-      ? WorkflowRelevance.NameAndDeploy
-      : containsName
-      ? WorkflowRelevance.Name
-      : containsDeploy
-      ? WorkflowRelevance.Deploy
-      : WorkflowRelevance.None
-  })
-
-  const workflowsSorted = concat(
-    workflowsByRelevance[WorkflowRelevance.NameAndDeploy],
-    workflowsByRelevance[WorkflowRelevance.Name],
-    workflowsByRelevance[WorkflowRelevance.Deploy],
-    workflowsByRelevance[WorkflowRelevance.None]
-  ).filter((w) => !!w)
+  const workflowsSorted = (workflows.data ?? []).orderBy(
+    [
+      (workflow) => {
+        const containsName = workflow.name
+          .toLowerCase()
+          .includes(selectedApplication.name.toLowerCase().split(' ')[0])
+        const containsDeploy = workflow.name.toLowerCase().includes('deploy')
+        return containsDeploy && containsName
+          ? WorkflowRelevance.NameAndDeploy
+          : containsName
+          ? WorkflowRelevance.Name
+          : containsDeploy
+          ? WorkflowRelevance.Deploy
+          : WorkflowRelevance.None
+      },
+      (w) => w.name,
+    ],
+    ['desc', 'asc']
+  )
 
   return (
     <>
