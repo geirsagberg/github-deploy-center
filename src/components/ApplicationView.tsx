@@ -61,7 +61,7 @@ export const ApplicationView = () => {
     workflowsByRelevance[WorkflowRelevance.Name],
     workflowsByRelevance[WorkflowRelevance.Deploy],
     workflowsByRelevance[WorkflowRelevance.None]
-  )
+  ).filter((w) => !!w)
 
   return (
     <>
