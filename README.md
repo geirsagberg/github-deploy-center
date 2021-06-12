@@ -1,5 +1,10 @@
 # GitHub Deploy Center (GDC)
 
+![Build and Publish status](https://github.com/geirsagberg/github-deploy-center/actions/workflows/build-and-publish.yml/badge.svg?branch=master)
+![dev deploy status](https://img.shields.io/github/deployments/geirsagberg/github-deploy-center/dev?label=dev)
+![test deploy status](https://img.shields.io/github/deployments/geirsagberg/github-deploy-center/test?label=test)
+![prod deploy status](https://img.shields.io/github/deployments/geirsagberg/github-deploy-center/prod?label=prod)
+
 GDC is a static website for showing your GitHub releases and deployments, and provides one-click deployment to any environment, powered by -your- GitHub Action workflows.
 
 ![GitHub Deploy Center](images/github-deploy-center.png)
