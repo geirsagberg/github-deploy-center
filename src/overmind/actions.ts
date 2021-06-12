@@ -3,12 +3,14 @@ import { pipe } from 'fp-ts/lib/function'
 import { some } from 'lodash'
 import { clone } from 'lodash-es'
 import { Action, AsyncAction } from 'overmind'
+import { showConfirm } from '../utils/dialog'
 import {
   ApplicationDialogState,
   ApplicationsByIdCodec,
   createApplicationConfig,
   createApplicationDialogState,
   createDeployWorkflowSettings,
+  DeploymentDialogState,
   DeployWorkflowCodec,
   DeployWorkflowSettings,
   EnvironmentDialogState,
@@ -44,6 +46,14 @@ export const updateWorkflowSettings: Action<
   }
 }
 
+export const updateDeployWorkflowDialog: Action<
+  (state: DeploymentDialogState) => void
+> = ({ state: { deploymentDialog } }, update) => {
+  if (deploymentDialog) {
+    update(deploymentDialog)
+  }
+}
+
 export const triggerDeployment: AsyncAction<{
   release: string
   environmentId: number
@@ -61,7 +71,7 @@ export const triggerDeployment: AsyncAction<{
   const repo = selectedApplication.repo
 
   if (
-    window.confirm(
+    showConfirm(
       `Are you sure you want to deploy "${release}" to "${environmentSettings.name}" in "${repo.owner}/${repo.name}@${deploySettings.ref}"?`
     )
   ) {
@@ -87,7 +97,7 @@ export const createNewApplication: Action<{
   repo: RepoModel
   name: string
   releaseFilter: string
-}> = ({ state }, { repo, name, releaseFilter }) => {
+}> = ({ state, actions }, { repo, name, releaseFilter }) => {
   if (!state.newApplicationDialog) return
   if (
     Object.values(state.applicationsById).some(
@@ -102,6 +112,7 @@ export const createNewApplication: Action<{
   state.applicationsById[appConfig.id] = appConfig
   state.selectedApplicationId = appConfig.id
   state.newApplicationDialog = null
+  actions.editDeployment()
 }
 
 export const cancelNewApplication: Action = ({ state }) => {
@@ -120,6 +131,23 @@ export const editApplication: Action = ({ state }) => {
     state.editApplicationDialog.releaseFilter =
       state.selectedApplication.releaseFilter
   }
+}
+
+export const editDeployment: Action = ({ state }) => {
+  const deploySettings = state.selectedApplication?.deploySettings
+  if (DeployWorkflowCodec.is(deploySettings))
+    state.deploymentDialog = clone(deploySettings)
+}
+
+export const saveDeployment: Action = ({ state }) => {
+  if (state.selectedApplication && state.deploymentDialog) {
+    state.selectedApplication.deploySettings = clone(state.deploymentDialog)
+  }
+  state.deploymentDialog = null
+}
+
+export const cancelEditDeployment: Action = ({ state }) => {
+  state.deploymentDialog = null
 }
 
 export const cancelEditApplication: Action = ({ state }) => {
@@ -161,6 +189,18 @@ export const updateApplicationDialog: Action<{
   if (dialogState) {
     dialogState.warning = undefined
     update(dialogState)
+  }
+}
+
+export const deleteApplication: Action = ({ state }) => {
+  if (
+    !!state.selectedApplication &&
+    showConfirm(
+      'Are you sure you want to delete ' + state.selectedApplication.name + '?'
+    )
+  ) {
+    delete state.applicationsById[state.selectedApplicationId]
+    state.editApplicationDialog = null
   }
 }
 

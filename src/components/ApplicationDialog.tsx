@@ -19,7 +19,7 @@ import { RepoSearchBox } from './RepoSearchView'
 
 export const ApplicationDialog: FC<{
   dialogState: ApplicationDialogState | null
-  updateDialogState: (update: (state: ApplicationDialogState) => void) => void
+  newOrEdit: 'new' | 'edit'
   title: string
   onSave: ({
     repo,
@@ -31,11 +31,14 @@ export const ApplicationDialog: FC<{
     releaseFilter: string
   }) => void
   onCancel: () => void
-}> = ({ dialogState, updateDialogState, title, onSave, onCancel }) => {
+}> = ({ dialogState, newOrEdit, title, onSave, onCancel }) => {
   const { data, error, isLoading } = useFetchRepos()
+  const { updateApplicationDialog, deleteApplication } = useActions()
+  const updateDialogState = (update: (state: ApplicationDialogState) => void) =>
+    updateApplicationDialog({ newOrEdit, update })
   const options = orderBy(data ?? [], (d) => d.owner.toLowerCase())
   return (
-    <Dialog open={!!dialogState} fullWidth>
+    <Dialog open={!!dialogState} fullWidth onBackdropClick={onCancel}>
       {dialogState ? (
         <form
           onSubmit={(event) => {
@@ -64,7 +67,8 @@ export const ApplicationDialog: FC<{
                     selectedRepo={dialogState.repo}
                     setSelectedRepo={(repo) =>
                       updateDialogState((state) => (state.repo = repo))
-                    }></RepoSearchBox>
+                    }
+                  />
                   <TextField
                     variant="outlined"
                     label="Name"
@@ -77,7 +81,10 @@ export const ApplicationDialog: FC<{
                       )
                     }}
                   />
-                  <Box display="flex" style={{ gap: '1rem' }}>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    style={{ gap: '1rem' }}>
                     <TextField
                       style={{ flex: 2 }}
                       variant="outlined"
@@ -93,6 +100,19 @@ export const ApplicationDialog: FC<{
                         )
                       }
                     />
+                    <Button
+                      color="secondary"
+                      variant="contained"
+                      onClick={() =>
+                        updateDialogState(
+                          (state) =>
+                            (state.releaseFilter =
+                              state.name.toLowerCase().replaceAll(' ', '-') +
+                              '-v')
+                        )
+                      }>
+                      Set filter from name
+                    </Button>
                   </Box>
                 </Box>
 
@@ -106,18 +126,9 @@ export const ApplicationDialog: FC<{
           </DialogContent>
           <Box p={2} pt={1}>
             <DialogActions>
-              <Button
-                color="secondary"
-                variant="contained"
-                onClick={() =>
-                  updateDialogState(
-                    (state) =>
-                      (state.releaseFilter =
-                        state.name.toLowerCase().replaceAll(' ', '-') + '-v')
-                  )
-                }>
-                Set filter from name
-              </Button>
+              {newOrEdit === 'edit' && (
+                <Button onClick={deleteApplication}>Delete</Button>
+              )}
               <Expander />
               <Button
                 type="submit"
@@ -137,17 +148,11 @@ export const ApplicationDialog: FC<{
 
 export const NewApplicationDialog = () => {
   const { newApplicationDialog } = useOvermindState()
-  const {
-    createNewApplication,
-    updateApplicationDialog,
-    cancelNewApplication,
-  } = useActions()
+  const { createNewApplication, cancelNewApplication } = useActions()
   return (
     <ApplicationDialog
       dialogState={newApplicationDialog}
-      updateDialogState={(update) =>
-        updateApplicationDialog({ newOrEdit: 'new', update })
-      }
+      newOrEdit="new"
       title="New application"
       onSave={createNewApplication}
       onCancel={cancelNewApplication}
@@ -157,14 +162,11 @@ export const NewApplicationDialog = () => {
 
 export const EditApplicationDialog = () => {
   const { editApplicationDialog } = useOvermindState()
-  const { saveApplication, updateApplicationDialog, cancelEditApplication } =
-    useActions()
+  const { saveApplication, cancelEditApplication } = useActions()
   return (
     <ApplicationDialog
       dialogState={editApplicationDialog}
-      updateDialogState={(update) =>
-        updateApplicationDialog({ newOrEdit: 'edit', update })
-      }
+      newOrEdit="edit"
       title="Edit application"
       onSave={saveApplication}
       onCancel={cancelEditApplication}

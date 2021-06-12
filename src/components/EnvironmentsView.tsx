@@ -45,7 +45,7 @@ const EnvironmentDialog: FC<{
   )
   const environmentsById = keyBy(filteredEnvironments, (e) => e.id)
   return (
-    <Dialog open={!!dialogState} fullWidth>
+    <Dialog open={!!dialogState} fullWidth onBackdropClick={onCancel}>
       {dialogState ? (
         <form
           onSubmit={(event) => {

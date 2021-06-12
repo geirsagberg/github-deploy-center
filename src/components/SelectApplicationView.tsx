@@ -12,7 +12,7 @@ import { useActions, useOvermindState } from '../overmind'
 
 export const SelectApplicationView = () => {
   const { applicationsById, selectedApplicationId } = useOvermindState()
-  const { selectApplication, editApplication } = useActions()
+  const { selectApplication, editApplication, editDeployment } = useActions()
   return size(applicationsById) ? (
     <Box display="flex" alignItems="center" style={{ gap: '1rem' }}>
       <FormControl variant="outlined" style={{ flex: 1 }}>
@@ -32,7 +32,10 @@ export const SelectApplicationView = () => {
         </Select>
       </FormControl>
       <Button color="secondary" variant="contained" onClick={editApplication}>
-        Edit
+        Edit App
+      </Button>
+      <Button color="secondary" variant="contained" onClick={editDeployment}>
+        Edit Deploy
       </Button>
     </Box>
   ) : null

@@ -127,6 +127,8 @@ export type EnvironmentDialogState = {
   workflowInputValue: string
 }
 
+export type DeploymentDialogState = DeployWorkflowSettings
+
 export type AppState = {
   token: string
   applicationsById: Record<string, ApplicationConfig>
@@ -136,6 +138,7 @@ export type AppState = {
   editApplicationDialog: ApplicationDialogState | null
   addEnvironmentDialog: EnvironmentDialogState | null
   editEnvironmentDialog: EnvironmentDialogState | null
+  deploymentDialog: DeploymentDialogState | null
 }
 
 const state: AppState = {
@@ -149,6 +152,7 @@ const state: AppState = {
   editApplicationDialog: null,
   addEnvironmentDialog: null,
   editEnvironmentDialog: null,
+  deploymentDialog: null,
 }
 
 export default state

@@ -4,7 +4,7 @@ import {
   EditApplicationDialog,
   NewApplicationDialog,
 } from './components/ApplicationDialog'
-import { ApplicationView } from './components/ApplicationView'
+import { DeploymentDialog } from './components/DeploymentDialog'
 import { EnvironmentsView } from './components/EnvironmentsView'
 import { ManageApplicationsView } from './components/ManageApplicationsView'
 import { ReleasesTableView } from './components/ReleasesTableView'
@@ -28,11 +28,11 @@ const App = () => {
           <>
             <ManageApplicationsView />
             <SelectApplicationView />
-            <ApplicationView />
             <EnvironmentsView />
             <ReleasesTableView />
             <NewApplicationDialog />
             <EditApplicationDialog />
+            <DeploymentDialog />
           </>
         )}
       </Box>
