@@ -1,4 +1,35 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# GitHub Deploy Center (GDC)
+
+GDC is a static website for showing your GitHub releases and deployments, and provides one-click deployment to any environment, powered by -your- GitHub Action workflows.
+
+![GitHub Deploy Center](images/github-deploy-center.png)
+
+- GDC is a fully static website and uses only local storage. No cookies, and nothing is sent to any server!
+- Application settings can be exported, shared and imported.
+- Monorepos are supported, with a flexible configuration flow for multiple applications in the same repo.
+
+## Getting started
+
+To use GDC, you need a couple of things:
+
+- A GitHub Personal Access Token with the `repo` OAuth scope. You can create one [here](https://github.com/settings/tokens).
+- A way to create GitHub releases (preferrably automatically, e.g. through GH Actions). See [the GDC Build and Publish workflow](./.github/workflows/build-and-publish.yml) as an example.
+- A GitHub Workflow with the `workflow_dispatch` trigger.
+  - The workflow must accept the following inputs (names are customizable):
+    - `ref`: Which release version to deploy (e.g. v1.0.3)
+    - `environment`: Which environment to deploy to (e.g. dev, test or prod)
+  - The workflow must create a deployment for the same commit as the release, and update status on success or failure.
+  - See [the GDC Deploy workflow](./.github/workflows/deploy.yml) as an example.
+
+# Development
+
+The app is built with:
+
+- [Create React App](https://create-react-app.dev/)
+- [Material UI](https://material-ui.com/)
+- [Overmind](https://overmindjs.org/)
+- [React Query](https://react-query.tanstack.com/)
+- [GraphQL](https://graphql.org/)
 
 ## Available Scripts
 
