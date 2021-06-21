@@ -21193,7 +21193,12 @@ export const FetchCurrentUserIdDocument = gql`
 export const FetchReleasesDocument = gql`
     query fetchReleases($repoName: String!, $repoOwner: String!, $prefix: String!) {
   repository(name: $repoName, owner: $repoOwner) {
-    refs(refPrefix: "refs/tags/", first: 100, query: $prefix) {
+    refs(
+      refPrefix: "refs/tags/"
+      first: 100
+      query: $prefix
+      orderBy: {field: TAG_COMMIT_DATE, direction: DESC}
+    ) {
       nodes {
         id
         name
