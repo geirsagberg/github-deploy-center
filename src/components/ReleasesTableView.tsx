@@ -77,11 +77,16 @@ export const ReleasesTableView = () => {
   }
 
   const releasesSorted = orderBy(
-    releases.filter((r) =>
-      r.name
-        .toLowerCase()
-        .startsWith(selectedApplication.releaseFilter.toLowerCase())
-    ),
+    releases
+      .slice()
+      .sort((a, b) =>
+        b.tagName.localeCompare(a.tagName, undefined, { numeric: true })
+      )
+      .filter((r) =>
+        r.name
+          .toLowerCase()
+          .startsWith(selectedApplication.releaseFilter.toLowerCase())
+      ),
     (r) => r.createdAt,
     'desc'
   )

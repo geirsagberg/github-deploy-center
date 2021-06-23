@@ -82,6 +82,7 @@ const EnvironmentDialog: FC<{
                   }
                   renderInput={(params) => (
                     <TextField
+                      autoFocus
                       variant="outlined"
                       label="Search"
                       {...params}
