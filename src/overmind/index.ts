@@ -17,7 +17,7 @@ export const config = {
 
 export type Context = IContext<typeof config>
 
-export const useOvermindState = createStateHook<Context>()
+export const useAppState = createStateHook<Context>()
 export const useActions = createActionsHook<Context>()
 export const useEffects = createEffectsHook<Context>()
 export const useReaction = createReactionHook<Context>()

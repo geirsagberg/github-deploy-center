@@ -12,7 +12,7 @@ import { Alert } from '@material-ui/lab'
 import { orderBy } from 'lodash-es'
 import React, { FC } from 'react'
 import { useFetchRepos } from '../api/fetchHooks'
-import { useActions, useOvermindState } from '../overmind'
+import { useActions, useAppState } from '../overmind'
 import { ApplicationDialogState, RepoModel } from '../overmind/state'
 import Expander from './Expander'
 import { RepoSearchBox } from './RepoSearchView'
@@ -147,7 +147,7 @@ export const ApplicationDialog: FC<{
 }
 
 export const NewApplicationDialog = () => {
-  const { newApplicationDialog } = useOvermindState()
+  const { newApplicationDialog } = useAppState()
   const { createNewApplication, cancelNewApplication } = useActions()
   return (
     <ApplicationDialog
@@ -161,7 +161,7 @@ export const NewApplicationDialog = () => {
 }
 
 export const EditApplicationDialog = () => {
-  const { editApplicationDialog } = useOvermindState()
+  const { editApplicationDialog } = useAppState()
   const { saveApplication, cancelEditApplication } = useActions()
   return (
     <ApplicationDialog

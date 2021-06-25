@@ -9,11 +9,11 @@ import {
 import { Autocomplete } from '@material-ui/lab'
 import { fromPairs } from 'lodash-es'
 import React from 'react'
-import { useActions, useOvermindState } from '../overmind'
+import { useActions, useAppState } from '../overmind'
 import { SelectWorkflow } from './SelectWorkflow'
 
 export const DeploymentDialog = () => {
-  const { deploymentDialog } = useOvermindState()
+  const { deploymentDialog } = useAppState()
   const { updateDeployWorkflowDialog, cancelEditDeployment, saveDeployment } =
     useActions()
 

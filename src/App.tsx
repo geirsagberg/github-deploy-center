@@ -9,10 +9,10 @@ import { EnvironmentsView } from './components/EnvironmentsView'
 import { ManageApplicationsView } from './components/ManageApplicationsView'
 import { ReleasesTableView } from './components/ReleasesTableView'
 import { SelectApplicationView } from './components/SelectApplicationView'
-import { useActions, useOvermindState } from './overmind'
+import { useActions, useAppState } from './overmind'
 
 const App = () => {
-  const { token } = useOvermindState()
+  const { token } = useAppState()
   const { setToken } = useActions()
   return (
     <Container>

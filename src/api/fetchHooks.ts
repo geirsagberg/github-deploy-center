@@ -6,7 +6,7 @@ import {
   DeploymentState,
   RepoFragment,
 } from '../generated/graphql'
-import { useEffects, useOvermindState } from '../overmind'
+import { useAppState, useEffects } from '../overmind'
 import {
   DeploymentModel,
   GitHubEnvironment,
@@ -16,7 +16,7 @@ import {
 import graphQLApi from '../utils/graphQLApi'
 
 export const useFetchReleases = () => {
-  const { selectedApplication } = useOvermindState()
+  const { selectedApplication } = useAppState()
 
   const repo = selectedApplication?.repo
   const prefix = selectedApplication?.releaseFilter ?? ''
@@ -71,7 +71,7 @@ export const useFetchReleases = () => {
 }
 
 export const useFetchWorkflows = () => {
-  const { token, selectedApplication } = useOvermindState()
+  const { token, selectedApplication } = useAppState()
   const { restApi } = useEffects()
 
   const repo = selectedApplication?.repo
@@ -97,7 +97,7 @@ export const useFetchWorkflows = () => {
 }
 
 export const useFetchEnvironments = () => {
-  const { token, selectedApplication } = useOvermindState()
+  const { token, selectedApplication } = useAppState()
   const { restApi } = useEffects()
 
   const repo = selectedApplication?.repo

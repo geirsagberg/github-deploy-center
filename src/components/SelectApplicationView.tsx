@@ -8,10 +8,10 @@ import {
 } from '@material-ui/core'
 import { map, size } from 'lodash-es'
 import React from 'react'
-import { useActions, useOvermindState } from '../overmind'
+import { useActions, useAppState } from '../overmind'
 
 export const SelectApplicationView = () => {
-  const { applicationsById, selectedApplicationId } = useOvermindState()
+  const { applicationsById, selectedApplicationId } = useAppState()
   const { selectApplication, editApplication, editDeployment } = useActions()
   return size(applicationsById) ? (
     <Box display="flex" alignItems="center" style={{ gap: '1rem' }}>

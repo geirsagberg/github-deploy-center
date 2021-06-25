@@ -15,7 +15,7 @@ import { orderBy } from 'lodash'
 import { keyBy } from 'lodash-es'
 import React, { FC } from 'react'
 import { useFetchEnvironments } from '../api/fetchHooks'
-import { useActions, useOvermindState } from '../overmind'
+import { useActions, useAppState } from '../overmind'
 import {
   DeployWorkflowCodec,
   EnvironmentDialogState,
@@ -30,7 +30,7 @@ const EnvironmentDialog: FC<{
   onCancel: () => void
 }> = ({ dialogState, onSave, onCancel, title, updateDialogState }) => {
   const { data, isLoading, error } = useFetchEnvironments()
-  const { selectedApplication } = useOvermindState()
+  const { selectedApplication } = useAppState()
   const filteredEnvironments = orderBy(
     (data || []).filter((d) => d.name !== 'github-pages'),
     [
@@ -134,7 +134,7 @@ const EnvironmentDialog: FC<{
 }
 
 const AddEnvironmentDialog = () => {
-  const { addEnvironmentDialog } = useOvermindState()
+  const { addEnvironmentDialog } = useAppState()
   const { cancelAddEnvironment, addEnvironment, updateEnvironmentDialog } =
     useActions()
   return (
@@ -151,7 +151,7 @@ const AddEnvironmentDialog = () => {
 }
 
 export const EnvironmentsView = () => {
-  const { selectedApplication } = useOvermindState()
+  const { selectedApplication } = useAppState()
   const { showAddEnvironmentModal } = useActions()
 
   if (

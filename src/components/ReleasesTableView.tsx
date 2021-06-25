@@ -17,7 +17,7 @@ import React from 'react'
 import { useMutation } from 'react-query'
 import { useFetchReleases } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
-import { useActions, useOvermindState } from '../overmind'
+import { useActions, useAppState } from '../overmind'
 import {
   DeploymentModel,
   DeployWorkflowCodec,
@@ -45,7 +45,7 @@ const getButtonVariant = (state: DeploymentState): 'contained' | 'outlined' => {
 }
 
 export const ReleasesTableView = () => {
-  const { selectedApplication } = useOvermindState()
+  const { selectedApplication } = useAppState()
   const repo = selectedApplication?.repo
   const { triggerDeployment, removeEnvironment } = useActions()
   const allReleaseResultsForTag = useFetchReleases()

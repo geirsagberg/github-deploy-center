@@ -9,7 +9,7 @@ import {
 import { Alert } from '@material-ui/lab'
 import React from 'react'
 import { useFetchWorkflows } from '../api/fetchHooks'
-import { useOvermindState } from '../overmind'
+import { useAppState } from '../overmind'
 
 enum WorkflowRelevance {
   None = 0,
@@ -28,7 +28,7 @@ export function SelectWorkflow({
   FormControlProps?: FormControlProps
 }) {
   const workflows = useFetchWorkflows()
-  const { selectedApplication } = useOvermindState()
+  const { selectedApplication } = useAppState()
 
   if (!selectedApplication) return null
 
