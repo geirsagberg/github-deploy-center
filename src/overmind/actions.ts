@@ -2,7 +2,7 @@ import { getOrElse } from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/function'
 import { some } from 'lodash'
 import { clone } from 'lodash-es'
-import { Action, AsyncAction } from 'overmind'
+import { Context } from '.'
 import { showConfirm } from '../utils/dialog'
 import {
   ApplicationDialogState,
@@ -18,11 +18,11 @@ import {
   RepoModel,
 } from './state'
 
-export const setToken: Action<string> = ({ state }, token) => {
+export const setToken = ({ state }: Context, token: string) => {
   state.token = token
 }
 
-export const showNewApplicationModal: Action = ({ state }) => {
+export const showNewApplicationModal = ({ state }: Context) => {
   state.newApplicationDialog = createApplicationDialogState()
 
   if (state.selectedApplication) {
@@ -30,9 +30,10 @@ export const showNewApplicationModal: Action = ({ state }) => {
   }
 }
 
-export const updateWorkflowSettings: Action<
-  (settings: DeployWorkflowSettings) => void
-> = ({ state: { selectedApplication } }, update) => {
+export const updateWorkflowSettings = (
+  { state: { selectedApplication } }: Context,
+  update: (settings: DeployWorkflowSettings) => void
+) => {
   if (selectedApplication) {
     let deploySettings = selectedApplication.deploySettings
     if (DeployWorkflowCodec.is(deploySettings)) {
@@ -46,18 +47,25 @@ export const updateWorkflowSettings: Action<
   }
 }
 
-export const updateDeployWorkflowDialog: Action<
-  (state: DeploymentDialogState) => void
-> = ({ state: { deploymentDialog } }, update) => {
+export const updateDeployWorkflowDialog = (
+  { state: { deploymentDialog } }: Context,
+  update: (state: DeploymentDialogState) => void
+) => {
   if (deploymentDialog) {
     update(deploymentDialog)
   }
 }
 
-export const triggerDeployment: AsyncAction<{
-  release: string
-  environmentId: number
-}> = async ({ effects, state }, { release, environmentId }) => {
+export const triggerDeployment = async (
+  { effects, state }: Context,
+  {
+    release,
+    environmentId,
+  }: {
+    release: string
+    environmentId: number
+  }
+) => {
   const { selectedApplication } = state
 
   if (!selectedApplication) return
@@ -93,11 +101,18 @@ export const triggerDeployment: AsyncAction<{
   }
 }
 
-export const createNewApplication: Action<{
-  repo: RepoModel
-  name: string
-  releaseFilter: string
-}> = ({ state, actions }, { repo, name, releaseFilter }) => {
+export const createNewApplication = (
+  { state, actions }: Context,
+  {
+    repo,
+    name,
+    releaseFilter,
+  }: {
+    repo: RepoModel
+    name: string
+    releaseFilter: string
+  }
+) => {
   if (!state.newApplicationDialog) return
   if (
     Object.values(state.applicationsById).some(
@@ -115,15 +130,15 @@ export const createNewApplication: Action<{
   actions.editDeployment()
 }
 
-export const cancelNewApplication: Action = ({ state }) => {
+export const cancelNewApplication = ({ state }: Context) => {
   state.newApplicationDialog = null
 }
 
-export const selectApplication: Action<string> = ({ state }, id) => {
+export const selectApplication = ({ state }: Context, id: string) => {
   state.selectedApplicationId = id
 }
 
-export const editApplication: Action = ({ state }) => {
+export const editApplication = ({ state }: Context) => {
   state.editApplicationDialog = createApplicationDialogState()
   if (state.selectedApplication) {
     state.editApplicationDialog.repo = clone(state.selectedApplication.repo)
@@ -133,32 +148,39 @@ export const editApplication: Action = ({ state }) => {
   }
 }
 
-export const editDeployment: Action = ({ state }) => {
+export const editDeployment = ({ state }: Context) => {
   const deploySettings = state.selectedApplication?.deploySettings
   if (DeployWorkflowCodec.is(deploySettings))
     state.deploymentDialog = clone(deploySettings)
 }
 
-export const saveDeployment: Action = ({ state }) => {
+export const saveDeployment = ({ state }: Context) => {
   if (state.selectedApplication && state.deploymentDialog) {
     state.selectedApplication.deploySettings = clone(state.deploymentDialog)
   }
   state.deploymentDialog = null
 }
 
-export const cancelEditDeployment: Action = ({ state }) => {
+export const cancelEditDeployment = ({ state }: Context) => {
   state.deploymentDialog = null
 }
 
-export const cancelEditApplication: Action = ({ state }) => {
+export const cancelEditApplication = ({ state }: Context) => {
   state.editApplicationDialog = null
 }
 
-export const saveApplication: Action<{
-  repo: RepoModel
-  name: string
-  releaseFilter: string
-}> = ({ state }, { repo, name, releaseFilter }) => {
+export const saveApplication = (
+  { state }: Context,
+  {
+    repo,
+    name,
+    releaseFilter,
+  }: {
+    repo: RepoModel
+    name: string
+    releaseFilter: string
+  }
+) => {
   if (!state.editApplicationDialog) return
   const id = state.selectedApplicationId
   if (
@@ -178,10 +200,16 @@ export const saveApplication: Action<{
   state.editApplicationDialog = null
 }
 
-export const updateApplicationDialog: Action<{
-  newOrEdit: 'new' | 'edit'
-  update: (state: ApplicationDialogState) => void
-}> = ({ state }, { newOrEdit, update }) => {
+export const updateApplicationDialog = (
+  { state }: Context,
+  {
+    newOrEdit,
+    update,
+  }: {
+    newOrEdit: 'new' | 'edit'
+    update: (state: ApplicationDialogState) => void
+  }
+) => {
   const dialogState =
     newOrEdit === 'new'
       ? state.newApplicationDialog
@@ -192,7 +220,7 @@ export const updateApplicationDialog: Action<{
   }
 }
 
-export const deleteApplication: Action = ({ state }) => {
+export const deleteApplication = ({ state }: Context) => {
   if (
     !!state.selectedApplication &&
     showConfirm(
@@ -204,17 +232,23 @@ export const deleteApplication: Action = ({ state }) => {
   }
 }
 
-export const showAddEnvironmentModal: Action = ({ state }) => {
+export const showAddEnvironmentModal = ({ state }: Context) => {
   state.addEnvironmentDialog = {
     environmentId: null,
     workflowInputValue: '',
   }
 }
 
-export const updateEnvironmentDialog: Action<{
-  addOrEdit: 'add' | 'edit'
-  update: (state: EnvironmentDialogState) => void
-}> = ({ state }, { addOrEdit, update }) => {
+export const updateEnvironmentDialog = (
+  { state }: Context,
+  {
+    addOrEdit,
+    update,
+  }: {
+    addOrEdit: 'add' | 'edit'
+    update: (state: EnvironmentDialogState) => void
+  }
+) => {
   const dialogState =
     addOrEdit === 'add'
       ? state.addEnvironmentDialog
@@ -224,13 +258,13 @@ export const updateEnvironmentDialog: Action<{
   }
 }
 
-export const cancelAddEnvironment: Action = ({ state }) => {
+export const cancelAddEnvironment = ({ state }: Context) => {
   state.addEnvironmentDialog = null
 }
 
-export const addEnvironment: Action<EnvironmentSettings> = (
-  { state },
-  settings
+export const addEnvironment = (
+  { state }: Context,
+  settings: EnvironmentSettings
 ) => {
   if (state.selectedApplication && state.addEnvironmentDialog?.environmentId) {
     state.selectedApplication.environmentSettingsById[
@@ -240,17 +274,17 @@ export const addEnvironment: Action<EnvironmentSettings> = (
   state.addEnvironmentDialog = null
 }
 
-export const removeEnvironment: Action<number> = ({ state }, id) => {
+export const removeEnvironment = ({ state }: Context, id: number) => {
   if (state.selectedApplication) {
     delete state.selectedApplication.environmentSettingsById[id]
   }
 }
 
-export const exportApplications: AsyncAction = async ({ state, effects }) => {
+export const exportApplications = async ({ state, effects }: Context) => {
   await effects.downloadJson(state.applicationsById, 'gdc-applications.json')
 }
 
-export const importApplications: AsyncAction = async ({ state, effects }) => {
+export const importApplications = async ({ state, effects }: Context) => {
   const json = await effects.uploadJson()
   if (json) {
     const imported = JSON.parse(json)
@@ -267,3 +301,5 @@ export const importApplications: AsyncAction = async ({ state, effects }) => {
     }
   }
 }
+
+export { onInitializeOvermind } from './onInitialize'

@@ -1,23 +1,24 @@
 import { getOrElse } from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/function'
 import { noop } from 'lodash-es'
-import { OnInitialize, RootState } from 'overmind'
+import { Context } from '.'
 import graphQLApi from '../utils/graphQLApi'
 import { restApi } from './effects'
-import { ApplicationsByIdCodec } from './state'
+import { ApplicationsByIdCodec, AppState } from './state'
 
-const onInitialize: OnInitialize = (
-  { state, effects: { storage } },
-  instance
-) => {
+export const onInitializeOvermind = ({
+  state,
+  effects: { storage },
+  reaction,
+}: Context) => {
   function sync<T>(
-    getState: (state: RootState) => T,
+    getState: (state: AppState) => T,
     onValueLoaded: (value: T) => void,
     options: { nested: boolean },
     onValueChanged: (value: T) => void = noop
   ) {
     const key = getState.toString().replace(/^.*\./, 'gdc.')
-    instance.reaction(
+    reaction(
       getState,
       (data) => {
         onValueChanged(data)
@@ -65,5 +66,3 @@ const onInitialize: OnInitialize = (
     { nested: false }
   )
 }
-
-export default onInitialize
