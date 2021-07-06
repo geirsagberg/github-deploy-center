@@ -35,6 +35,8 @@ const getButtonStyle = (state?: DeploymentState) => {
       return { color: colors.orange[400] }
     case DeploymentState.InProgress:
       return { color: colors.yellow[400] }
+    case undefined:
+      return {}
     default:
       return { color: colors.grey[50] }
   }

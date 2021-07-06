@@ -138,6 +138,8 @@ export type DeploymentDialogState = DeployWorkflowSettings
 
 export type SettingsDialogState = {}
 
+export const PendingDeploymentsCodec = t.record(t.string, t.string)
+
 export type AppState = {
   token: string
   appSettings: AppSettings
