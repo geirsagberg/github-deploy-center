@@ -25,10 +25,7 @@ export const DeploymentDialog = () => {
       deploymentDialog.ref
   )
   return (
-    <Dialog
-      open={!!deploymentDialog}
-      fullWidth
-      onBackdropClick={cancelEditDeployment}>
+    <Dialog open={!!deploymentDialog} fullWidth onClose={cancelEditDeployment}>
       {deploymentDialog ? (
         <form
           onSubmit={(event) => {

@@ -5,7 +5,7 @@ import { render } from 'react-dom'
 export const ConfirmDialog = () => {
   const [open, setOpen] = useState(true)
   return (
-    <Dialog open={open} onBackdropClick={() => setOpen(false)}>
+    <Dialog open={open} onClose={() => setOpen(false)}>
       <DialogContent>Hello</DialogContent>
     </Dialog>
   )

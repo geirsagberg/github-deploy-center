@@ -1,12 +1,13 @@
 import { getOrElse } from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/function'
 import { some } from 'lodash'
-import { clone } from 'lodash-es'
+import { clone, get, set } from 'lodash-es'
 import { Context } from '.'
 import { showConfirm } from '../utils/dialog'
 import {
   ApplicationDialogState,
   ApplicationsByIdCodec,
+  AppState,
   createApplicationConfig,
   createApplicationDialogState,
   createDeployWorkflowSettings,
@@ -20,6 +21,21 @@ import {
 
 export const setToken = ({ state }: Context, token: string) => {
   state.token = token
+}
+
+export const showSettings = ({ state }: Context) => (state.settingsDialog = {})
+
+export const hideSettings = ({ state }: Context) => delete state.settingsDialog
+
+export const setState = <T>(
+  { state }: Context,
+  { selector, value }: { selector: (state: AppState) => T; value: T }
+) => {
+  const path = selector.toString().replace(/^.*?\./, '')
+  if (get(state, path) === undefined) {
+    throw Error('Unkown path ' + path)
+  }
+  set(state, path, value)
 }
 
 export const showNewApplicationModal = ({ state }: Context) => {
@@ -126,12 +142,12 @@ export const createNewApplication = (
   const appConfig = createApplicationConfig(repo, name, releaseFilter)
   state.applicationsById[appConfig.id] = appConfig
   state.selectedApplicationId = appConfig.id
-  state.newApplicationDialog = null
+  delete state.newApplicationDialog
   actions.editDeployment()
 }
 
 export const cancelNewApplication = ({ state }: Context) => {
-  state.newApplicationDialog = null
+  delete state.newApplicationDialog
 }
 
 export const selectApplication = ({ state }: Context, id: string) => {
@@ -158,15 +174,15 @@ export const saveDeployment = ({ state }: Context) => {
   if (state.selectedApplication && state.deploymentDialog) {
     state.selectedApplication.deploySettings = clone(state.deploymentDialog)
   }
-  state.deploymentDialog = null
+  delete state.deploymentDialog
 }
 
 export const cancelEditDeployment = ({ state }: Context) => {
-  state.deploymentDialog = null
+  delete state.deploymentDialog
 }
 
 export const cancelEditApplication = ({ state }: Context) => {
-  state.editApplicationDialog = null
+  delete state.editApplicationDialog
 }
 
 export const saveApplication = (
@@ -197,7 +213,7 @@ export const saveApplication = (
   state.applicationsById[id].repo = clone(repo)
   state.applicationsById[id].name = name
   state.applicationsById[id].releaseFilter = releaseFilter
-  state.editApplicationDialog = null
+  delete state.editApplicationDialog
 }
 
 export const updateApplicationDialog = (
@@ -228,7 +244,7 @@ export const deleteApplication = ({ state }: Context) => {
     )
   ) {
     delete state.applicationsById[state.selectedApplicationId]
-    state.editApplicationDialog = null
+    delete state.editApplicationDialog
   }
 }
 
@@ -259,7 +275,7 @@ export const updateEnvironmentDialog = (
 }
 
 export const cancelAddEnvironment = ({ state }: Context) => {
-  state.addEnvironmentDialog = null
+  delete state.addEnvironmentDialog
 }
 
 export const addEnvironment = (
@@ -271,7 +287,7 @@ export const addEnvironment = (
       state.addEnvironmentDialog.environmentId
     ] = settings
   }
-  state.addEnvironmentDialog = null
+  delete state.addEnvironmentDialog
 }
 
 export const removeEnvironment = ({ state }: Context, id: number) => {

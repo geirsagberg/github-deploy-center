@@ -3,7 +3,7 @@ import {
   createActionsHook,
   createEffectsHook,
   createReactionHook,
-  createStateHook,
+  createStateHook
 } from 'overmind-react'
 import * as actions from './actions'
 import * as effects from './effects'

@@ -107,6 +107,12 @@ export const ApplicationsByIdCodec = t.record(t.string, ApplicationConfigCodec)
 
 export const DeploySettingsByRepoCodec = t.record(t.string, DeploySettingsCodec)
 
+export const AppSettingsCodec = t.type({
+  deployTimeoutSecs: t.number
+})
+
+export type AppSettings = t.TypeOf<typeof AppSettingsCodec>
+
 export type DeploySettings = t.TypeOf<typeof DeploySettingsCodec>
 
 export type ApplicationDialogState = {
@@ -129,30 +135,32 @@ export type EnvironmentDialogState = {
 
 export type DeploymentDialogState = DeployWorkflowSettings
 
+export type SettingsDialogState = {}
+
 export type AppState = {
   token: string
+  appSettings: AppSettings
   applicationsById: Record<string, ApplicationConfig>
   selectedApplicationId: string
-  selectedApplication: ApplicationConfig | null
-  newApplicationDialog: ApplicationDialogState | null
-  editApplicationDialog: ApplicationDialogState | null
-  addEnvironmentDialog: EnvironmentDialogState | null
-  editEnvironmentDialog: EnvironmentDialogState | null
-  deploymentDialog: DeploymentDialogState | null
+  selectedApplication?: ApplicationConfig
+  newApplicationDialog?: ApplicationDialogState
+  editApplicationDialog?: ApplicationDialogState
+  addEnvironmentDialog?: EnvironmentDialogState
+  editEnvironmentDialog?: EnvironmentDialogState
+  deploymentDialog?: DeploymentDialogState
+  settingsDialog?: SettingsDialogState
 }
 
 const state: AppState = {
   token: '',
+  appSettings: {
+    deployTimeoutSecs: 60
+  },
   applicationsById: {},
   selectedApplicationId: '',
   get selectedApplication() {
-    return this.applicationsById[this.selectedApplicationId] ?? null
+    return this.applicationsById[this.selectedApplicationId]
   },
-  newApplicationDialog: null,
-  editApplicationDialog: null,
-  addEnvironmentDialog: null,
-  editEnvironmentDialog: null,
-  deploymentDialog: null,
 }
 
 export default state

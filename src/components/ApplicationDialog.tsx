@@ -18,7 +18,7 @@ import Expander from './Expander'
 import { RepoSearchBox } from './RepoSearchView'
 
 export const ApplicationDialog: FC<{
-  dialogState: ApplicationDialogState | null
+  dialogState?: ApplicationDialogState
   newOrEdit: 'new' | 'edit'
   title: string
   onSave: ({
@@ -38,7 +38,7 @@ export const ApplicationDialog: FC<{
     updateApplicationDialog({ newOrEdit, update })
   const options = orderBy(data ?? [], (d) => d.owner.toLowerCase())
   return (
-    <Dialog open={!!dialogState} fullWidth onBackdropClick={onCancel}>
+    <Dialog open={!!dialogState} fullWidth onClose={onCancel}>
       {dialogState ? (
         <form
           onSubmit={(event) => {

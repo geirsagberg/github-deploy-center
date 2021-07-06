@@ -1,4 +1,12 @@
-import { Box, Container, Paper, TextField, Typography } from '@material-ui/core'
+import {
+  Box,
+  Container,
+  Icon,
+  IconButton,
+  Paper,
+  TextField,
+  Typography,
+} from '@material-ui/core'
 import React from 'react'
 import {
   EditApplicationDialog,
@@ -9,15 +17,21 @@ import { EnvironmentsView } from './components/EnvironmentsView'
 import { ManageApplicationsView } from './components/ManageApplicationsView'
 import { ReleasesTableView } from './components/ReleasesTableView'
 import { SelectApplicationView } from './components/SelectApplicationView'
+import { SettingsDialog } from './components/SettingsDialog'
 import { useActions, useAppState } from './overmind'
 
 const App = () => {
   const { token } = useAppState()
-  const { setToken } = useActions()
+  const { setToken, showSettings } = useActions()
   return (
     <Container>
       <Box p={4} display="grid" gridGap="1rem" component={Paper}>
-        <Typography variant="h1">GitHub Deploy Center</Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="h1">GitHub Deploy Center</Typography>
+          <IconButton title="Settings" onClick={() => showSettings()}>
+            <Icon>settings</Icon>
+          </IconButton>
+        </Box>
         <TextField
           label="Personal Access Token"
           value={token}
@@ -36,6 +50,7 @@ const App = () => {
           </>
         )}
       </Box>
+      <SettingsDialog />
     </Container>
   )
 }
