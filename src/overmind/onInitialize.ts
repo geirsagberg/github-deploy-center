@@ -4,7 +4,12 @@ import { noop } from 'lodash-es'
 import { Context } from '.'
 import graphQLApi from '../utils/graphQLApi'
 import { restApi } from './effects'
-import { ApplicationsByIdCodec, AppState } from './state'
+import {
+  ApplicationsByIdCodec,
+  AppSettingsCodec,
+  AppState,
+  defaultAppSettings,
+} from './state'
 
 export const onInitializeOvermind = ({
   state,
@@ -64,5 +69,19 @@ export const onInitializeOvermind = ({
     (state) => state.selectedApplicationId,
     (id) => (state.selectedApplicationId = id),
     { nested: false }
+  )
+
+  sync(
+    (state) => state.appSettings,
+    (data) => {
+      state.appSettings = pipe(
+        AppSettingsCodec.decode(data),
+        getOrElse((e) => {
+          console.error(e)
+          return defaultAppSettings
+        })
+      )
+    },
+    { nested: true }
   )
 }

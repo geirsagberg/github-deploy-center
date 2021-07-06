@@ -38,4 +38,7 @@ fragment Deploy on Deployment {
   createdAt
   environment
   state
+  latestStatus {
+    createdAt
+  }
 }

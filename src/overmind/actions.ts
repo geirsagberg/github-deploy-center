@@ -1,3 +1,4 @@
+import dayjs from 'dayjs'
 import { getOrElse } from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/function'
 import { some } from 'lodash'
@@ -92,16 +93,22 @@ export const triggerDeployment = async (
 
   const environmentSettings = environmentSettingsById[environmentId]
 
-  const repo = selectedApplication.repo
+  const { repo } = selectedApplication
 
   if (
     showConfirm(
       `Are you sure you want to deploy "${release}" to "${environmentSettings.name}" in "${repo.owner}/${repo.name}@${deploySettings.ref}"?`
     )
   ) {
+    state.pendingDeployments[`${release}_${environmentId}`] = dayjs()
+
     const { owner, name } = repo
     const { ref, workflowId, environmentKey, releaseKey, extraArgs } =
       deploySettings
+
+    const environmentArg =
+      environmentSettings.workflowInputValue || environmentSettings.name
+
     await effects.restApi.octokit.actions.createWorkflowDispatch({
       owner,
       repo: name,
@@ -109,8 +116,7 @@ export const triggerDeployment = async (
       workflow_id: workflowId,
       inputs: {
         [releaseKey]: release,
-        [environmentKey]:
-          environmentSettings.workflowInputValue || environmentSettings.name,
+        [environmentKey]: environmentArg,
         ...extraArgs,
       },
     })

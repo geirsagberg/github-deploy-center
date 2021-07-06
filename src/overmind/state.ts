@@ -26,6 +26,7 @@ export type DeploymentModel = {
   createdAt: Dayjs
   environment: string
   state: DeploymentState
+  modifiedAt?: Dayjs
 }
 
 export const DeployWorkflowCodec = t.type({
@@ -108,7 +109,7 @@ export const ApplicationsByIdCodec = t.record(t.string, ApplicationConfigCodec)
 export const DeploySettingsByRepoCodec = t.record(t.string, DeploySettingsCodec)
 
 export const AppSettingsCodec = t.type({
-  deployTimeoutSecs: t.number
+  deployTimeoutSecs: t.number,
 })
 
 export type AppSettings = t.TypeOf<typeof AppSettingsCodec>
@@ -149,18 +150,22 @@ export type AppState = {
   editEnvironmentDialog?: EnvironmentDialogState
   deploymentDialog?: DeploymentDialogState
   settingsDialog?: SettingsDialogState
+  pendingDeployments: Record<string, Dayjs>
+}
+
+export const defaultAppSettings: AppSettings = {
+  deployTimeoutSecs: 60,
 }
 
 const state: AppState = {
   token: '',
-  appSettings: {
-    deployTimeoutSecs: 60
-  },
+  appSettings: defaultAppSettings,
   applicationsById: {},
   selectedApplicationId: '',
   get selectedApplication() {
     return this.applicationsById[this.selectedApplicationId]
   },
+  pendingDeployments: {},
 }
 
 export default state

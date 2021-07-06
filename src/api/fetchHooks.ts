@@ -51,11 +51,13 @@ export const useFetchReleases = () => {
                         createdAt,
                         environment,
                         state,
+                        latestStatus,
                       }): DeploymentModel => ({
                         id,
                         createdAt: dayjs(createdAt),
                         environment: environment || '',
                         state: state || DeploymentState.Inactive,
+                        modifiedAt: dayjs(latestStatus?.createdAt),
                       })
                     )
                     .orderBy((n) => n.createdAt, 'desc') || [],

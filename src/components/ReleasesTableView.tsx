@@ -25,7 +25,7 @@ import {
   ReleaseModel,
 } from '../overmind/state'
 
-const getButtonStyle = (state: DeploymentState) => {
+const getButtonStyle = (state?: DeploymentState) => {
   switch (state) {
     case DeploymentState.Active:
       return { backgroundColor: colors.blue[400] }
@@ -40,12 +40,8 @@ const getButtonStyle = (state: DeploymentState) => {
   }
 }
 
-const getButtonVariant = (state: DeploymentState): 'contained' | 'outlined' => {
-  return state === DeploymentState.Active ? 'contained' : 'outlined'
-}
-
 export const ReleasesTableView = () => {
-  const { selectedApplication } = useAppState()
+  const { selectedApplication, pendingDeployments } = useAppState()
   const repo = selectedApplication?.repo
   const { triggerDeployment, removeEnvironment } = useActions()
   const allReleaseResultsForTag = useFetchReleases()
@@ -112,23 +108,35 @@ export const ReleasesTableView = () => {
     const latestRelease = releasesByEnvironment[environment.id]?.[0]
     const isAfterLatest =
       !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
-    const deployButtonVariant = isAfterLatest ? 'contained' : 'outlined'
+
+    const pendingDeployment =
+      pendingDeployments[`${release.tagName}_${environment.id}`]
+    const modifiedAt = deployment?.modifiedAt
+    const deploymentState =
+      pendingDeployment &&
+      (!modifiedAt || pendingDeployment.isAfter(modifiedAt))
+        ? DeploymentState.Pending
+        : deployment?.state
+
+    const deployButtonVariant =
+      (isAfterLatest && !deploymentState) ||
+      deploymentState === DeploymentState.Active
+        ? 'contained'
+        : 'outlined'
 
     return (
       <Button
         disabled={isLoading}
-        variant={
-          deployment ? getButtonVariant(deployment.state) : deployButtonVariant
-        }
-        color={!deployment && isAfterLatest ? 'primary' : 'default'}
-        style={deployment ? getButtonStyle(deployment.state) : {}}
+        variant={deployButtonVariant}
+        color={!deploymentState && isAfterLatest ? 'primary' : 'default'}
+        style={getButtonStyle(deploymentState)}
         onClick={() =>
           mutate({
             release: release.tagName,
             environmentId: environment.id,
           })
         }>
-        {deployment?.state ?? 'Deploy'}
+        {deploymentState?.replaceAll('_', ' ') ?? 'Deploy'}
       </Button>
     )
   }

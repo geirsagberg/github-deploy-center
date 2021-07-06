@@ -21106,6 +21106,10 @@ export type CommitFragmentFragment = (
 export type DeployFragment = (
   { __typename: 'Deployment' }
   & Pick<Deployment, 'id' | 'createdAt' | 'environment' | 'state'>
+  & { latestStatus: Maybe<(
+    { __typename: 'DeploymentStatus' }
+    & Pick<DeploymentStatus, 'createdAt'>
+  )> }
 );
 
 export type FetchReposWithWriteAccessQueryVariables = Exact<{
@@ -21152,6 +21156,9 @@ export const DeployFragmentDoc = gql`
   createdAt
   environment
   state
+  latestStatus {
+    createdAt
+  }
 }
     `;
 export const CommitFragmentFragmentDoc = gql`
