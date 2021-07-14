@@ -70,6 +70,7 @@ export const EnvironmentDialog: FC<{
                       ? environmentsById[dialogState.environmentId]
                       : null
                   }
+                  openOnFocus
                   onChange={(_, value) =>
                     updateDialogState(
                       (state) => (state.environmentId = value?.id ?? null)
@@ -81,6 +82,10 @@ export const EnvironmentDialog: FC<{
                       variant="outlined"
                       label="Search"
                       {...params}
+                      inputProps={{
+                        ...params.inputProps,
+                        'data-lpignore': true,
+                      }}
                       InputProps={{
                         ...params.InputProps,
                         endAdornment:

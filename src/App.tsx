@@ -8,6 +8,7 @@ import {
   Typography,
 } from '@material-ui/core'
 import React from 'react'
+import ModalContainer from 'react-modal-promise'
 import {
   EditApplicationDialog,
   NewApplicationDialog,
@@ -51,6 +52,7 @@ const App = () => {
         )}
       </Box>
       <SettingsDialog />
+      <ModalContainer />
     </Container>
   )
 }

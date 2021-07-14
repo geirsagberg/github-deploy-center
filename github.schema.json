@@ -2058,6 +2058,73 @@
             },
             {
               "args": [
+                {
+                  "defaultValue": null,
+                  "description": "Returns the elements in the list that come after the specified cursor.",
+                  "name": "after",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the elements in the list that come before the specified cursor.",
+                  "name": "before",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the first _n_ elements from the list.",
+                  "name": "first",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the last _n_ elements from the list.",
+                  "name": "last",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": "{field: ALLOW_LIST_VALUE, direction: ASC}",
+                  "description": "Ordering options for IP allow list entries returned.",
+                  "name": "orderBy",
+                  "type": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "IpAllowListEntryOrder",
+                    "ofType": null
+                  }
+                }
+              ],
+              "deprecationReason": null,
+              "description": "The IP addresses of the app.",
+              "isDeprecated": false,
+              "name": "ipAllowListEntries",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "IpAllowListEntryConnection",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
               ],
               "deprecationReason": null,
               "description": "The hex color code, without the leading '#', for the logo background.",
@@ -5152,6 +5219,23 @@
               "description": "Are commits required to be signed.",
               "isDeprecated": false,
               "name": "requiresCommitSignatures",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Boolean",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "Are conversations required to be resolved before merging.",
+              "isDeprecated": false,
+              "name": "requiresConversationResolution",
               "type": {
                 "kind": "NON_NULL",
                 "name": null,
@@ -14654,6 +14738,16 @@
                     "ofType": null
                   }
                 }
+              }
+            },
+            {
+              "defaultValue": null,
+              "description": "Are conversations required to be resolved before merging.",
+              "name": "requiresConversationResolution",
+              "type": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
               }
             },
             {
@@ -27345,6 +27439,23 @@
               "args": [
               ],
               "deprecationReason": null,
+              "description": "The setting value for whether the enterprise has IP allow list configuration for installed GitHub Apps enabled.",
+              "isDeprecated": false,
+              "name": "ipAllowListForInstalledAppsEnabledSetting",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "ENUM",
+                  "name": "IpAllowListForInstalledAppsEnabledSettingValue",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
               "description": "Whether or not the default repository permission is currently being updated.",
               "isDeprecated": false,
               "name": "isUpdatingDefaultRepositoryPermission",
@@ -35955,6 +36066,29 @@
           "possibleTypes": null
         },
         {
+          "description": "The possible values for the IP allow list configuration for installed GitHub Apps setting.",
+          "enumValues": [
+            {
+              "deprecationReason": null,
+              "description": "The setting is enabled for the owner.",
+              "isDeprecated": false,
+              "name": "ENABLED"
+            },
+            {
+              "deprecationReason": null,
+              "description": "The setting is disabled for the owner.",
+              "isDeprecated": false,
+              "name": "DISABLED"
+            }
+          ],
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "kind": "ENUM",
+          "name": "IpAllowListForInstalledAppsEnabledSettingValue",
+          "possibleTypes": null
+        },
+        {
           "description": "Types that can own an IP allow list.",
           "enumValues": null,
           "fields": null,
@@ -35963,6 +36097,11 @@
           "kind": "UNION",
           "name": "IpAllowListOwner",
           "possibleTypes": [
+            {
+              "kind": "OBJECT",
+              "name": "App",
+              "ofType": null
+            },
             {
               "kind": "OBJECT",
               "name": "Enterprise",
@@ -36990,6 +37129,23 @@
               "description": "Identifies the issue title.",
               "isDeprecated": false,
               "name": "title",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "Identifies the issue title rendered to HTML.",
+              "isDeprecated": false,
+              "name": "titleHTML",
               "type": {
                 "kind": "NON_NULL",
                 "name": null,
@@ -49427,6 +49583,33 @@
               "args": [
                 {
                   "defaultValue": null,
+                  "description": "Parameters for UpdateIpAllowListForInstalledAppsEnabledSetting",
+                  "name": "input",
+                  "type": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "INPUT_OBJECT",
+                      "name": "UpdateIpAllowListForInstalledAppsEnabledSettingInput",
+                      "ofType": null
+                    }
+                  }
+                }
+              ],
+              "deprecationReason": null,
+              "description": "Sets whether IP allow list configuration for installed GitHub Apps is enabled on an owner.",
+              "isDeprecated": false,
+              "name": "updateIpAllowListForInstalledAppsEnabledSetting",
+              "type": {
+                "kind": "OBJECT",
+                "name": "UpdateIpAllowListForInstalledAppsEnabledSettingPayload",
+                "ofType": null
+              }
+            },
+            {
+              "args": [
+                {
+                  "defaultValue": null,
                   "description": "Parameters for UpdateIssue",
                   "name": "input",
                   "type": {
@@ -50728,6 +50911,11 @@
             {
               "kind": "OBJECT",
               "name": "SecurityAdvisory",
+              "ofType": null
+            },
+            {
+              "kind": "OBJECT",
+              "name": "SponsorsActivity",
               "ofType": null
             },
             {
@@ -60275,6 +60463,23 @@
             },
             {
               "args": [
+              ],
+              "deprecationReason": null,
+              "description": "The setting value for whether the organization has IP allow list configuration for installed GitHub Apps enabled.",
+              "isDeprecated": false,
+              "name": "ipAllowListForInstalledAppsEnabledSetting",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "ENUM",
+                  "name": "IpAllowListForInstalledAppsEnabledSettingValue",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
                 {
                   "defaultValue": null,
                   "description": "The target account's login.",
@@ -61424,6 +61629,83 @@
                 "kind": "OBJECT",
                 "name": "OrganizationIdentityProvider",
                 "ofType": null
+              }
+            },
+            {
+              "args": [
+                {
+                  "defaultValue": null,
+                  "description": "Returns the elements in the list that come after the specified cursor.",
+                  "name": "after",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the elements in the list that come before the specified cursor.",
+                  "name": "before",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the first _n_ elements from the list.",
+                  "name": "first",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the last _n_ elements from the list.",
+                  "name": "last",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": "MONTH",
+                  "description": "Filter activities returned to only those that occurred in a given time range.",
+                  "name": "period",
+                  "type": {
+                    "kind": "ENUM",
+                    "name": "SponsorsActivityPeriod",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": "{field: TIMESTAMP, direction: DESC}",
+                  "description": "Ordering options for activity returned from the connection.",
+                  "name": "orderBy",
+                  "type": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "SponsorsActivityOrder",
+                    "ofType": null
+                  }
+                }
+              ],
+              "deprecationReason": null,
+              "description": "Events involving this sponsorable, such as new sponsorships.",
+              "isDeprecated": false,
+              "name": "sponsorsActivities",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "SponsorsActivityConnection",
+                  "ofType": null
+                }
               }
             },
             {
@@ -71678,6 +71960,23 @@
               "args": [
               ],
               "deprecationReason": null,
+              "description": "Identifies the pull request title rendered to HTML.",
+              "isDeprecated": false,
+              "name": "titleHTML",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "HTML",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
               "description": "Identifies the date and time when the object was last updated.",
               "isDeprecated": false,
               "name": "updatedAt",
@@ -79142,6 +79441,63 @@
             },
             {
               "args": [
+                {
+                  "defaultValue": null,
+                  "description": "Returns the elements in the list that come after the specified cursor.",
+                  "name": "after",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the elements in the list that come before the specified cursor.",
+                  "name": "before",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the first _n_ elements from the list.",
+                  "name": "first",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the last _n_ elements from the list.",
+                  "name": "last",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                }
+              ],
+              "deprecationReason": null,
+              "description": "Reactors to the reaction subject with the emotion represented by this reaction group.",
+              "isDeprecated": false,
+              "name": "reactors",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ReactorConnection",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
               ],
               "deprecationReason": null,
               "description": "The subject that was reacted to.",
@@ -79200,9 +79556,9 @@
                   }
                 }
               ],
-              "deprecationReason": null,
+              "deprecationReason": "Reactors can now be mannequins, bots, and organizations. Use the `reactors` field instead. Removal on 2021-10-01 UTC.",
               "description": "Users who have reacted to the reaction subject with the emotion represented by this reaction group",
-              "isDeprecated": false,
+              "isDeprecated": true,
               "name": "users",
               "type": {
                 "kind": "NON_NULL",
@@ -79293,6 +79649,180 @@
           "interfaces": null,
           "kind": "ENUM",
           "name": "ReactionOrderField",
+          "possibleTypes": null
+        },
+        {
+          "description": "Types that can be assigned to reactions.",
+          "enumValues": null,
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "kind": "UNION",
+          "name": "Reactor",
+          "possibleTypes": [
+            {
+              "kind": "OBJECT",
+              "name": "Bot",
+              "ofType": null
+            },
+            {
+              "kind": "OBJECT",
+              "name": "Mannequin",
+              "ofType": null
+            },
+            {
+              "kind": "OBJECT",
+              "name": "Organization",
+              "ofType": null
+            },
+            {
+              "kind": "OBJECT",
+              "name": "User",
+              "ofType": null
+            }
+          ]
+        },
+        {
+          "description": "The connection type for Reactor.",
+          "enumValues": null,
+          "fields": [
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "A list of edges.",
+              "isDeprecated": false,
+              "name": "edges",
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ReactorEdge",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "A list of nodes.",
+              "isDeprecated": false,
+              "name": "nodes",
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "UNION",
+                  "name": "Reactor",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "Information to aid in pagination.",
+              "isDeprecated": false,
+              "name": "pageInfo",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "PageInfo",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "Identifies the total count of items in the connection.",
+              "isDeprecated": false,
+              "name": "totalCount",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [
+          ],
+          "kind": "OBJECT",
+          "name": "ReactorConnection",
+          "possibleTypes": null
+        },
+        {
+          "description": "Represents an author of a reaction.",
+          "enumValues": null,
+          "fields": [
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "A cursor for use in pagination.",
+              "isDeprecated": false,
+              "name": "cursor",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "The author of the reaction.",
+              "isDeprecated": false,
+              "name": "node",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "UNION",
+                  "name": "Reactor",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "The moment when the user made the reaction.",
+              "isDeprecated": false,
+              "name": "reactedAt",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "DateTime",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [
+          ],
+          "kind": "OBJECT",
+          "name": "ReactorEdge",
           "possibleTypes": null
         },
         {
@@ -79938,6 +80468,23 @@
               "description": "Are reviews from code owners required to update matching branches.",
               "isDeprecated": false,
               "name": "requiresCodeOwnerReviews",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Boolean",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "Are conversations required to be resolved before merging.",
+              "isDeprecated": false,
+              "name": "requiresConversationResolution",
               "type": {
                 "kind": "NON_NULL",
                 "name": null,
@@ -99059,36 +99606,6 @@
           "enumValues": [
             {
               "deprecationReason": null,
-              "description": "Ruby gems hosted at RubyGems.org",
-              "isDeprecated": false,
-              "name": "RUBYGEMS"
-            },
-            {
-              "deprecationReason": null,
-              "description": "JavaScript packages hosted at npmjs.com",
-              "isDeprecated": false,
-              "name": "NPM"
-            },
-            {
-              "deprecationReason": null,
-              "description": "Python packages hosted at PyPI.org",
-              "isDeprecated": false,
-              "name": "PIP"
-            },
-            {
-              "deprecationReason": null,
-              "description": "Java artifacts hosted at the Maven central repository",
-              "isDeprecated": false,
-              "name": "MAVEN"
-            },
-            {
-              "deprecationReason": null,
-              "description": ".NET packages hosted at the NuGet Gallery",
-              "isDeprecated": false,
-              "name": "NUGET"
-            },
-            {
-              "deprecationReason": null,
               "description": "PHP packages hosted at packagist.org",
               "isDeprecated": false,
               "name": "COMPOSER"
@@ -99098,6 +99615,42 @@
               "description": "Go modules",
               "isDeprecated": false,
               "name": "GO"
+            },
+            {
+              "deprecationReason": null,
+              "description": "Java artifacts hosted at the Maven central repository",
+              "isDeprecated": false,
+              "name": "MAVEN"
+            },
+            {
+              "deprecationReason": null,
+              "description": "JavaScript packages hosted at npmjs.com",
+              "isDeprecated": false,
+              "name": "NPM"
+            },
+            {
+              "deprecationReason": null,
+              "description": ".NET packages hosted at the NuGet Gallery",
+              "isDeprecated": false,
+              "name": "NUGET"
+            },
+            {
+              "deprecationReason": null,
+              "description": "Python packages hosted at PyPI.org",
+              "isDeprecated": false,
+              "name": "PIP"
+            },
+            {
+              "deprecationReason": null,
+              "description": "Ruby gems hosted at RubyGems.org",
+              "isDeprecated": false,
+              "name": "RUBYGEMS"
+            },
+            {
+              "deprecationReason": null,
+              "description": "Applications, runtimes, operating systems and other kinds of software",
+              "isDeprecated": false,
+              "name": "OTHER"
             }
           ],
           "fields": null,
@@ -100400,6 +100953,83 @@
             },
             {
               "args": [
+                {
+                  "defaultValue": null,
+                  "description": "Returns the elements in the list that come after the specified cursor.",
+                  "name": "after",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the elements in the list that come before the specified cursor.",
+                  "name": "before",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the first _n_ elements from the list.",
+                  "name": "first",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the last _n_ elements from the list.",
+                  "name": "last",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": "MONTH",
+                  "description": "Filter activities returned to only those that occurred in a given time range.",
+                  "name": "period",
+                  "type": {
+                    "kind": "ENUM",
+                    "name": "SponsorsActivityPeriod",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": "{field: TIMESTAMP, direction: DESC}",
+                  "description": "Ordering options for activity returned from the connection.",
+                  "name": "orderBy",
+                  "type": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "SponsorsActivityOrder",
+                    "ofType": null
+                  }
+                }
+              ],
+              "deprecationReason": null,
+              "description": "Events involving this sponsorable, such as new sponsorships.",
+              "isDeprecated": false,
+              "name": "sponsorsActivities",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "SponsorsActivityConnection",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
               ],
               "deprecationReason": null,
               "description": "The GitHub Sponsors listing for this user or organization.",
@@ -100820,6 +101450,386 @@
           "possibleTypes": null
         },
         {
+          "description": "An event related to sponsorship activity.",
+          "enumValues": null,
+          "fields": [
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "What action this activity indicates took place.",
+              "isDeprecated": false,
+              "name": "action",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "ENUM",
+                  "name": "SponsorsActivityAction",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": null,
+              "isDeprecated": false,
+              "name": "id",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "ID",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "The tier that the sponsorship used to use, for tier change events.",
+              "isDeprecated": false,
+              "name": "previousSponsorsTier",
+              "type": {
+                "kind": "OBJECT",
+                "name": "SponsorsTier",
+                "ofType": null
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "The user or organization who triggered this activity and was/is sponsoring the sponsorable.",
+              "isDeprecated": false,
+              "name": "sponsor",
+              "type": {
+                "kind": "UNION",
+                "name": "Sponsor",
+                "ofType": null
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "The user or organization that is being sponsored, the maintainer.",
+              "isDeprecated": false,
+              "name": "sponsorable",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "INTERFACE",
+                  "name": "Sponsorable",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "The associated sponsorship tier.",
+              "isDeprecated": false,
+              "name": "sponsorsTier",
+              "type": {
+                "kind": "OBJECT",
+                "name": "SponsorsTier",
+                "ofType": null
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "The timestamp of this event.",
+              "isDeprecated": false,
+              "name": "timestamp",
+              "type": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [
+            {
+              "kind": "INTERFACE",
+              "name": "Node",
+              "ofType": null
+            }
+          ],
+          "kind": "OBJECT",
+          "name": "SponsorsActivity",
+          "possibleTypes": null
+        },
+        {
+          "description": "The possible actions that GitHub Sponsors activities can represent.",
+          "enumValues": [
+            {
+              "deprecationReason": null,
+              "description": "The activity was starting a sponsorship.",
+              "isDeprecated": false,
+              "name": "NEW_SPONSORSHIP"
+            },
+            {
+              "deprecationReason": null,
+              "description": "The activity was cancelling a sponsorship.",
+              "isDeprecated": false,
+              "name": "CANCELLED_SPONSORSHIP"
+            },
+            {
+              "deprecationReason": null,
+              "description": "The activity was changing the sponsorship tier, either directly by the sponsor or by a scheduled/pending change.",
+              "isDeprecated": false,
+              "name": "TIER_CHANGE"
+            },
+            {
+              "deprecationReason": null,
+              "description": "The activity was funds being refunded to the sponsor or GitHub.",
+              "isDeprecated": false,
+              "name": "REFUND"
+            },
+            {
+              "deprecationReason": null,
+              "description": "The activity was scheduling a downgrade or cancellation.",
+              "isDeprecated": false,
+              "name": "PENDING_CHANGE"
+            },
+            {
+              "deprecationReason": null,
+              "description": "The activity was disabling matching for a previously matched sponsorship.",
+              "isDeprecated": false,
+              "name": "SPONSOR_MATCH_DISABLED"
+            }
+          ],
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "kind": "ENUM",
+          "name": "SponsorsActivityAction",
+          "possibleTypes": null
+        },
+        {
+          "description": "The connection type for SponsorsActivity.",
+          "enumValues": null,
+          "fields": [
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "A list of edges.",
+              "isDeprecated": false,
+              "name": "edges",
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "SponsorsActivityEdge",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "A list of nodes.",
+              "isDeprecated": false,
+              "name": "nodes",
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "SponsorsActivity",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "Information to aid in pagination.",
+              "isDeprecated": false,
+              "name": "pageInfo",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "PageInfo",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "Identifies the total count of items in the connection.",
+              "isDeprecated": false,
+              "name": "totalCount",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [
+          ],
+          "kind": "OBJECT",
+          "name": "SponsorsActivityConnection",
+          "possibleTypes": null
+        },
+        {
+          "description": "An edge in a connection.",
+          "enumValues": null,
+          "fields": [
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "A cursor for use in pagination.",
+              "isDeprecated": false,
+              "name": "cursor",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "The item at the end of the edge.",
+              "isDeprecated": false,
+              "name": "node",
+              "type": {
+                "kind": "OBJECT",
+                "name": "SponsorsActivity",
+                "ofType": null
+              }
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [
+          ],
+          "kind": "OBJECT",
+          "name": "SponsorsActivityEdge",
+          "possibleTypes": null
+        },
+        {
+          "description": "Ordering options for GitHub Sponsors activity connections.",
+          "enumValues": null,
+          "fields": null,
+          "inputFields": [
+            {
+              "defaultValue": null,
+              "description": "The field to order activity by.",
+              "name": "field",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "ENUM",
+                  "name": "SponsorsActivityOrderField",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "defaultValue": null,
+              "description": "The ordering direction.",
+              "name": "direction",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "ENUM",
+                  "name": "OrderDirection",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "interfaces": null,
+          "kind": "INPUT_OBJECT",
+          "name": "SponsorsActivityOrder",
+          "possibleTypes": null
+        },
+        {
+          "description": "Properties by which GitHub Sponsors activity connections can be ordered.",
+          "enumValues": [
+            {
+              "deprecationReason": null,
+              "description": "Order activities by when they happened.",
+              "isDeprecated": false,
+              "name": "TIMESTAMP"
+            }
+          ],
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "kind": "ENUM",
+          "name": "SponsorsActivityOrderField",
+          "possibleTypes": null
+        },
+        {
+          "description": "The possible time periods for which Sponsors activities can be requested.",
+          "enumValues": [
+            {
+              "deprecationReason": null,
+              "description": "The previous calendar day.",
+              "isDeprecated": false,
+              "name": "DAY"
+            },
+            {
+              "deprecationReason": null,
+              "description": "The previous seven days.",
+              "isDeprecated": false,
+              "name": "WEEK"
+            },
+            {
+              "deprecationReason": null,
+              "description": "The previous thirty days.",
+              "isDeprecated": false,
+              "name": "MONTH"
+            },
+            {
+              "deprecationReason": null,
+              "description": "Don't restrict the activity to any date range, include all activity.",
+              "isDeprecated": false,
+              "name": "ALL"
+            }
+          ],
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "kind": "ENUM",
+          "name": "SponsorsActivityPeriod",
+          "possibleTypes": null
+        },
+        {
           "description": "A goal associated with a GitHub Sponsors listing, representing a target the sponsored maintainer would like to attain.",
           "enumValues": null,
           "fields": [
@@ -101168,7 +102178,7 @@
               "args": [
               ],
               "deprecationReason": null,
-              "description": "Get a different tier for this tier's maintainer that is at the same frequency as this tier but with a lesser cost. Returns the published tier with the monthly price closest to this tier's without going over.",
+              "description": "Get a different tier for this tier's maintainer that is at the same frequency as this tier but with an equal or lesser cost. Returns the published tier with the monthly price closest to this tier's without going over.",
               "isDeprecated": false,
               "name": "closestLesserValueTier",
               "type": {
@@ -112547,6 +113557,16 @@
             },
             {
               "defaultValue": null,
+              "description": "Are conversations required to be resolved before merging.",
+              "name": "requiresConversationResolution",
+              "type": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            {
+              "defaultValue": null,
               "description": "A unique identifier for the client performing the mutation.",
               "name": "clientMutationId",
               "type": {
@@ -115019,6 +116039,93 @@
           "possibleTypes": null
         },
         {
+          "description": "Autogenerated input type of UpdateIpAllowListForInstalledAppsEnabledSetting",
+          "enumValues": null,
+          "fields": null,
+          "inputFields": [
+            {
+              "defaultValue": null,
+              "description": "The ID of the owner.",
+              "name": "ownerId",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "ID",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "defaultValue": null,
+              "description": "The value for the IP allow list configuration for installed GitHub Apps setting.",
+              "name": "settingValue",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "ENUM",
+                  "name": "IpAllowListForInstalledAppsEnabledSettingValue",
+                  "ofType": null
+                }
+              }
+            },
+            {
+              "defaultValue": null,
+              "description": "A unique identifier for the client performing the mutation.",
+              "name": "clientMutationId",
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            }
+          ],
+          "interfaces": null,
+          "kind": "INPUT_OBJECT",
+          "name": "UpdateIpAllowListForInstalledAppsEnabledSettingInput",
+          "possibleTypes": null
+        },
+        {
+          "description": "Autogenerated return type of UpdateIpAllowListForInstalledAppsEnabledSetting",
+          "enumValues": null,
+          "fields": [
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "A unique identifier for the client performing the mutation.",
+              "isDeprecated": false,
+              "name": "clientMutationId",
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            {
+              "args": [
+              ],
+              "deprecationReason": null,
+              "description": "The IP allow list owner on which the setting was updated.",
+              "isDeprecated": false,
+              "name": "owner",
+              "type": {
+                "kind": "UNION",
+                "name": "IpAllowListOwner",
+                "ofType": null
+              }
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [
+          ],
+          "kind": "OBJECT",
+          "name": "UpdateIpAllowListForInstalledAppsEnabledSettingPayload",
+          "possibleTypes": null
+        },
+        {
           "description": "Autogenerated input type of UpdateIssueComment",
           "enumValues": null,
           "fields": null,
@@ -116922,7 +118029,7 @@
                 },
                 {
                   "defaultValue": null,
-                  "description": "Only contributions made before and up to and including this time will be counted. If omitted, defaults to the current time.",
+                  "description": "Only contributions made before and up to (including) this time will be counted. If omitted, defaults to the current time or one year from the provided from argument.",
                   "name": "to",
                   "type": {
                     "kind": "SCALAR",
@@ -118997,6 +120104,83 @@
                 "kind": "OBJECT",
                 "name": "SavedReplyConnection",
                 "ofType": null
+              }
+            },
+            {
+              "args": [
+                {
+                  "defaultValue": null,
+                  "description": "Returns the elements in the list that come after the specified cursor.",
+                  "name": "after",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the elements in the list that come before the specified cursor.",
+                  "name": "before",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the first _n_ elements from the list.",
+                  "name": "first",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": null,
+                  "description": "Returns the last _n_ elements from the list.",
+                  "name": "last",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "Int",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": "MONTH",
+                  "description": "Filter activities returned to only those that occurred in a given time range.",
+                  "name": "period",
+                  "type": {
+                    "kind": "ENUM",
+                    "name": "SponsorsActivityPeriod",
+                    "ofType": null
+                  }
+                },
+                {
+                  "defaultValue": "{field: TIMESTAMP, direction: DESC}",
+                  "description": "Ordering options for activity returned from the connection.",
+                  "name": "orderBy",
+                  "type": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "SponsorsActivityOrder",
+                    "ofType": null
+                  }
+                }
+              ],
+              "deprecationReason": null,
+              "description": "Events involving this sponsorable, such as new sponsorships.",
+              "isDeprecated": false,
+              "name": "sponsorsActivities",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "SponsorsActivityConnection",
+                  "ofType": null
+                }
               }
             },
             {

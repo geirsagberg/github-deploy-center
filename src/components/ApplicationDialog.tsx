@@ -72,6 +72,9 @@ export const ApplicationDialog: FC<{
                   <TextField
                     variant="outlined"
                     label="Name"
+                    inputProps={{
+                      'data-lpignore': true,
+                    }}
                     placeholder="Defaults to same as repository"
                     value={dialogState.name}
                     fullWidth

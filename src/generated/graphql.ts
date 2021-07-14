@@ -435,6 +435,8 @@ export type App = Node & {
   /** The description of the app. */
   description: Maybe<Scalars['String']>;
   id: Scalars['ID'];
+  /** The IP addresses of the app. */
+  ipAllowListEntries: IpAllowListEntryConnection;
   /** The hex color code, without the leading '#', for the logo background. */
   logoBackgroundColor: Scalars['String'];
   /** A URL pointing to the app's logo. */
@@ -447,6 +449,16 @@ export type App = Node & {
   updatedAt: Scalars['DateTime'];
   /** The URL to the app's homepage. */
   url: Scalars['URI'];
+};
+
+
+/** A GitHub App. */
+export type AppIpAllowListEntriesArgs = {
+  after: Maybe<Scalars['String']>;
+  before: Maybe<Scalars['String']>;
+  first: Maybe<Scalars['Int']>;
+  last: Maybe<Scalars['Int']>;
+  orderBy?: Maybe<IpAllowListEntryOrder>;
 };
 
 
@@ -861,6 +873,8 @@ export type BranchProtectionRule = Node & {
   requiresCodeOwnerReviews: Scalars['Boolean'];
   /** Are commits required to be signed. */
   requiresCommitSignatures: Scalars['Boolean'];
+  /** Are conversations required to be resolved before merging. */
+  requiresConversationResolution: Scalars['Boolean'];
   /** Are merge commits prohibited from being pushed to this branch. */
   requiresLinearHistory: Scalars['Boolean'];
   /** Are status checks required to update matching branches. */
@@ -2561,6 +2575,8 @@ export type CreateBranchProtectionRuleInput = {
   pushActorIds: Maybe<Array<Scalars['ID']>>;
   /** List of required status check contexts that must pass for commits to be accepted to matching branches. */
   requiredStatusCheckContexts: Maybe<Array<Scalars['String']>>;
+  /** Are conversations required to be resolved before merging. */
+  requiresConversationResolution: Maybe<Scalars['Boolean']>;
   /** A unique identifier for the client performing the mutation. */
   clientMutationId: Maybe<Scalars['String']>;
 };
@@ -4797,6 +4813,8 @@ export type EnterpriseOwnerInfo = {
   ipAllowListEnabledSetting: IpAllowListEnabledSettingValue;
   /** The IP addresses that are allowed to access resources owned by the enterprise. */
   ipAllowListEntries: IpAllowListEntryConnection;
+  /** The setting value for whether the enterprise has IP allow list configuration for installed GitHub Apps enabled. */
+  ipAllowListForInstalledAppsEnabledSetting: IpAllowListForInstalledAppsEnabledSettingValue;
   /** Whether or not the default repository permission is currently being updated. */
   isUpdatingDefaultRepositoryPermission: Scalars['Boolean'];
   /** Whether the two-factor authentication requirement is currently being enforced. */
@@ -6359,8 +6377,16 @@ export enum IpAllowListEntryOrderField {
   AllowListValue = 'ALLOW_LIST_VALUE'
 }
 
+/** The possible values for the IP allow list configuration for installed GitHub Apps setting. */
+export enum IpAllowListForInstalledAppsEnabledSettingValue {
+  /** The setting is enabled for the owner. */
+  Enabled = 'ENABLED',
+  /** The setting is disabled for the owner. */
+  Disabled = 'DISABLED'
+}
+
 /** Types that can own an IP allow list. */
-export type IpAllowListOwner = Enterprise | Organization;
+export type IpAllowListOwner = App | Enterprise | Organization;
 
 /** An Issue is a place to discuss ideas, enhancements, tasks, and bugs for a project. */
 export type Issue = Node & Assignable & Closable & Comment & Updatable & UpdatableComment & Labelable & Lockable & Reactable & RepositoryNode & Subscribable & UniformResourceLocatable & {
@@ -6441,6 +6467,8 @@ export type Issue = Node & Assignable & Closable & Comment & Updatable & Updatab
   timelineItems: IssueTimelineItemsConnection;
   /** Identifies the issue title. */
   title: Scalars['String'];
+  /** Identifies the issue title rendered to HTML. */
+  titleHTML: Scalars['String'];
   /** Identifies the date and time when the object was last updated. */
   updatedAt: Scalars['DateTime'];
   /** The HTTP URL for this issue */
@@ -8230,6 +8258,8 @@ export type Mutation = {
   updateIpAllowListEnabledSetting: Maybe<UpdateIpAllowListEnabledSettingPayload>;
   /** Updates an IP allow list entry. */
   updateIpAllowListEntry: Maybe<UpdateIpAllowListEntryPayload>;
+  /** Sets whether IP allow list configuration for installed GitHub Apps is enabled on an owner. */
+  updateIpAllowListForInstalledAppsEnabledSetting: Maybe<UpdateIpAllowListForInstalledAppsEnabledSettingPayload>;
   /** Updates an Issue. */
   updateIssue: Maybe<UpdateIssuePayload>;
   /** Updates an IssueComment object. */
@@ -9066,6 +9096,12 @@ export type MutationUpdateIpAllowListEnabledSettingArgs = {
 /** The root query for implementing GraphQL mutations. */
 export type MutationUpdateIpAllowListEntryArgs = {
   input: UpdateIpAllowListEntryInput;
+};
+
+
+/** The root query for implementing GraphQL mutations. */
+export type MutationUpdateIpAllowListForInstalledAppsEnabledSettingArgs = {
+  input: UpdateIpAllowListForInstalledAppsEnabledSettingInput;
 };
 
 
@@ -10612,6 +10648,8 @@ export type Organization = Node & Actor & PackageOwner & ProjectOwner & Reposito
   ipAllowListEnabledSetting: IpAllowListEnabledSettingValue;
   /** The IP addresses that are allowed to access resources owned by the organization. */
   ipAllowListEntries: IpAllowListEntryConnection;
+  /** The setting value for whether the organization has IP allow list configuration for installed GitHub Apps enabled. */
+  ipAllowListForInstalledAppsEnabledSetting: IpAllowListForInstalledAppsEnabledSettingValue;
   /** Check if the given account is sponsoring this user/organization. */
   isSponsoredBy: Scalars['Boolean'];
   /** True if the viewer is sponsored by this user/organization. */
@@ -10670,6 +10708,8 @@ export type Organization = Node & Actor & PackageOwner & ProjectOwner & Reposito
   resourcePath: Scalars['URI'];
   /** The Organization's SAML identity providers */
   samlIdentityProvider: Maybe<OrganizationIdentityProvider>;
+  /** Events involving this sponsorable, such as new sponsorships. */
+  sponsorsActivities: SponsorsActivityConnection;
   /** The GitHub Sponsors listing for this user or organization. */
   sponsorsListing: Maybe<SponsorsListing>;
   /** The viewer's sponsorship of this entity. */
@@ -10884,6 +10924,17 @@ export type OrganizationRepositoryDiscussionsArgs = {
   orderBy?: Maybe<DiscussionOrder>;
   repositoryId: Maybe<Scalars['ID']>;
   answered?: Maybe<Scalars['Boolean']>;
+};
+
+
+/** An account on GitHub, with one or more owners, that has repositories, members and teams. */
+export type OrganizationSponsorsActivitiesArgs = {
+  after: Maybe<Scalars['String']>;
+  before: Maybe<Scalars['String']>;
+  first: Maybe<Scalars['Int']>;
+  last: Maybe<Scalars['Int']>;
+  period?: Maybe<SponsorsActivityPeriod>;
+  orderBy?: Maybe<SponsorsActivityOrder>;
 };
 
 
@@ -12346,6 +12397,8 @@ export type PullRequest = Node & Assignable & Closable & Comment & Updatable & U
   timelineItems: PullRequestTimelineItemsConnection;
   /** Identifies the pull request title. */
   title: Scalars['String'];
+  /** Identifies the pull request title rendered to HTML. */
+  titleHTML: Scalars['HTML'];
   /** Identifies the date and time when the object was last updated. */
   updatedAt: Scalars['DateTime'];
   /** The HTTP URL for this pull request. */
@@ -13767,12 +13820,26 @@ export type ReactionGroup = {
   content: ReactionContent;
   /** Identifies when the reaction was created. */
   createdAt: Maybe<Scalars['DateTime']>;
+  /** Reactors to the reaction subject with the emotion represented by this reaction group. */
+  reactors: ReactorConnection;
   /** The subject that was reacted to. */
   subject: Reactable;
-  /** Users who have reacted to the reaction subject with the emotion represented by this reaction group */
+  /**
+   * Users who have reacted to the reaction subject with the emotion represented by this reaction group
+   * @deprecated Reactors can now be mannequins, bots, and organizations. Use the `reactors` field instead. Removal on 2021-10-01 UTC.
+   */
   users: ReactingUserConnection;
   /** Whether or not the authenticated user has left a reaction on the subject. */
   viewerHasReacted: Scalars['Boolean'];
+};
+
+
+/** A group of emoji reactions to a particular piece of content. */
+export type ReactionGroupReactorsArgs = {
+  after: Maybe<Scalars['String']>;
+  before: Maybe<Scalars['String']>;
+  first: Maybe<Scalars['Int']>;
+  last: Maybe<Scalars['Int']>;
 };
 
 
@@ -13797,6 +13864,33 @@ export enum ReactionOrderField {
   /** Allows ordering a list of reactions by when they were created. */
   CreatedAt = 'CREATED_AT'
 }
+
+/** Types that can be assigned to reactions. */
+export type Reactor = Bot | Mannequin | Organization | User;
+
+/** The connection type for Reactor. */
+export type ReactorConnection = {
+  __typename: 'ReactorConnection';
+  /** A list of edges. */
+  edges: Maybe<Array<Maybe<ReactorEdge>>>;
+  /** A list of nodes. */
+  nodes: Maybe<Array<Maybe<Reactor>>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** Represents an author of a reaction. */
+export type ReactorEdge = {
+  __typename: 'ReactorEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String'];
+  /** The author of the reaction. */
+  node: Reactor;
+  /** The moment when the user made the reaction. */
+  reactedAt: Scalars['DateTime'];
+};
 
 /** Represents a 'ready_for_review' event on a given pull request. */
 export type ReadyForReviewEvent = Node & UniformResourceLocatable & {
@@ -13901,6 +13995,8 @@ export type RefUpdateRule = {
   requiredStatusCheckContexts: Maybe<Array<Maybe<Scalars['String']>>>;
   /** Are reviews from code owners required to update matching branches. */
   requiresCodeOwnerReviews: Scalars['Boolean'];
+  /** Are conversations required to be resolved before merging. */
+  requiresConversationResolution: Scalars['Boolean'];
   /** Are merge commits prohibited from being pushed to this branch. */
   requiresLinearHistory: Scalars['Boolean'];
   /** Are commits required to be signed. */
@@ -17065,20 +17161,22 @@ export type SecurityAdvisoryConnection = {
 
 /** The possible ecosystems of a security vulnerability's package. */
 export enum SecurityAdvisoryEcosystem {
-  /** Ruby gems hosted at RubyGems.org */
-  Rubygems = 'RUBYGEMS',
-  /** JavaScript packages hosted at npmjs.com */
-  Npm = 'NPM',
-  /** Python packages hosted at PyPI.org */
-  Pip = 'PIP',
-  /** Java artifacts hosted at the Maven central repository */
-  Maven = 'MAVEN',
-  /** .NET packages hosted at the NuGet Gallery */
-  Nuget = 'NUGET',
   /** PHP packages hosted at packagist.org */
   Composer = 'COMPOSER',
   /** Go modules */
-  Go = 'GO'
+  Go = 'GO',
+  /** Java artifacts hosted at the Maven central repository */
+  Maven = 'MAVEN',
+  /** JavaScript packages hosted at npmjs.com */
+  Npm = 'NPM',
+  /** .NET packages hosted at the NuGet Gallery */
+  Nuget = 'NUGET',
+  /** Python packages hosted at PyPI.org */
+  Pip = 'PIP',
+  /** Ruby gems hosted at RubyGems.org */
+  Rubygems = 'RUBYGEMS',
+  /** Applications, runtimes, operating systems and other kinds of software */
+  Other = 'OTHER'
 }
 
 /** An edge in a connection. */
@@ -17347,6 +17445,8 @@ export type Sponsorable = {
   isSponsoredBy: Scalars['Boolean'];
   /** True if the viewer is sponsored by this user/organization. */
   isSponsoringViewer: Scalars['Boolean'];
+  /** Events involving this sponsorable, such as new sponsorships. */
+  sponsorsActivities: SponsorsActivityConnection;
   /** The GitHub Sponsors listing for this user or organization. */
   sponsorsListing: Maybe<SponsorsListing>;
   /** The viewer's sponsorship of this entity. */
@@ -17365,6 +17465,17 @@ export type Sponsorable = {
 /** Entities that can be sponsored through GitHub Sponsors */
 export type SponsorableIsSponsoredByArgs = {
   accountLogin: Scalars['String'];
+};
+
+
+/** Entities that can be sponsored through GitHub Sponsors */
+export type SponsorableSponsorsActivitiesArgs = {
+  after: Maybe<Scalars['String']>;
+  before: Maybe<Scalars['String']>;
+  first: Maybe<Scalars['Int']>;
+  last: Maybe<Scalars['Int']>;
+  period?: Maybe<SponsorsActivityPeriod>;
+  orderBy?: Maybe<SponsorsActivityOrder>;
 };
 
 
@@ -17427,6 +17538,88 @@ export enum SponsorableOrderField {
   Login = 'LOGIN'
 }
 
+/** An event related to sponsorship activity. */
+export type SponsorsActivity = Node & {
+  __typename: 'SponsorsActivity';
+  /** What action this activity indicates took place. */
+  action: SponsorsActivityAction;
+  id: Scalars['ID'];
+  /** The tier that the sponsorship used to use, for tier change events. */
+  previousSponsorsTier: Maybe<SponsorsTier>;
+  /** The user or organization who triggered this activity and was/is sponsoring the sponsorable. */
+  sponsor: Maybe<Sponsor>;
+  /** The user or organization that is being sponsored, the maintainer. */
+  sponsorable: Sponsorable;
+  /** The associated sponsorship tier. */
+  sponsorsTier: Maybe<SponsorsTier>;
+  /** The timestamp of this event. */
+  timestamp: Maybe<Scalars['DateTime']>;
+};
+
+/** The possible actions that GitHub Sponsors activities can represent. */
+export enum SponsorsActivityAction {
+  /** The activity was starting a sponsorship. */
+  NewSponsorship = 'NEW_SPONSORSHIP',
+  /** The activity was cancelling a sponsorship. */
+  CancelledSponsorship = 'CANCELLED_SPONSORSHIP',
+  /** The activity was changing the sponsorship tier, either directly by the sponsor or by a scheduled/pending change. */
+  TierChange = 'TIER_CHANGE',
+  /** The activity was funds being refunded to the sponsor or GitHub. */
+  Refund = 'REFUND',
+  /** The activity was scheduling a downgrade or cancellation. */
+  PendingChange = 'PENDING_CHANGE',
+  /** The activity was disabling matching for a previously matched sponsorship. */
+  SponsorMatchDisabled = 'SPONSOR_MATCH_DISABLED'
+}
+
+/** The connection type for SponsorsActivity. */
+export type SponsorsActivityConnection = {
+  __typename: 'SponsorsActivityConnection';
+  /** A list of edges. */
+  edges: Maybe<Array<Maybe<SponsorsActivityEdge>>>;
+  /** A list of nodes. */
+  nodes: Maybe<Array<Maybe<SponsorsActivity>>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int'];
+};
+
+/** An edge in a connection. */
+export type SponsorsActivityEdge = {
+  __typename: 'SponsorsActivityEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String'];
+  /** The item at the end of the edge. */
+  node: Maybe<SponsorsActivity>;
+};
+
+/** Ordering options for GitHub Sponsors activity connections. */
+export type SponsorsActivityOrder = {
+  /** The field to order activity by. */
+  field: SponsorsActivityOrderField;
+  /** The ordering direction. */
+  direction: OrderDirection;
+};
+
+/** Properties by which GitHub Sponsors activity connections can be ordered. */
+export enum SponsorsActivityOrderField {
+  /** Order activities by when they happened. */
+  Timestamp = 'TIMESTAMP'
+}
+
+/** The possible time periods for which Sponsors activities can be requested. */
+export enum SponsorsActivityPeriod {
+  /** The previous calendar day. */
+  Day = 'DAY',
+  /** The previous seven days. */
+  Week = 'WEEK',
+  /** The previous thirty days. */
+  Month = 'MONTH',
+  /** Don't restrict the activity to any date range, include all activity. */
+  All = 'ALL'
+}
+
 /** A goal associated with a GitHub Sponsors listing, representing a target the sponsored maintainer would like to attain. */
 export type SponsorsGoal = {
   __typename: 'SponsorsGoal';
@@ -17487,7 +17680,7 @@ export type SponsorsTier = Node & {
   __typename: 'SponsorsTier';
   /** SponsorsTier information only visible to users that can administer the associated Sponsors listing. */
   adminInfo: Maybe<SponsorsTierAdminInfo>;
-  /** Get a different tier for this tier's maintainer that is at the same frequency as this tier but with a lesser cost. Returns the published tier with the monthly price closest to this tier's without going over. */
+  /** Get a different tier for this tier's maintainer that is at the same frequency as this tier but with an equal or lesser cost. Returns the published tier with the monthly price closest to this tier's without going over. */
   closestLesserValueTier: Maybe<SponsorsTier>;
   /** Identifies the date and time when the object was created. */
   createdAt: Scalars['DateTime'];
@@ -19355,6 +19548,8 @@ export type UpdateBranchProtectionRuleInput = {
   pushActorIds: Maybe<Array<Scalars['ID']>>;
   /** List of required status check contexts that must pass for commits to be accepted to matching branches. */
   requiredStatusCheckContexts: Maybe<Array<Scalars['String']>>;
+  /** Are conversations required to be resolved before merging. */
+  requiresConversationResolution: Maybe<Scalars['Boolean']>;
   /** A unique identifier for the client performing the mutation. */
   clientMutationId: Maybe<Scalars['String']>;
 };
@@ -19877,6 +20072,25 @@ export type UpdateIpAllowListEntryPayload = {
   ipAllowListEntry: Maybe<IpAllowListEntry>;
 };
 
+/** Autogenerated input type of UpdateIpAllowListForInstalledAppsEnabledSetting */
+export type UpdateIpAllowListForInstalledAppsEnabledSettingInput = {
+  /** The ID of the owner. */
+  ownerId: Scalars['ID'];
+  /** The value for the IP allow list configuration for installed GitHub Apps setting. */
+  settingValue: IpAllowListForInstalledAppsEnabledSettingValue;
+  /** A unique identifier for the client performing the mutation. */
+  clientMutationId: Maybe<Scalars['String']>;
+};
+
+/** Autogenerated return type of UpdateIpAllowListForInstalledAppsEnabledSetting */
+export type UpdateIpAllowListForInstalledAppsEnabledSettingPayload = {
+  __typename: 'UpdateIpAllowListForInstalledAppsEnabledSettingPayload';
+  /** A unique identifier for the client performing the mutation. */
+  clientMutationId: Maybe<Scalars['String']>;
+  /** The IP allow list owner on which the setting was updated. */
+  owner: Maybe<IpAllowListOwner>;
+};
+
 /** Autogenerated input type of UpdateIssueComment */
 export type UpdateIssueCommentInput = {
   /** The ID of the IssueComment to modify. */
@@ -20345,6 +20559,8 @@ export type User = Node & Actor & PackageOwner & ProjectOwner & RepositoryDiscus
   resourcePath: Scalars['URI'];
   /** Replies this user has saved */
   savedReplies: Maybe<SavedReplyConnection>;
+  /** Events involving this sponsorable, such as new sponsorships. */
+  sponsorsActivities: SponsorsActivityConnection;
   /** The GitHub Sponsors listing for this user or organization. */
   sponsorsListing: Maybe<SponsorsListing>;
   /** The viewer's sponsorship of this entity. */
@@ -20658,6 +20874,17 @@ export type UserSavedRepliesArgs = {
   first: Maybe<Scalars['Int']>;
   last: Maybe<Scalars['Int']>;
   orderBy?: Maybe<SavedReplyOrder>;
+};
+
+
+/** A user is an individual's account on GitHub that owns repositories and can make new content. */
+export type UserSponsorsActivitiesArgs = {
+  after: Maybe<Scalars['String']>;
+  before: Maybe<Scalars['String']>;
+  first: Maybe<Scalars['Int']>;
+  last: Maybe<Scalars['Int']>;
+  period?: Maybe<SponsorsActivityPeriod>;
+  orderBy?: Maybe<SponsorsActivityOrder>;
 };
 
 

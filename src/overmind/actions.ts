@@ -96,7 +96,7 @@ export const triggerDeployment = async (
   const { repo } = selectedApplication
 
   if (
-    showConfirm(
+    await showConfirm(
       `Are you sure you want to deploy "${release}" to "${environmentSettings.name}" in "${repo.owner}/${repo.name}@${deploySettings.ref}"?`
     )
   ) {
@@ -242,12 +242,12 @@ export const updateApplicationDialog = (
   }
 }
 
-export const deleteApplication = ({ state }: Context) => {
+export const deleteApplication = async ({ state }: Context) => {
   if (
     !!state.selectedApplication &&
-    showConfirm(
+    (await showConfirm(
       'Are you sure you want to delete ' + state.selectedApplication.name + '?'
-    )
+    ))
   ) {
     delete state.applicationsById[state.selectedApplicationId]
     delete state.editApplicationDialog
@@ -296,8 +296,13 @@ export const addEnvironment = (
   delete state.addEnvironmentDialog
 }
 
-export const removeEnvironment = ({ state }: Context, id: number) => {
-  if (state.selectedApplication) {
+export const removeEnvironment = async ({ state }: Context, id: number) => {
+  if (
+    state.selectedApplication &&
+    (await showConfirm(
+      `Are you sure you want to delete ${state.selectedApplication.environmentSettingsById[id].name}?`
+    ))
+  ) {
     delete state.selectedApplication.environmentSettingsById[id]
   }
 }
