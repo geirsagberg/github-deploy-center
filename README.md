@@ -25,6 +25,7 @@ To use GDC, you need a couple of things:
     - `environment`: Which environment to deploy to (e.g. dev, test or prod)
   - The workflow must create a deployment for the same commit as the release, and update status on success or failure.
   - See [the GDC Deploy workflow](./.github/workflows/deploy.yml) as an example.
+- **KNOWN ISSUE:** Currently, the GitHub Environments API is used to fetch environments. This currently works only for public repos and enterprise private repos.
 
 ## Hosting
 
