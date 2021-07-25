@@ -9,13 +9,20 @@ import {
   DialogTitle,
   TextField,
 } from '@material-ui/core'
-import { Alert, Autocomplete } from '@material-ui/lab'
+import { Alert, Autocomplete, createFilterOptions } from '@material-ui/lab'
+import { identity } from 'fp-ts/lib/function'
 import { orderBy } from 'lodash'
-import { keyBy } from 'lodash-es'
 import React, { FC } from 'react'
 import { useFetchEnvironments } from '../api/fetchHooks'
 import { useAppState } from '../overmind'
 import { EnvironmentDialogState, EnvironmentSettings } from '../overmind/state'
+
+type Option = {
+  name: string
+  inputValue?: string
+}
+
+const filter = createFilterOptions<Option>()
 
 export const EnvironmentDialog: FC<{
   dialogState?: EnvironmentDialogState
@@ -38,7 +45,6 @@ export const EnvironmentDialog: FC<{
       (e) => e.name,
     ]
   )
-  const environmentsByName = keyBy(filteredEnvironments, (e) => e.name)
   return (
     <Dialog open={!!dialogState} fullWidth onClose={onCancel}>
       {dialogState ? (
@@ -60,23 +66,39 @@ export const EnvironmentDialog: FC<{
               <>
                 <DialogContentText>Select environment</DialogContentText>
                 <Autocomplete
+                  freeSolo
                   loading={isLoading}
-                  options={filteredEnvironments}
-                  getOptionLabel={(e) => e.name}
-                  getOptionSelected={(first, second) =>
-                    first.name === second.name
-                  }
-                  value={
-                    dialogState.environmentName
-                      ? environmentsByName[dialogState.environmentName]
-                      : null
-                  }
+                  options={filteredEnvironments.map<Option>(identity)}
+                  value={dialogState.environmentName}
                   openOnFocus
                   onChange={(_, value) =>
                     updateDialogState(
-                      (state) => (state.environmentName = value?.name ?? '')
+                      (state) =>
+                        (state.environmentName =
+                          typeof value === 'string'
+                            ? value
+                            : value?.inputValue ?? value?.name ?? '')
                     )
                   }
+                  getOptionLabel={(option) =>
+                    typeof option === 'string' ? option : option.name
+                  }
+                  getOptionSelected={(first, second) =>
+                    first.name === second.name
+                  }
+                  filterOptions={(options, params) => {
+                    const filtered = filter(options, params)
+
+                    // Suggest the creation of a new value
+                    if (params.inputValue !== '') {
+                      filtered.push({
+                        inputValue: params.inputValue,
+                        name: `Add "${params.inputValue}"`,
+                      })
+                    }
+
+                    return filtered
+                  }}
                   renderInput={(params) => (
                     <TextField
                       autoFocus
