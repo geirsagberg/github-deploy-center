@@ -53,12 +53,12 @@ export const ReleasesTableView = () => {
   const { mutate, error, isLoading } = useMutation(
     async ({
       release,
-      environmentId,
+      environmentName,
     }: {
       release: string
-      environmentId: number
+      environmentName: string
     }) => {
-      await triggerDeployment({ release, environmentId })
+      await triggerDeployment({ release, environmentName })
     }
   )
 
@@ -90,13 +90,13 @@ export const ReleasesTableView = () => {
   )
 
   const selectedEnvironments = values(
-    selectedApplication.environmentSettingsById
+    selectedApplication.environmentSettingsByName
   )
 
   const releasesByEnvironment = selectedEnvironments.reduce<
-    Record<number, ReleaseModel[]>
+    Record<string, ReleaseModel[]>
   >((record, environment) => {
-    record[environment.id] = releasesSorted.filter((r) =>
+    record[environment.name] = releasesSorted.filter((r) =>
       r.deployments.some((d) => d.environment === environment.name)
     )
     return record
@@ -107,12 +107,12 @@ export const ReleasesTableView = () => {
     release: ReleaseModel,
     environment: EnvironmentSettings
   ) => {
-    const latestRelease = releasesByEnvironment[environment.id]?.[0]
+    const latestRelease = releasesByEnvironment[environment.name]?.[0]
     const isAfterLatest =
       !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
 
     const pendingDeployment =
-      pendingDeployments[`${release.tagName}_${environment.id}`]
+      pendingDeployments[`${release.tagName}_${environment.name}`]
     const modifiedAt = deployment?.modifiedAt
     const deploymentState =
       pendingDeployment &&
@@ -135,7 +135,7 @@ export const ReleasesTableView = () => {
         onClick={() =>
           mutate({
             release: release.tagName,
-            environmentId: environment.id,
+            environmentName: environment.name,
           })
         }>
         {deploymentState?.replaceAll('_', ' ') ?? 'Deploy'}
@@ -153,7 +153,7 @@ export const ReleasesTableView = () => {
           <TableRow>
             <TableCell>Release name</TableCell>
             {selectedEnvironments.map((environment) => (
-              <TableCell key={environment.id}>
+              <TableCell key={environment.name}>
                 <Link
                   href={`https://github.com/${repo?.owner}/${
                     repo?.name
@@ -164,7 +164,7 @@ export const ReleasesTableView = () => {
                   color="inherit">
                   {environment.name}
                 </Link>
-                <IconButton onClick={() => removeEnvironment(environment.id)}>
+                <IconButton onClick={() => removeEnvironment(environment.name)}>
                   <Icon>delete</Icon>
                 </IconButton>
               </TableCell>
@@ -187,7 +187,7 @@ export const ReleasesTableView = () => {
                   (d) => d.environment === environment.name
                 )
                 return (
-                  <TableCell key={environment.id}>
+                  <TableCell key={environment.name}>
                     {createButton(deployment, release, environment)}
                   </TableCell>
                 )

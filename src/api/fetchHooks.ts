@@ -1,4 +1,6 @@
 import dayjs from 'dayjs'
+import { getOrElse } from 'fp-ts/lib/Either'
+import { pipe } from 'fp-ts/lib/function'
 import { orderBy } from 'lodash-es'
 import { useQuery } from 'react-query'
 import {
@@ -10,6 +12,7 @@ import { useAppState, useEffects } from '../overmind'
 import {
   DeploymentModel,
   GitHubEnvironment,
+  GitHubEnvironmentsCodec,
   ReleaseModel,
   RepoModel,
 } from '../overmind/state'
@@ -120,7 +123,16 @@ export const useFetchEnvironments = () => {
           per_page: 100,
         })
 
-        environments.push(...(response.data?.environments ?? []))
+        if (response.data?.environments) {
+          const page = pipe(
+            GitHubEnvironmentsCodec.decode(response.data.environments),
+            getOrElse((e) => {
+              console.log(e)
+              return [] as GitHubEnvironment[]
+            })
+          )
+          environments.push(...page)
+        }
 
         keepFetching =
           !!response.data.total_count &&

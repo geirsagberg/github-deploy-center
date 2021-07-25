@@ -77,21 +77,21 @@ export const triggerDeployment = async (
   { effects, state }: Context,
   {
     release,
-    environmentId,
+    environmentName,
   }: {
     release: string
-    environmentId: number
+    environmentName: string
   }
 ) => {
   const { selectedApplication } = state
 
   if (!selectedApplication) return
-  const { deploySettings, environmentSettingsById } = selectedApplication
+  const { deploySettings, environmentSettingsByName } = selectedApplication
   if (!DeployWorkflowCodec.is(deploySettings)) return
 
-  if (!(environmentId in environmentSettingsById)) return
+  if (!(environmentName in environmentSettingsByName)) return
 
-  const environmentSettings = environmentSettingsById[environmentId]
+  const environmentSettings = environmentSettingsByName[environmentName]
 
   const { repo } = selectedApplication
 
@@ -100,7 +100,7 @@ export const triggerDeployment = async (
       `Are you sure you want to deploy "${release}" to "${environmentSettings.name}" in "${repo.owner}/${repo.name}@${deploySettings.ref}"?`
     )
   ) {
-    state.pendingDeployments[`${release}_${environmentId}`] = dayjs()
+    state.pendingDeployments[`${release}_${environmentName}`] = dayjs()
 
     const { owner, name } = repo
     const { ref, workflowId, environmentKey, releaseKey, extraArgs } =
@@ -256,7 +256,7 @@ export const deleteApplication = async ({ state }: Context) => {
 
 export const showAddEnvironmentModal = ({ state }: Context) => {
   state.addEnvironmentDialog = {
-    environmentId: null,
+    environmentName: '',
     workflowInputValue: '',
   }
 }
@@ -288,22 +288,25 @@ export const addEnvironment = (
   { state }: Context,
   settings: EnvironmentSettings
 ) => {
-  if (state.selectedApplication && state.addEnvironmentDialog?.environmentId) {
-    state.selectedApplication.environmentSettingsById[
-      state.addEnvironmentDialog.environmentId
+  if (
+    state.selectedApplication &&
+    state.addEnvironmentDialog?.environmentName
+  ) {
+    state.selectedApplication.environmentSettingsByName[
+      state.addEnvironmentDialog.environmentName
     ] = settings
   }
   delete state.addEnvironmentDialog
 }
 
-export const removeEnvironment = async ({ state }: Context, id: number) => {
+export const removeEnvironment = async ({ state }: Context, name: string) => {
   if (
     state.selectedApplication &&
     (await showConfirm(
-      `Are you sure you want to delete ${state.selectedApplication.environmentSettingsById[id].name}?`
+      `Are you sure you want to delete ${state.selectedApplication.environmentSettingsByName[name].name}?`
     ))
   ) {
-    delete state.selectedApplication.environmentSettingsById[id]
+    delete state.selectedApplication.environmentSettingsByName[name]
   }
 }
 

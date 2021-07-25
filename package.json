@@ -24,6 +24,7 @@
     "uuid": "^8.3.2"
   },
   "scripts": {
+    "analyze": "source-map-explorer 'build/static/js/*.js'",
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
@@ -38,14 +39,18 @@
   "browserslist": {
     "production": [
       "defaults",
-      "not IE 11",
-      "not IE_Mob 11"
+      "not IE 11"
     ],
     "development": [
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "jest": {
+    "moduleNameMapper": {
+      "^lodash-es$": "lodash"
+    }
   },
   "devDependencies": {
     "@craco/craco": "^6.2.0",
@@ -69,6 +74,7 @@
     "esbuild": "^0.12.15",
     "json-format": "^1.0.1",
     "json-format-cli": "^1.1.1",
+    "source-map-explorer": "^2.5.2",
     "type-fest": "^1.2.2",
     "typescript": "~4.3.5"
   }

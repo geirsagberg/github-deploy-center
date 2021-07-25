@@ -38,19 +38,18 @@ export const EnvironmentDialog: FC<{
       (e) => e.name,
     ]
   )
-  const environmentsById = keyBy(filteredEnvironments, (e) => e.id)
+  const environmentsByName = keyBy(filteredEnvironments, (e) => e.name)
   return (
     <Dialog open={!!dialogState} fullWidth onClose={onCancel}>
       {dialogState ? (
         <form
           onSubmit={(event) => {
             event.preventDefault()
-            const { environmentId, workflowInputValue } = dialogState
-            environmentId &&
+            const { environmentName, workflowInputValue } = dialogState
+            environmentName &&
               onSave({
-                id: environmentId,
                 workflowInputValue,
-                name: environmentsById[environmentId].name,
+                name: environmentName,
               })
           }}>
           <DialogTitle>{title}</DialogTitle>
@@ -64,16 +63,18 @@ export const EnvironmentDialog: FC<{
                   loading={isLoading}
                   options={filteredEnvironments}
                   getOptionLabel={(e) => e.name}
-                  getOptionSelected={(first, second) => first.id === second.id}
+                  getOptionSelected={(first, second) =>
+                    first.name === second.name
+                  }
                   value={
-                    dialogState.environmentId
-                      ? environmentsById[dialogState.environmentId]
+                    dialogState.environmentName
+                      ? environmentsByName[dialogState.environmentName]
                       : null
                   }
                   openOnFocus
                   onChange={(_, value) =>
                     updateDialogState(
-                      (state) => (state.environmentId = value?.id ?? null)
+                      (state) => (state.environmentName = value?.name ?? '')
                     )
                   }
                   renderInput={(params) => (
@@ -89,7 +90,7 @@ export const EnvironmentDialog: FC<{
                       InputProps={{
                         ...params.InputProps,
                         endAdornment:
-                          isLoading && !dialogState.environmentId ? (
+                          isLoading && !dialogState.environmentName ? (
                             <Box
                               maxWidth={24}
                               maxHeight={24}
@@ -119,7 +120,7 @@ export const EnvironmentDialog: FC<{
             <DialogActions>
               <Button
                 type="submit"
-                disabled={!dialogState.environmentId}
+                disabled={!dialogState.environmentName}
                 variant="contained"
                 color="primary">
                 Save

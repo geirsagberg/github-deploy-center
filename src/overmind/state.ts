@@ -1,5 +1,6 @@
 import { Dayjs } from 'dayjs'
 import * as t from 'io-ts'
+import { keyBy, map } from 'lodash-es'
 import { v4 as uuid } from 'uuid'
 import { DeploymentState } from '../generated/graphql'
 
@@ -64,30 +65,74 @@ export const DeploySettingsCodec = t.union([
   DeployDeploymentCodec,
 ])
 
-export const GitHubEnvironmentCodec = t.type({
-  id: t.number,
-  name: t.string,
-})
+export const GitHubEnvironmentCodec = t.exact(
+  t.type({
+    name: t.string,
+  })
+)
+
+export const GitHubEnvironmentsCodec = t.array(GitHubEnvironmentCodec)
 
 export type GitHubEnvironment = t.TypeOf<typeof GitHubEnvironmentCodec>
 
-export const EnvironmentSettingsCodec = t.intersection([
-  GitHubEnvironmentCodec,
+export const EnvironmentSettingsCodec = t.exact(
   t.type({
+    name: t.string,
     workflowInputValue: t.string,
-  }),
-])
+  })
+)
 
 export type EnvironmentSettings = t.TypeOf<typeof EnvironmentSettingsCodec>
 
-export const ApplicationConfigCodec = t.type({
-  id: t.string,
-  name: t.string,
-  releaseFilter: t.string,
-  environmentSettingsById: t.record(t.string, EnvironmentSettingsCodec),
-  repo: RepoCodec,
-  deploySettings: DeploySettingsCodec,
+type HasEnvironmentSettings = {
+  environmentSettingsByName: {
+    [name: string]: EnvironmentSettings
+  }
+}
+
+const EnvironmentSettingsByNameCodec = t.type({
+  environmentSettingsByName: t.record(t.string, EnvironmentSettingsCodec),
 })
+
+// TODO: Remove handling environmentSettingsById after a while
+export const ApplicationConfigCodec = t.intersection([
+  t.strict({
+    id: t.string,
+    name: t.string,
+    releaseFilter: t.string,
+    repo: RepoCodec,
+    deploySettings: DeploySettingsCodec,
+  }),
+  t.exact(
+    new t.InterfaceType<HasEnvironmentSettings, HasEnvironmentSettings>(
+      'HasEnvironmentSettings',
+      (x: any): x is HasEnvironmentSettings => 'environmentSettingsByName' in x,
+      (input: any, context) => {
+        if (input.environmentSettingsByName)
+          return EnvironmentSettingsByNameCodec.validate(input, context)
+        if (input.environmentSettingsById) {
+          return t.success({
+            environmentSettingsByName: keyBy(
+              map(
+                input.environmentSettingsById,
+                (settings): EnvironmentSettings => ({
+                  name: settings.name,
+                  workflowInputValue: settings.workflowInputValue,
+                })
+              ),
+              (x) => x.name
+            ),
+          })
+        }
+        return t.failure(input, context)
+      },
+      t.identity,
+      {
+        environmentSettingsByName: {},
+      }
+    )
+  ),
+])
 
 export const createApplicationConfig = (
   repo: RepoModel,
@@ -97,7 +142,7 @@ export const createApplicationConfig = (
   id: uuid(),
   name: name || repo.name,
   releaseFilter,
-  environmentSettingsById: {},
+  environmentSettingsByName: {},
   repo,
   deploySettings: createDeployWorkflowSettings({ ref: repo.defaultBranch }),
 })
@@ -130,7 +175,7 @@ export const createApplicationDialogState = (): ApplicationDialogState => ({
 })
 
 export type EnvironmentDialogState = {
-  environmentId: number | null
+  environmentName: string
   workflowInputValue: string
 }
 
