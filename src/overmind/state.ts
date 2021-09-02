@@ -155,6 +155,7 @@ export const DeploySettingsByRepoCodec = t.record(t.string, DeploySettingsCodec)
 
 export const AppSettingsCodec = t.type({
   deployTimeoutSecs: t.number,
+  refreshIntervalSecs: t.number,
 })
 
 export type AppSettings = t.TypeOf<typeof AppSettingsCodec>
@@ -202,6 +203,7 @@ export type AppState = {
 
 export const defaultAppSettings: AppSettings = {
   deployTimeoutSecs: 60,
+  refreshIntervalSecs: 60,
 }
 
 const state: AppState = {

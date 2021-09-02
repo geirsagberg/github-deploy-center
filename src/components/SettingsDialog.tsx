@@ -49,10 +49,14 @@ export const SettingsDialog = () => {
   return (
     <Dialog open={!!settingsDialog} fullWidth onClose={hideSettings}>
       <DialogTitle>Settings</DialogTitle>
-      <DialogContent>
+      <DialogContent style={{ gap: '1rem', display: 'flex' }}>
         <Editor
           label="Deploy timeout (secs)"
           selector={(state) => state.appSettings.deployTimeoutSecs}
+        />
+        <Editor
+          label="Status refresh interval (secs)"
+          selector={(state) => state.appSettings.refreshIntervalSecs}
         />
       </DialogContent>
       <DialogActions>

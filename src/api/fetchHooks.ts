@@ -19,7 +19,7 @@ import {
 import graphQLApi from '../utils/graphQLApi'
 
 export const useFetchReleases = () => {
-  const { selectedApplication } = useAppState()
+  const { selectedApplication, appSettings } = useAppState()
 
   const repo = selectedApplication?.repo
   const prefix = selectedApplication?.releaseFilter ?? ''
@@ -69,6 +69,9 @@ export const useFetchReleases = () => {
         )
         .filter((n): n is ReleaseModel => !!n)
       return releases
+    },
+    {
+      refetchInterval: 1000 * appSettings.refreshIntervalSecs,
     }
   )
 
