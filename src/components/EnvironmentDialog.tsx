@@ -59,7 +59,7 @@ export const EnvironmentDialog: FC<{
               })
           }}>
           <DialogTitle>{title}</DialogTitle>
-          <DialogContent style={{ height: '14rem' }}>
+          <DialogContent>
             {error instanceof Error ? (
               <Alert severity="error">{error.message}</Alert>
             ) : (
@@ -123,18 +123,22 @@ export const EnvironmentDialog: FC<{
                     />
                   )}
                 />
-                <TextField
-                  style={{ marginTop: '1rem' }}
-                  label="Workflow input value (defaults to environment name)"
-                  fullWidth
-                  variant="outlined"
-                  value={dialogState.workflowInputValue}
-                  onChange={(event) =>
-                    updateDialogState(
-                      (state) => (state.workflowInputValue = event.target.value)
-                    )
-                  }
-                />
+                {selectedApplication?.deploySettings.type === 'workflow' &&
+                  selectedApplication.deploySettings.environmentKey && (
+                    <TextField
+                      style={{ marginTop: '1rem' }}
+                      label="Workflow input value (defaults to environment name)"
+                      fullWidth
+                      variant="outlined"
+                      value={dialogState.workflowInputValue}
+                      onChange={(event) =>
+                        updateDialogState(
+                          (state) =>
+                            (state.workflowInputValue = event.target.value)
+                        )
+                      }
+                    />
+                  )}
               </>
             )}
           </DialogContent>

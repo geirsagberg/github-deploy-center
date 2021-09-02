@@ -109,16 +109,23 @@ export const triggerDeployment = async (
     const environmentArg =
       environmentSettings.workflowInputValue || environmentSettings.name
 
+    const inputs = environmentKey
+      ? {
+          [releaseKey]: release,
+          [environmentKey]: environmentArg,
+          ...extraArgs,
+        }
+      : {
+          [releaseKey]: release,
+          ...extraArgs,
+        }
+
     await effects.restApi.octokit.actions.createWorkflowDispatch({
       owner,
       repo: name,
       ref,
       workflow_id: workflowId,
-      inputs: {
-        [releaseKey]: release,
-        [environmentKey]: environmentArg,
-        ...extraArgs,
-      },
+      inputs,
     })
   }
 }

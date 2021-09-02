@@ -21,7 +21,6 @@ export const DeploymentDialog = () => {
     deploymentDialog &&
       deploymentDialog.workflowId &&
       deploymentDialog.releaseKey &&
-      deploymentDialog.environmentKey &&
       deploymentDialog.ref
   )
   return (
@@ -53,7 +52,7 @@ export const DeploymentDialog = () => {
               }
             />
             <TextField
-              label="Environment input name"
+              label="Environment input name (optional)"
               value={deploymentDialog.environmentKey}
               onChange={(e) =>
                 updateDeployWorkflowDialog(

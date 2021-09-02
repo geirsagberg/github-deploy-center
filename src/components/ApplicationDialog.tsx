@@ -14,6 +14,7 @@ import React, { FC } from 'react'
 import { useFetchRepos } from '../api/fetchHooks'
 import { useActions, useAppState } from '../overmind'
 import { ApplicationDialogState, RepoModel } from '../overmind/state'
+import { theme } from '../theme'
 import Expander from './Expander'
 import { RepoSearchBox } from './RepoSearchView'
 
@@ -130,7 +131,11 @@ export const ApplicationDialog: FC<{
           <Box p={2} pt={1}>
             <DialogActions>
               {newOrEdit === 'edit' && (
-                <Button onClick={deleteApplication}>Delete</Button>
+                <Button
+                  style={{ color: theme.palette.error.main }}
+                  onClick={deleteApplication}>
+                  Delete
+                </Button>
               )}
               <Expander />
               <Button
