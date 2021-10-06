@@ -7,6 +7,10 @@ module.exports = {
         esbuildLoaderOptions: {
           loader: 'tsx',
           implementation: require('esbuild'),
+          target: 'es2019',
+        },
+        esbuildMinimizerOptions: {
+          target: 'es2019',
         },
       },
     },
