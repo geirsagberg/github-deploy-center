@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import { getOrElse } from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/function'
-import { mapValues, noop } from 'lodash-es'
+import { mapValues, noop, pickBy } from 'lodash-es'
 import { Context } from '.'
 import graphQLApi from '../utils/graphQLApi'
 import { restApi } from './effects'
@@ -96,7 +96,9 @@ export const onInitializeOvermind = ({
           console.error(e)
           return {} as Record<string, string>
         }),
-        (data) => mapValues(data, (date) => dayjs(date))
+        (data) => mapValues(data, (date) => dayjs(date)),
+        (days) =>
+          pickBy(days, (date) => date.subtract(10, 'minute').isBefore(dayjs()))
       )
     },
     { nested: true }
