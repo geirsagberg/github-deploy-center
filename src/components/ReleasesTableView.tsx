@@ -24,6 +24,7 @@ import {
   EnvironmentSettings,
   ReleaseModel,
 } from '../overmind/state'
+import { getDeploymentId } from '../overmind/utils'
 
 const getButtonStyle = (state?: DeploymentState) => {
   switch (state) {
@@ -111,8 +112,13 @@ export const ReleasesTableView = () => {
     const isAfterLatest =
       !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
 
-    const pendingDeployment =
-      pendingDeployments[`${release.tagName}_${environment.name}`]
+    const deploymentId = getDeploymentId({
+      release: release.tagName,
+      environment: environment.name,
+      repo: selectedApplication.repo.name,
+      owner: selectedApplication.repo.owner,
+    })
+    const pendingDeployment = pendingDeployments[deploymentId]
     const modifiedAt = deployment?.modifiedAt
     const deploymentState =
       pendingDeployment &&

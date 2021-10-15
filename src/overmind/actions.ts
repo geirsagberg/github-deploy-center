@@ -19,6 +19,7 @@ import {
   EnvironmentSettings,
   RepoModel,
 } from './state'
+import { getDeploymentId } from './utils'
 
 export const setToken = ({ state }: Context, token: string) => {
   state.token = token
@@ -100,7 +101,13 @@ export const triggerDeployment = async (
       `Are you sure you want to deploy "${release}" to "${environmentSettings.name}" in "${repo.owner}/${repo.name}@${deploySettings.ref}"?`
     )
   ) {
-    state.pendingDeployments[`${release}_${environmentName}`] = dayjs()
+    const deploymentId = getDeploymentId({
+      release,
+      environment: environmentName,
+      owner: repo.owner,
+      repo: repo.name,
+    })
+    state.pendingDeployments[deploymentId] = dayjs()
 
     const { owner, name } = repo
     const { ref, workflowId, environmentKey, releaseKey, extraArgs } =
