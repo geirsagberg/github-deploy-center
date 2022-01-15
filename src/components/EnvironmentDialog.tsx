@@ -61,7 +61,18 @@ export const EnvironmentDialog: FC<{
           <DialogTitle>{title}</DialogTitle>
           <DialogContent>
             {error instanceof Error ? (
-              <Alert severity="error">{error.message}</Alert>
+                <>
+                  <Box mb={2}>
+                    <Alert severity="warning">Could not fetch environments: {error.message}</Alert>
+                  </Box>
+                  <DialogContentText>Enter environment name manually:</DialogContentText>
+                  <TextField
+                      label="Environment name"
+                      value={dialogState.environmentName}
+                      onChange={(e) =>
+                      updateDialogState((state) => (state.environmentName = e.target.value))}
+                  />
+                </>
             ) : (
               <>
                 <DialogContentText>Select environment</DialogContentText>
