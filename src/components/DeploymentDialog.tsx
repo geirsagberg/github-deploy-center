@@ -79,7 +79,7 @@ export const DeploymentDialog = () => {
               )}
               renderInput={(params) => (
                 <TextField
-                  label="Extra workflow args"
+                  label="Extra workflow args (press Enter to add)"
                   placeholder="key=value"
                   {...params}
                 />
