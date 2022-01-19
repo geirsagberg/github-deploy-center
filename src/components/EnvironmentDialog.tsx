@@ -59,18 +59,24 @@ export const EnvironmentDialog: FC<{
               })
           }}>
           <DialogTitle>{title}</DialogTitle>
-          <DialogContent>
+          <DialogContent style={{display: "flex", flexDirection: "column"}}>
             {error instanceof Error ? (
                 <>
                   <Box mb={2}>
                     <Alert severity="warning">Could not fetch environments: {error.message}</Alert>
                   </Box>
-                  <DialogContentText>Enter environment name manually:</DialogContentText>
+                  <DialogContentText>Enter environment manually:</DialogContentText>
                   <TextField
                       label="Environment name"
                       value={dialogState.environmentName}
                       onChange={(e) =>
                       updateDialogState((state) => (state.environmentName = e.target.value))}
+                  />
+                  <TextField
+                      label="Workflow input value"
+                      value={dialogState.workflowInputValue}
+                      onChange={(e) =>
+                      updateDialogState((state) => (state.workflowInputValue = e.target.value))}
                   />
                 </>
             ) : (
