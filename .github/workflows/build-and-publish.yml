@@ -4,10 +4,8 @@ on:
   push:
     branches:
       - master
-    paths:
-      - src/**
-      - public/**
-      - .github/workflows/build-and-publish.yml
+    paths-ignore:
+      - '**/*.md'
   workflow_dispatch:
 
 env:
@@ -19,11 +17,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Setup Node
-        uses: actions/setup-node@v1
-        with:
-          node-version: '14'
 
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
@@ -59,7 +52,7 @@ jobs:
         with:
           tag_name: v${{ github.run_number }}
           release_name: Release v${{ github.run_number }}
-          
+
       - name: Upload release artifact
         uses: actions/upload-release-asset@v1
         with:

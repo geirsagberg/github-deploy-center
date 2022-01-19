@@ -3,7 +3,7 @@ name: Deploy
 on:
   workflow_dispatch:
     inputs:
-      release:
+      ref:
         description: Which release version to deploy (e.g. v1.0.3)
         required: true
       environment:
@@ -13,7 +13,7 @@ on:
 env:
   GITHUB_TOKEN: ${{ github.token }}
   ENVIRONMENT: ${{ github.event.inputs.environment }}
-  RELEASE: ${{ github.event.inputs.release }}
+  RELEASE: ${{ github.event.inputs.ref }}
 
 jobs:
   deploy:
@@ -56,7 +56,7 @@ jobs:
       - name: Login with Azure Service Principal
         env:
           AZCOPY_SPA_CLIENT_SECRET: ${{ secrets.AZCOPY_SPA_CLIENT_SECRET }}
-        run: ./azcopy login --service-principal --application-id 6059feb3-4e4d-448a-ae16-73c8be36ef57 --tenant-id a7d6d49d-a422-491d-bc2f-e60e48013583
+        run: ./azcopy login --service-principal --application-id 39bec033-4358-4ae1-abbd-ecb8de5729cf --tenant-id a7d6d49d-a422-491d-bc2f-e60e48013583
 
       - name: Set storage account
         run: |

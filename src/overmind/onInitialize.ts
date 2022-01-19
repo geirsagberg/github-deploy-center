@@ -1,54 +1,104 @@
+import dayjs from 'dayjs'
 import { getOrElse } from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/function'
-import { OnInitialize } from 'overmind'
-import { orNull } from '../utils/fp'
+import { mapValues, noop } from 'lodash-es'
+import { Context } from '.'
 import graphQLApi from '../utils/graphQLApi'
 import { restApi } from './effects'
-import { DeploySettingsByRepoCodec, RepoCodec } from './state'
+import {
+  ApplicationsByIdCodec,
+  AppSettingsCodec,
+  AppState,
+  defaultAppSettings,
+  PendingDeploymentsCodec,
+} from './state'
 
-const onInitialize: OnInitialize = ({ state }, instance) => {
-  const savedStateJson = localStorage.getItem('overmind')
-  if (savedStateJson) {
-    try {
-      const savedState = JSON.parse(savedStateJson)
-      state.token = savedState.token || ''
-      state.selectedRepo = pipe(
-        RepoCodec.decode(savedState.selectedRepo),
-        orNull()
-      )
-      state.environmentOrderByRepo = savedState.environmentOrderByRepo || {}
-      state.deploySettingsByRepo = pipe(
-        DeploySettingsByRepoCodec.decode(savedState.deploySettingsByRepo),
-        getOrElse((e) => {
-          console.error(e)
-          return {}
-        })
-      )
-    } catch (error) {
-      console.error(error)
+export const onInitializeOvermind = ({
+  state,
+  effects: { storage },
+  reaction,
+}: Context) => {
+  function sync<T>(
+    getState: (state: AppState) => T,
+    onValueLoaded: (value: T) => void,
+    options: { nested: boolean },
+    onValueChanged: (value: T) => void = noop
+  ) {
+    const key = getState.toString().replace(/^.*?\./, 'gdc.')
+    reaction(
+      getState,
+      (data) => {
+        onValueChanged(data)
+        storage.save(key, data)
+      },
+      {
+        nested: options.nested,
+      }
+    )
+    const value = storage.load(key)
+    if (value) {
+      onValueLoaded(value)
     }
   }
-  instance.reaction(
-    ({
-      token,
-      selectedRepo,
-      environmentOrderByRepo,
-      deploySettingsByRepo,
-    }) => ({
-      token,
-      selectedRepo,
-      environmentOrderByRepo,
-      deploySettingsByRepo,
-    }),
-    (data) => localStorage.setItem('overmind', JSON.stringify(data))
-  )
-  instance.reaction(
-    ({ token }) => token,
+
+  sync(
+    (state) => state.token,
+    (token) => {
+      state.token = token || ''
+    },
+    { nested: false },
     (token) => {
       graphQLApi.setToken(token)
       restApi.setToken(token)
     }
   )
-}
 
-export default onInitialize
+  sync(
+    (state) => state.applicationsById,
+    (data) => {
+      state.applicationsById = pipe(
+        ApplicationsByIdCodec.decode(data),
+        getOrElse((e) => {
+          console.error(e)
+          return {}
+        })
+      )
+    },
+    { nested: true }
+  )
+
+  sync(
+    (state) => state.selectedApplicationId,
+    (id) => (state.selectedApplicationId = id),
+    { nested: false }
+  )
+
+  sync(
+    (state) => state.appSettings,
+    (data) => {
+      state.appSettings = pipe(
+        AppSettingsCodec.decode(data),
+        getOrElse((e) => {
+          console.error(e)
+          return defaultAppSettings
+        })
+      )
+    },
+    { nested: true }
+  )
+
+  sync(
+    (state) => state.pendingDeployments,
+    (data) => {
+      state.pendingDeployments = pipe(
+        PendingDeploymentsCodec.decode(data),
+        getOrElse((e) => {
+          console.error(e)
+          return {} as Record<string, string>
+        }),
+        (data) => mapValues(data, (date) => dayjs(date))
+      )
+    },
+    { nested: true }
+  )
+}

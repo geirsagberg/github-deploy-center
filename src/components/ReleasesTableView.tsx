@@ -1,6 +1,9 @@
 import {
   Button,
+  CircularProgress,
   colors,
+  Icon,
+  IconButton,
   Link,
   Table,
   TableBody,
@@ -9,16 +12,21 @@ import {
   TableRow,
 } from '@material-ui/core'
 import { Alert } from '@material-ui/lab'
-import { groupBy, keyBy, orderBy, uniq } from 'lodash-es'
-import React, { FC, useState } from 'react'
+import { orderBy, values } from 'lodash-es'
+import React from 'react'
 import { useMutation } from 'react-query'
+import { useFetchReleases } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
-import { useActions, useOvermindState } from '../overmind'
-import { DeploymentModel, ReleaseModel } from '../overmind/state'
-import { ApplicationSelector } from './ApplicationSelector'
-import { useFetchDeployments, useFetchReleases } from './fetchHooks'
+import { useActions, useAppState } from '../overmind'
+import {
+  DeploymentModel,
+  DeployWorkflowCodec,
+  EnvironmentSettings,
+  ReleaseModel,
+} from '../overmind/state'
+import { getDeploymentId } from '../overmind/utils'
 
-const getButtonStyle = (state: DeploymentState) => {
+const getButtonStyle = (state?: DeploymentState) => {
   switch (state) {
     case DeploymentState.Active:
       return { backgroundColor: colors.blue[400] }
@@ -28,118 +36,115 @@ const getButtonStyle = (state: DeploymentState) => {
       return { color: colors.orange[400] }
     case DeploymentState.InProgress:
       return { color: colors.yellow[400] }
+    case undefined:
+      return {}
     default:
       return { color: colors.grey[50] }
   }
 }
 
-const getButtonVariant = (state: DeploymentState): 'contained' | 'outlined' => {
-  return state === DeploymentState.Active ? 'contained' : 'outlined'
-}
+export const ReleasesTableView = () => {
+  const { selectedApplication, pendingDeployments } = useAppState()
+  const repo = selectedApplication?.repo
+  const { triggerDeployment, removeEnvironment } = useActions()
+  const allReleaseResultsForTag = useFetchReleases()
 
-const estimateEnvironmentsOrder = (
-  deployments: DeploymentModel[] | null | undefined
-) => {
-  return uniq(
-    orderBy(deployments || [], (d) => d.createdAt).map((d) => d.environment)
-  )
-}
-
-export const ReleasesTableView: FC = () => {
-  const { environmentOrderForSelectedRepo, selectedRepo } = useOvermindState()
-  const { triggerDeployment } = useActions()
-  const allReleaseResultsForRepo = useFetchReleases()
-  const allDeploymentResultsForRepo = useFetchDeployments()
-
-  const [filterByApplication, setFilterByApplication] = useState(false)
-  const [currentApplication, setCurrentApplication] = useState<string>()
-
-  const appNames = new Set(
-    allReleaseResultsForRepo.data?.map((releaseData) =>
-      releaseData.tagName.substring(0, releaseData.tagName.indexOf('-'))
-    )
-  )
-
-  const releases =
-    filterByApplication && currentApplication
-      ? allReleaseResultsForRepo.data?.filter(
-          (releaseData) => releaseData.tagName.indexOf(currentApplication) > -1
-        ) || []
-      : allReleaseResultsForRepo.data || []
-
-  const deployments =
-    filterByApplication && currentApplication
-      ? allDeploymentResultsForRepo.data?.filter(
-          (deploymentData) =>
-            deploymentData.refName.indexOf(currentApplication) > -1
-        ) || []
-      : allDeploymentResultsForRepo.data || []
+  const releases = allReleaseResultsForTag.data || []
 
   const { mutate, error, isLoading } = useMutation(
     async ({
       release,
-      environment,
+      environmentName,
     }: {
       release: string
-      environment: string
+      environmentName: string
     }) => {
-      await triggerDeployment({ release, environment })
+      await triggerDeployment({ release, environmentName })
     }
   )
 
-  const releasesSorted = orderBy(releases, (r) => r.createdAt, 'desc')
+  if (
+    !selectedApplication ||
+    !DeployWorkflowCodec.is(selectedApplication.deploySettings) ||
+    !selectedApplication.deploySettings.workflowId
+  ) {
+    return null
+  }
 
-  const releasesByTag = keyBy(releasesSorted, (r) => r.tagName)
+  if (allReleaseResultsForTag.isLoading) {
+    return <CircularProgress />
+  }
 
-  const deploymentsByTag = groupBy(deployments, (d) => d.refName)
-
-  const environmentsOrder = environmentOrderForSelectedRepo || []
-
-  const environments = uniq(
-    environmentsOrder.concat(estimateEnvironmentsOrder(deployments))
+  const releasesSorted = orderBy(
+    releases
+      .slice()
+      .sort((a, b) =>
+        b.tagName.localeCompare(a.tagName, undefined, { numeric: true })
+      )
+      .filter((r) =>
+        r.name
+          .toLowerCase()
+          .startsWith(selectedApplication.releaseFilter.toLowerCase())
+      ),
+    (r) => r.createdAt,
+    'desc'
   )
 
-  const releasesByEnvironment = environments.reduce<
+  const selectedEnvironments = values(
+    selectedApplication.environmentSettingsByName
+  )
+
+  const releasesByEnvironment = selectedEnvironments.reduce<
     Record<string, ReleaseModel[]>
   >((record, environment) => {
-    record[environment] = deployments
-      .filter((d) => d.environment === environment)
-      .map((d) => releasesByTag[d.refName])
-      .filter((d) => !!d)
+    record[environment.name] = releasesSorted.filter((r) =>
+      r.deployments.some((d) => d.environment === environment.name)
+    )
     return record
   }, {})
-
-  const isAfterLatestReleaseForEnvironment = (
-    release: ReleaseModel,
-    environment: string
-  ) => {
-    const latestRelease = releasesByEnvironment[environment]?.[0]
-    return !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
-  }
 
   const createButton = (
     deployment: DeploymentModel | undefined,
     release: ReleaseModel,
-    environment: string
+    environment: EnvironmentSettings
   ) => {
-    const isLatest = isAfterLatestReleaseForEnvironment(release, environment)
-    const deployButtonVariant = isLatest ? 'contained' : 'outlined'
+    const latestRelease = releasesByEnvironment[environment.name]?.[0]
+    const isAfterLatest =
+      !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
+
+    const deploymentId = getDeploymentId({
+      release: release.tagName,
+      environment: environment.name,
+      repo: selectedApplication.repo.name,
+      owner: selectedApplication.repo.owner,
+    })
+    const pendingDeployment = pendingDeployments[deploymentId]
+    const modifiedAt = deployment?.modifiedAt
+    const deploymentState =
+      pendingDeployment &&
+      (!modifiedAt || pendingDeployment.isAfter(modifiedAt))
+        ? DeploymentState.Pending
+        : deployment?.state
+
+    const deployButtonVariant =
+      (isAfterLatest && !deploymentState) ||
+      deploymentState === DeploymentState.Active
+        ? 'contained'
+        : 'outlined'
 
     return (
       <Button
         disabled={isLoading}
-        variant={
-          deployment ? getButtonVariant(deployment.state) : deployButtonVariant
-        }
-        color={!deployment && isLatest ? 'primary' : 'default'}
-        style={deployment ? getButtonStyle(deployment.state) : {}}
+        variant={deployButtonVariant}
+        color={!deploymentState && isAfterLatest ? 'primary' : 'default'}
+        style={getButtonStyle(deploymentState)}
         onClick={() =>
           mutate({
             release: release.tagName,
-            environment,
+            environmentName: environment.name,
           })
         }>
-        {deployment?.state ?? 'Deploy'}
+        {deploymentState?.replaceAll('_', ' ') ?? 'Deploy'}
       </Button>
     )
   }
@@ -149,19 +154,26 @@ export const ReleasesTableView: FC = () => {
       {error instanceof Error && (
         <Alert severity="error">{error.message}</Alert>
       )}
-      <ApplicationSelector
-        appNames={appNames}
-        isMonorepo={filterByApplication}
-        shouldFilterByApplication={setFilterByApplication}
-        currentApp={currentApplication}
-        setCurrentApp={setCurrentApplication}
-      />
       <Table>
         <TableHead>
           <TableRow>
             <TableCell>Release name</TableCell>
-            {environments.map((environment) => (
-              <TableCell key={environment}>{environment}</TableCell>
+            {selectedEnvironments.map((environment) => (
+              <TableCell key={environment.name}>
+                <Link
+                  href={`https://github.com/${repo?.owner}/${
+                    repo?.name
+                  }/deployments/activity_log?environment=${encodeURIComponent(
+                    environment.name
+                  )}`}
+                  target="_blank"
+                  color="inherit">
+                  {environment.name}
+                </Link>
+                <IconButton onClick={() => removeEnvironment(environment.name)}>
+                  <Icon>delete</Icon>
+                </IconButton>
+              </TableCell>
             ))}
           </TableRow>
         </TableHead>
@@ -170,18 +182,18 @@ export const ReleasesTableView: FC = () => {
             <TableRow key={release.id}>
               <TableCell style={{ width: '20%' }}>
                 <Link
-                  href={`https://github.com/${selectedRepo?.owner}/${selectedRepo?.name}/releases/tag/${release.tagName}`}
+                  href={`https://github.com/${repo?.owner}/${repo?.name}/releases/tag/${release.tagName}`}
                   target="_blank"
                   color="inherit">
                   {release.name}
                 </Link>
               </TableCell>
-              {environments.map((environment) => {
-                const deployment = deploymentsByTag[release.tagName]?.find(
-                  (d) => d.environment === environment
+              {selectedEnvironments.map((environment) => {
+                const deployment = release.deployments.find(
+                  (d) => d.environment === environment.name
                 )
                 return (
-                  <TableCell key={environment}>
+                  <TableCell key={environment.name}>
                     {createButton(deployment, release, environment)}
                   </TableCell>
                 )

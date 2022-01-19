@@ -1,32 +1,27 @@
-import { createOvermind, IConfig } from 'overmind'
+import { createOvermind, IContext } from 'overmind'
 import {
   createActionsHook,
   createEffectsHook,
-  createHook,
   createReactionHook,
   createStateHook,
 } from 'overmind-react'
 import * as actions from './actions'
 import * as effects from './effects'
-import onInitialize from './onInitialize'
 import state from './state'
-import { createConfig } from './utils'
 
-const config = createConfig({
+export const config = {
   state,
-  onInitialize,
   actions,
   effects,
-})
-
-declare module 'overmind' {
-  interface Config extends IConfig<typeof config> {}
 }
 
-export const useOvermind = createHook()
-export const useOvermindState = createStateHook()
-export const useActions = createActionsHook()
-export const useEffects = createEffectsHook()
-export const useReaction = createReactionHook()
+export type Context = IContext<typeof config>
 
-export const overmind = createOvermind(config)
+export const useAppState = createStateHook<Context>()
+export const useActions = createActionsHook<Context>()
+export const useEffects = createEffectsHook<Context>()
+export const useReaction = createReactionHook<Context>()
+
+// We set the delimiter to something other than '.', to avoid errors if release strings include dots
+// See e.g. https://github.com/cerebral/overmind/issues/441
+export const overmind = createOvermind(config, { delimiter: '|' })
