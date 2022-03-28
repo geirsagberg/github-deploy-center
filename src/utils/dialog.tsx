@@ -22,6 +22,7 @@ const ConfirmDialog = ({ isOpen, onResolve, message }: ConfirmDialogProps) => {
         <Button
           variant="contained"
           color="primary"
+          autoFocus
           onClick={() => onResolve(true)}>
           Ok
         </Button>

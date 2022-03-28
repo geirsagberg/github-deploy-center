@@ -85,7 +85,7 @@ export const useFetchWorkflows = () => {
   const repo = selectedApplication?.repo
 
   const { data, isLoading, error } = useQuery(
-    `${repo?.owner}/${repo?.name}-workflows`,
+    `${repo?.owner}/${repo?.name}/workflows`,
     async () => {
       if (!token || !repo) return []
 
@@ -111,38 +111,28 @@ export const useFetchEnvironments = () => {
   const repo = selectedApplication?.repo
 
   const { data, isLoading, error } = useQuery(
-    `${repo?.owner}/${repo?.name}-environments`,
+    `${repo?.owner}/${repo?.name}/environments`,
     async () => {
       if (!token || !repo) return []
       const { owner, name } = repo
 
-      let keepFetching = true
-      const environments: GitHubEnvironment[] = []
-
-      while (keepFetching) {
-        const response = await restApi.octokit.repos.getAllEnvironments({
+      const data = await restApi.octokit.paginate(
+        restApi.octokit.repos.getAllEnvironments,
+        {
           owner,
           repo: name,
           per_page: 100,
+        },
+        (response) => response.data as any
+      )
+      console.log(data)
+      return pipe(
+        GitHubEnvironmentsCodec.decode(data),
+        getOrElse((e) => {
+          console.log(e)
+          return [] as GitHubEnvironment[]
         })
-
-        if (response.data?.environments) {
-          const page = pipe(
-            GitHubEnvironmentsCodec.decode(response.data.environments),
-            getOrElse((e) => {
-              console.log(e)
-              return [] as GitHubEnvironment[]
-            })
-          )
-          environments.push(...page)
-        }
-
-        keepFetching =
-          !!response.data.total_count &&
-          environments.length < response.data.total_count
-      }
-
-      return environments
+      )
     }
   )
   return { data, isLoading, error }
