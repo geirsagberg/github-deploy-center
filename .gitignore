@@ -27,3 +27,5 @@ yarn-error.log*
 .terraform
 .eslintcache
 .env
+
+.terraform.lock.hcl

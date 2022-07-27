@@ -1,10 +1,9 @@
 terraform {
-  required_version = ">= 0.13"
+  required_version = "~> 1.2.5"
   required_providers {
-    azurerm = "= 2.33.0"
+    azurerm = "~> 3.0"
   }
-
-  backend "remote" {
+  cloud {
     organization = "geirsagberg"
 
     workspaces {
@@ -25,7 +24,6 @@ resource "azurerm_resource_group" "github_deploy_center" {
 
 resource "azurerm_storage_account" "githubdeploy_dev" {
   min_tls_version          = "TLS1_2"
-  allow_blob_public_access = true
   name                     = "githubdeploydev"
   resource_group_name      = azurerm_resource_group.github_deploy_center.name
   location                 = azurerm_resource_group.github_deploy_center.location
@@ -42,7 +40,6 @@ resource "azurerm_storage_account" "githubdeploy_dev" {
 
 resource "azurerm_storage_account" "githubdeploy_test" {
   min_tls_version          = "TLS1_2"
-  allow_blob_public_access = true
   name                     = "githubdeploytest"
   resource_group_name      = azurerm_resource_group.github_deploy_center.name
   location                 = azurerm_resource_group.github_deploy_center.location
@@ -59,7 +56,6 @@ resource "azurerm_storage_account" "githubdeploy_test" {
 
 resource "azurerm_storage_account" "githubdeploy_prod" {
   min_tls_version          = "TLS1_2"
-  allow_blob_public_access = true
   name                     = "githubdeploy"
   resource_group_name      = azurerm_resource_group.github_deploy_center.name
   location                 = azurerm_resource_group.github_deploy_center.location
