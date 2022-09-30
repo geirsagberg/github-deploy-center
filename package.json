@@ -4,7 +4,7 @@
   "dependencies": {
     "@material-ui/core": "^4.12.3",
     "@material-ui/lab": "^4.0.0-alpha.60",
-    "@octokit/rest": "^18.12.0",
+    "@octokit/rest": "^19.0.4",
     "browser-fs-access": "^0.25",
     "dayjs": "^1.11.0",
     "fp-ts": "^2.11.9",

@@ -1,3 +1,4 @@
+import { components } from '@octokit/openapi-types/types'
 import dayjs from 'dayjs'
 import { getOrElse } from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/function'
@@ -11,6 +12,7 @@ import {
 import { useAppState, useEffects } from '../overmind'
 import {
   DeploymentModel,
+  DeployWorkflowCodec,
   GitHubEnvironment,
   GitHubEnvironmentsCodec,
   ReleaseModel,
@@ -78,6 +80,8 @@ export const useFetchReleases = () => {
   return { data, isLoading, error }
 }
 
+type Workflow = components['schemas']['workflow']
+
 export const useFetchWorkflows = () => {
   const { token, selectedApplication } = useAppState()
   const { restApi } = useEffects()
@@ -91,14 +95,46 @@ export const useFetchWorkflows = () => {
 
       const { owner, name } = repo
 
-      const response = await restApi.octokit.actions.listRepoWorkflows({
-        owner,
-        repo: name,
-        per_page: 100,
-      })
+      const response = await restApi.octokit.paginate(
+        restApi.octokit.actions.listRepoWorkflows,
+        {
+          owner,
+          repo: name,
+          per_page: 100,
+        },
+        (response) => response.data as Workflow[]
+      )
 
       // TODO: Only return workflows with `workflow_dispatch` trigger
-      return orderBy(response.data?.workflows ?? [], (w) => w.name)
+      return orderBy(response, (w) => w.name)
+    }
+  )
+  return { data, isLoading, error }
+}
+
+export const useFetchWorkflowRuns = () => {
+  const { token, selectedApplication } = useAppState()
+  const { restApi } = useEffects()
+
+  const repo = selectedApplication?.repo
+  const workflowId = DeployWorkflowCodec.is(selectedApplication?.deploySettings)
+    ? selectedApplication?.deploySettings.workflowId
+    : undefined
+  const { data, isLoading, error } = useQuery(
+    `${repo?.owner}/${repo?.name}/workflow-runs`,
+    async () => {
+      if (!token || !repo || !workflowId) return []
+
+      const { owner, name } = repo
+
+      const response = await restApi.octokit.actions.listWorkflowRuns({
+        workflow_id: workflowId,
+        owner,
+        repo: name,
+        per_page: 5,
+      })
+
+      return response.data?.workflow_runs ?? []
     }
   )
   return { data, isLoading, error }
