@@ -125,11 +125,10 @@ export const useFetchEnvironments = () => {
         },
         (response) => response.data as any
       )
-      console.log(data)
       return pipe(
         GitHubEnvironmentsCodec.decode(data),
         getOrElse((e) => {
-          console.log(e)
+          console.error(e)
           return [] as GitHubEnvironment[]
         })
       )

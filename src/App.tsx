@@ -19,6 +19,7 @@ import { ManageApplicationsView } from './components/ManageApplicationsView'
 import { ReleasesTableView } from './components/ReleasesTableView'
 import { SelectApplicationView } from './components/SelectApplicationView'
 import { SettingsDialog } from './components/SettingsDialog'
+import WorkflowInfoView from './components/WorkflowInfoView'
 import { useActions, useAppState } from './overmind'
 
 const App = () => {
@@ -44,6 +45,7 @@ const App = () => {
             <ManageApplicationsView />
             <SelectApplicationView />
             <EnvironmentsView />
+            <WorkflowInfoView />
             <ReleasesTableView />
             <NewApplicationDialog />
             <EditApplicationDialog />
