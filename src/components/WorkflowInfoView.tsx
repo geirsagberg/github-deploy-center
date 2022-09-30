@@ -1,4 +1,4 @@
-import { Link, Typography } from '@material-ui/core'
+import { Icon, Link, Typography } from '@material-ui/core'
 import React from 'react'
 import { useFetchWorkflows } from '../api/fetchHooks'
 import { useAppState } from '../overmind'
@@ -32,9 +32,15 @@ const WorkflowInfoView = () => {
     <Typography>
       Selected workflow:{' '}
       <Link
+        target="_blank"
         href={`https://github.com/${repo.owner}/${repo.name}/actions/workflows/${workflow.path}`}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+        }}
       >
         {workflow.name} to {ref}
+        <Icon style={{ fontSize: '1rem', margin: '0 0.25rem' }}>launch</Icon>
       </Link>
     </Typography>
   )
