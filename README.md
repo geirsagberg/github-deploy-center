@@ -37,7 +37,7 @@ The app is built with:
 - [Create React App](https://create-react-app.dev/)
 - [Material UI](https://material-ui.com/)
 - [Overmind](https://overmindjs.org/)
-- [React Query](https://react-query.tanstack.com/)
+- [React Query](https://@tanstack/react-query.tanstack.com/)
 - [GraphQL](https://graphql.org/)
 
 ## Available Scripts

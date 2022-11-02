@@ -4,7 +4,7 @@ import {
   DialogActions,
   DialogContent,
   DialogContentText,
-} from '@material-ui/core'
+} from '@mui/material'
 import React from 'react'
 import { create, InstanceProps } from 'react-modal-promise'
 
@@ -23,7 +23,8 @@ const ConfirmDialog = ({ isOpen, onResolve, message }: ConfirmDialogProps) => {
           variant="contained"
           color="primary"
           autoFocus
-          onClick={() => onResolve(true)}>
+          onClick={() => onResolve(true)}
+        >
           Ok
         </Button>
         <Button onClick={() => onResolve(false)}>Cancel</Button>

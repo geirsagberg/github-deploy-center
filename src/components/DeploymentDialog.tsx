@@ -1,14 +1,13 @@
 import {
+  Autocomplete,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   TextField,
-} from '@material-ui/core'
-import { Autocomplete } from '@material-ui/lab'
+} from '@mui/material'
 import { fromPairs } from 'lodash-es'
-import React from 'react'
 import { useActions, useAppState } from '../overmind'
 import { SelectWorkflow } from './SelectWorkflow'
 
@@ -32,10 +31,17 @@ export const DeploymentDialog = () => {
             if (valid) {
               saveDeployment()
             }
-          }}>
+          }}
+        >
           <DialogTitle>Deploy workflow settings</DialogTitle>
           <DialogContent
-            style={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+            style={{
+              display: 'flex',
+              gap: '1rem',
+              flexDirection: 'column',
+              overflow: 'visible',
+            }}
+          >
             <SelectWorkflow
               workflowId={deploymentDialog.workflowId}
               onChange={(id) =>
@@ -101,7 +107,8 @@ export const DeploymentDialog = () => {
               type="submit"
               disabled={!valid}
               variant="contained"
-              color="primary">
+              color="primary"
+            >
               Save
             </Button>
             <Button onClick={cancelEditDeployment}>Cancel</Button>

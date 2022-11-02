@@ -1,13 +1,12 @@
 import {
+  Alert,
   CircularProgress,
   FormControl,
   FormControlProps,
   InputLabel,
   MenuItem,
   Select,
-} from '@material-ui/core'
-import { Alert } from '@material-ui/lab'
-import React from 'react'
+} from '@mui/material'
 import { useFetchWorkflows } from '../api/fetchHooks'
 import { useAppState } from '../overmind'
 
@@ -72,7 +71,8 @@ export function SelectWorkflow({
                 ? (e.target.value as number)
                 : 0
             onChange(workflowId)
-          }}>
+          }}
+        >
           <MenuItem value={0}>
             <em>None</em>
           </MenuItem>

@@ -29,3 +29,6 @@ yarn-error.log*
 .env
 
 .terraform.lock.hcl
+
+dist/
+stats.html

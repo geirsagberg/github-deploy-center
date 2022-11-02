@@ -44,7 +44,7 @@ jobs:
         run: yarn build
 
       - name: Zip artifact
-        run: mkdir -p artifacts && cd build && zip -r ../artifacts/release.zip .
+        run: yarn package
 
       - name: Create release
         id: create_release

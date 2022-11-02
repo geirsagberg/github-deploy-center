@@ -1,18 +1,20 @@
 import {
+  Alert,
+  Autocomplete,
   Box,
   Button,
   CircularProgress,
+  createFilterOptions,
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
   DialogTitle,
   TextField,
-} from '@material-ui/core'
-import { Alert, Autocomplete, createFilterOptions } from '@material-ui/lab'
+} from '@mui/material'
 import { identity } from 'fp-ts/lib/function'
-import { orderBy } from 'lodash'
-import React, { FC } from 'react'
+import { orderBy } from 'lodash-es'
+import { FC } from 'react'
 import { useFetchEnvironments } from '../api/fetchHooks'
 import { useAppState } from '../overmind'
 import { EnvironmentDialogState, EnvironmentSettings } from '../overmind/state'
@@ -57,28 +59,39 @@ export const EnvironmentDialog: FC<{
                 workflowInputValue,
                 name: environmentName,
               })
-          }}>
+          }}
+        >
           <DialogTitle>{title}</DialogTitle>
-          <DialogContent style={{display: "flex", flexDirection: "column"}}>
+          <DialogContent style={{ display: 'flex', flexDirection: 'column' }}>
             {error instanceof Error ? (
-                <>
-                  <Box mb={2}>
-                    <Alert severity="warning">Could not fetch environments: {error.message}</Alert>
-                  </Box>
-                  <DialogContentText>Enter environment manually:</DialogContentText>
-                  <TextField
-                      label="Environment name"
-                      value={dialogState.environmentName}
-                      onChange={(e) =>
-                      updateDialogState((state) => (state.environmentName = e.target.value))}
-                  />
-                  <TextField
-                      label="Workflow input value"
-                      value={dialogState.workflowInputValue}
-                      onChange={(e) =>
-                      updateDialogState((state) => (state.workflowInputValue = e.target.value))}
-                  />
-                </>
+              <>
+                <Box mb={2}>
+                  <Alert severity="warning">
+                    Could not fetch environments: {error.message}
+                  </Alert>
+                </Box>
+                <DialogContentText>
+                  Enter environment manually:
+                </DialogContentText>
+                <TextField
+                  label="Environment name"
+                  value={dialogState.environmentName}
+                  onChange={(e) =>
+                    updateDialogState(
+                      (state) => (state.environmentName = e.target.value)
+                    )
+                  }
+                />
+                <TextField
+                  label="Workflow input value"
+                  value={dialogState.workflowInputValue}
+                  onChange={(e) =>
+                    updateDialogState(
+                      (state) => (state.workflowInputValue = e.target.value)
+                    )
+                  }
+                />
+              </>
             ) : (
               <>
                 <DialogContentText>Select environment</DialogContentText>
@@ -100,8 +113,8 @@ export const EnvironmentDialog: FC<{
                   getOptionLabel={(option) =>
                     typeof option === 'string' ? option : option.name
                   }
-                  getOptionSelected={(first, second) =>
-                    first.name === second.name
+                  isOptionEqualToValue={(option, value) =>
+                    option.name === value.name
                   }
                   filterOptions={(options, params) => {
                     const filtered = filter(options, params)
@@ -134,7 +147,8 @@ export const EnvironmentDialog: FC<{
                               maxWidth={24}
                               maxHeight={24}
                               ml={1}
-                              component={CircularProgress}></Box>
+                              component={CircularProgress}
+                            ></Box>
                           ) : null,
                       }}
                     />
@@ -165,7 +179,8 @@ export const EnvironmentDialog: FC<{
                 type="submit"
                 disabled={!dialogState.environmentName}
                 variant="contained"
-                color="primary">
+                color="primary"
+              >
                 Save
               </Button>
               <Button onClick={onCancel}>Cancel</Button>

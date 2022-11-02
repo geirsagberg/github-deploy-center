@@ -1,80 +1,65 @@
 {
   "name": "github-deploy-center",
   "private": true,
-  "dependencies": {
-    "@material-ui/core": "^4.12.3",
-    "@material-ui/lab": "^4.0.0-alpha.60",
-    "@octokit/rest": "^19.0.4",
-    "browser-fs-access": "^0.25",
-    "dayjs": "^1.11.0",
-    "fp-ts": "^2.11.9",
-    "graphql": "^16.3.0",
-    "graphql-request": "^4.2.0",
-    "graphql-tag": "^2.12.6",
-    "io-ts": "^2.2.16",
-    "lodash-es": "^4.17.21",
-    "overmind": "^28.0.1",
-    "overmind-react": "^29.0.1",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "react-modal-promise": "^1.0.2",
-    "react-query": "^3.34.19",
-    "react-scripts": "^5.0.0",
-    "uuid": "^8.3.2"
-  },
   "scripts": {
-    "analyze": "source-map-explorer 'build/static/js/*.js'",
-    "start": "craco start",
-    "build": "craco build",
-    "test": "craco test",
-    "eject": "react-scripts eject",
+    "analyze": "yarn build && open stats.html",
+    "start": "vite",
+    "preview": "vite preview",
+    "build": "tsc && vite build",
     "codegen": "graphql-codegen --config codegen.yml",
     "update-github-schema": "curl -H \"Authorization: Bearer $GITHUB_PAT\" https://api.github.com/graphql --output github.schema.json && json-format github.schema.json --indent 2",
-    "package": "mkdir -p artifacts && cd build && zip -r ../artifacts/release.zip ."
+    "package": "mkdir -p artifacts && cd dist && zip -r ../artifacts/release.zip ."
   },
-  "eslintConfig": {
-    "extends": "react-app"
-  },
-  "browserslist": {
-    "production": [
-      "defaults",
-      "not IE 11"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
-  "jest": {
-    "moduleNameMapper": {
-      "^lodash-es$": "lodash"
-    }
+  "dependencies": {
+    "@emotion/react": "^11.10.5",
+    "@emotion/styled": "^11.10.5",
+    "@mui/material": "^5.10.12",
+    "@octokit/rest": "^19.0.5",
+    "@tanstack/react-query": "^4.14.1",
+    "@tanstack/react-query-devtools": "^4.14.1",
+    "browser-fs-access": "^0.31",
+    "dayjs": "^1.11.6",
+    "fp-ts": "^2.13.1",
+    "graphql": "^16.6.0",
+    "graphql-request": "^5.0.0",
+    "graphql-tag": "^2.12.6",
+    "io-ts": "^2.2.19",
+    "isomorphic-fetch": "^3.0.0",
+    "lodash-es": "^4.17.21",
+    "overmind": "^28.0.2",
+    "overmind-react": "^29.0.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-modal-promise": "^1.0.2",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@craco/craco": "^6.4.3",
-    "@graphql-codegen/cli": "^2.6.2",
-    "@graphql-codegen/introspection": "2.1.1",
-    "@graphql-codegen/typescript": "2.4.8",
-    "@graphql-codegen/typescript-graphql-request": "^4.4.4",
-    "@graphql-codegen/typescript-operations": "2.3.5",
-    "@testing-library/jest-dom": "^5.16.3",
-    "@testing-library/react": "^12.1.4",
-    "@testing-library/user-event": "^13.5.0",
+    "@babel/core": "^7.19.6",
+    "@graphql-codegen/cli": "^2.13.11",
+    "@graphql-codegen/introspection": "2.2.1",
+    "@graphql-codegen/typescript": "2.8.1",
+    "@graphql-codegen/typescript-graphql-request": "^4.5.8",
+    "@graphql-codegen/typescript-operations": "2.5.6",
+    "@testing-library/dom": "^8.19.0",
+    "@testing-library/jest-dom": "^5.16.5",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^14.4.3",
     "@types/file-saver": "^2.0.5",
-    "@types/jest": "^27.4.1",
+    "@types/jest": "^29.2.1",
     "@types/lodash-es": "^4.17.6",
-    "@types/node": "^17.0.23",
-    "@types/react": "^17.0.43",
-    "@types/react-dom": "^17.0.14",
+    "@types/node": "^18.11.9",
+    "@types/react": "^18.0.24",
+    "@types/react-dom": "^18.0.8",
     "@types/uuid": "^8.3.4",
-    "craco-esbuild": "^0.5.0",
+    "@vitejs/plugin-react": "^2.2.0",
     "cross-env": "^7.0.3",
-    "esbuild": "^0.14.28",
+    "esbuild": "^0.15.12",
     "json-format": "^1.0.1",
     "json-format-cli": "^1.1.1",
-    "source-map-explorer": "^2.5.2",
-    "type-fest": "^2.12.1",
-    "typescript": "~4.6.3"
+    "rollup-plugin-visualizer": "^5.8.3",
+    "ts-node": "^10.9.1",
+    "type-fest": "^3.1.0",
+    "typescript": "^4.8.4",
+    "vite": "^3.2.2"
   }
 }

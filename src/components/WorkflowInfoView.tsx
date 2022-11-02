@@ -5,10 +5,9 @@ import {
   List,
   ListItem,
   Typography,
-} from '@material-ui/core'
+} from '@mui/material'
 import dayjs from 'dayjs'
 import { size } from 'lodash-es'
-import React from 'react'
 import { useFetchWorkflowRuns, useFetchWorkflows } from '../api/fetchHooks'
 import { useAppState } from '../overmind'
 import { DeployWorkflowCodec } from '../overmind/state'
@@ -32,8 +31,6 @@ const WorkflowInfoView = () => {
   const { selectedApplication } = useAppState()
   const workflows = useFetchWorkflows()
   const runs = useFetchWorkflowRuns()
-
-  console.log(runs)
 
   if (
     !selectedApplication ||

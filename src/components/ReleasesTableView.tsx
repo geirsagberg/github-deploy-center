@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   CircularProgress,
   colors,
@@ -10,11 +11,9 @@ import {
   TableCell,
   TableHead,
   TableRow,
-} from '@material-ui/core'
-import { Alert } from '@material-ui/lab'
+} from '@mui/material'
+import { useMutation } from '@tanstack/react-query'
 import { orderBy, values } from 'lodash-es'
-import React from 'react'
-import { useMutation } from 'react-query'
 import { useFetchReleases } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
 import { useActions, useAppState } from '../overmind'
@@ -136,14 +135,15 @@ export const ReleasesTableView = () => {
       <Button
         disabled={isLoading}
         variant={deployButtonVariant}
-        color={!deploymentState && isAfterLatest ? 'primary' : 'default'}
+        color={!deploymentState && isAfterLatest ? 'primary' : 'inherit'}
         style={getButtonStyle(deploymentState)}
         onClick={() =>
           mutate({
             release: release.tagName,
             environmentName: environment.name,
           })
-        }>
+        }
+      >
         {deploymentState?.replaceAll('_', ' ') ?? 'Deploy'}
       </Button>
     )
@@ -167,7 +167,8 @@ export const ReleasesTableView = () => {
                     environment.name
                   )}`}
                   target="_blank"
-                  color="inherit">
+                  color="inherit"
+                >
                   {environment.name}
                 </Link>
                 <IconButton onClick={() => removeEnvironment(environment.name)}>
@@ -184,7 +185,8 @@ export const ReleasesTableView = () => {
                 <Link
                   href={`https://github.com/${repo?.owner}/${repo?.name}/releases/tag/${release.tagName}`}
                   target="_blank"
-                  color="inherit">
+                  color="inherit"
+                >
                   {release.name}
                 </Link>
               </TableCell>

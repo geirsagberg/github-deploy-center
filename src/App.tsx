@@ -6,8 +6,7 @@ import {
   Paper,
   TextField,
   Typography,
-} from '@material-ui/core'
-import React from 'react'
+} from '@mui/material'
 import ModalContainer from 'react-modal-promise'
 import {
   EditApplicationDialog,
@@ -27,7 +26,7 @@ const App = () => {
   const { setToken, showSettings } = useActions()
   return (
     <Container>
-      <Box p={4} display="grid" gridGap="1rem" component={Paper}>
+      <Box p={4} display="grid" gap="1rem" component={Paper}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h1">GitHub Deploy Center</Typography>
           <IconButton title="Settings" onClick={() => showSettings()}>

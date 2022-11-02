@@ -1,12 +1,7 @@
-import {
-  Button,
-  Typography
-} from '@material-ui/core'
+import { Button, Typography } from '@mui/material'
 import React from 'react'
 import { useActions, useAppState } from '../overmind'
-import {
-  DeployWorkflowCodec
-} from '../overmind/state'
+import { DeployWorkflowCodec } from '../overmind/state'
 import { EnvironmentDialog } from './EnvironmentDialog'
 
 const AddEnvironmentDialog = () => {

@@ -1,6 +1,5 @@
-import { Box, CircularProgress, TextField } from '@material-ui/core'
-import { Autocomplete } from '@material-ui/lab'
-import React, { FC } from 'react'
+import { Autocomplete, Box, CircularProgress, TextField } from '@mui/material'
+import { FC } from 'react'
 import { RepoModel } from '../overmind/state'
 
 interface RepoSearchBoxProps {
@@ -33,14 +32,15 @@ export const RepoSearchBox: FC<RepoSearchBoxProps> = ({
                 maxWidth={24}
                 maxHeight={24}
                 ml={1}
-                component={CircularProgress}></Box>
+                component={CircularProgress}
+              ></Box>
             ) : null,
         }}
       />
     )}
     groupBy={(r) => r.owner}
     getOptionLabel={(r) => r.name}
-    getOptionSelected={(first, second) => first.id === second.id}
+    isOptionEqualToValue={(option, value) => option.name === value.name}
     value={selectedRepo}
     autoHighlight
     onChange={(_, value) => setSelectedRepo(value)}

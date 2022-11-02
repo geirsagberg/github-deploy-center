@@ -1,8 +1,7 @@
 import dayjs from 'dayjs'
 import { getOrElse } from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/function'
-import { some } from 'lodash'
-import { clone, get, set } from 'lodash-es'
+import { clone, get, set, some } from 'lodash-es'
 import { Context } from '.'
 import { showConfirm } from '../utils/dialog'
 import {

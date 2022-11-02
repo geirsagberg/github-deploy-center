@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Button,
   Dialog,
@@ -7,10 +8,9 @@ import {
   DialogContentText,
   DialogTitle,
   TextField,
-} from '@material-ui/core'
-import { Alert } from '@material-ui/lab'
+} from '@mui/material'
 import { orderBy } from 'lodash-es'
-import React, { FC } from 'react'
+import { FC } from 'react'
 import { useFetchRepos } from '../api/fetchHooks'
 import { useActions, useAppState } from '../overmind'
 import { ApplicationDialogState, RepoModel } from '../overmind/state'
@@ -50,7 +50,8 @@ export const ApplicationDialog: FC<{
                 name: dialogState.name,
                 releaseFilter: dialogState.releaseFilter,
               })
-          }}>
+          }}
+        >
           <DialogTitle>{title}</DialogTitle>
           <DialogContent>
             {error instanceof Error ? (
@@ -61,7 +62,8 @@ export const ApplicationDialog: FC<{
                 <Box
                   display="flex"
                   flexDirection="column"
-                  style={{ gap: '1rem' }}>
+                  style={{ gap: '1rem' }}
+                >
                   <RepoSearchBox
                     isLoading={isLoading}
                     options={options}
@@ -88,7 +90,8 @@ export const ApplicationDialog: FC<{
                   <Box
                     display="flex"
                     alignItems="center"
-                    style={{ gap: '1rem' }}>
+                    style={{ gap: '1rem' }}
+                  >
                     <TextField
                       style={{ flex: 2 }}
                       variant="outlined"
@@ -114,7 +117,8 @@ export const ApplicationDialog: FC<{
                               state.name.toLowerCase().replaceAll(' ', '-') +
                               '-v')
                         )
-                      }>
+                      }
+                    >
                       Set filter from name
                     </Button>
                   </Box>
@@ -133,7 +137,8 @@ export const ApplicationDialog: FC<{
               {newOrEdit === 'edit' && (
                 <Button
                   style={{ color: theme.palette.error.main }}
-                  onClick={deleteApplication}>
+                  onClick={deleteApplication}
+                >
                   Delete
                 </Button>
               )}
@@ -142,7 +147,8 @@ export const ApplicationDialog: FC<{
                 type="submit"
                 disabled={!dialogState.repo || !!dialogState.warning}
                 variant="contained"
-                color="primary">
+                color="primary"
+              >
                 Save
               </Button>
               <Button onClick={onCancel}>Cancel</Button>

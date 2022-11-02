@@ -5,7 +5,7 @@ import {
   DialogContent,
   DialogTitle,
   TextField,
-} from '@material-ui/core'
+} from '@mui/material'
 import React from 'react'
 import { useActions, useAppState } from '../overmind'
 import { AppState } from '../overmind/state'

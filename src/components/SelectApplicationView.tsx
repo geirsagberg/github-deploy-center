@@ -5,7 +5,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
-} from '@material-ui/core'
+} from '@mui/material'
 import { map, orderBy, size } from 'lodash-es'
 import React from 'react'
 import { useActions, useAppState } from '../overmind'
@@ -26,7 +26,8 @@ export const SelectApplicationView = () => {
           onChange={(event) => {
             selectApplication(event.target.value as string)
           }}
-          value={selectedApplicationId}>
+          value={selectedApplicationId}
+        >
           {map(sortedApplications, (app) => (
             <MenuItem value={app.id} key={app.id}>
               {app.name}
