@@ -16,13 +16,39 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ github.token }}
-  ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
-  RELEASE: ${{ github.event.inputs.ref || 'latest' }}
-  REF: ${{ github.event.inputs.ref || github.event.workflow_run.head_sha }}
+  ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+  RELEASE: ${{ inputs.ref || 'latest' }}
 
 jobs:
+  find_tag:
+    name: Find latest tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Find latest tag
+        if: env.RELEASE == 'latest'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "TAG=$(gh release view --json name | jq -r '.name')" >> $GITHUB_ENV
+
+      - name: Set release tag if not latest
+        if: env.RELEASE != 'latest'
+        run: echo "TAG=${{ inputs.release }}" >> $GITHUB_ENV
+
+      - name: Output tag
+        id: set-tag
+        run: echo "TAG=${{ env.TAG }}" >> $GITHUB_OUTPUT
+    outputs:
+      tag: ${{ steps.set-tag.outputs.tag }}
+
   deploy:
     runs-on: ubuntu-latest
+    needs: find_tag
+    env:
+      TAG: ${{ needs.find_tag.outputs.tag }}
     steps:
       - name: Validate environment
         if: env.ENVIRONMENT != 'dev' && env.ENVIRONMENT != 'test' && env.ENVIRONMENT != 'prod'
@@ -31,7 +57,7 @@ jobs:
       - name: Validate release
         uses: octokit/request-action@v2.x
         with:
-          route: GET /repos/${{ github.repository }}/releases/${{ env.RELEASE }}
+          route: GET /repos/${{ github.repository }}/releases/${{ env.TAG }}
 
       - name: Create deployment
         id: create_deployment
@@ -40,18 +66,18 @@ jobs:
           token: ${{ github.token }}
           environment: ${{ env.ENVIRONMENT }}
           production-environment: ${{ env.ENVIRONMENT == 'prod' }}
-          description: Deployment of release ${{ env.RELEASE }} to ${{ env.ENVIRONMENT }}
-          ref: ${{ env.REF }}
+          description: Deployment of release ${{ env.TAG }} to ${{ env.ENVIRONMENT }}
+          ref: ${{ env.TAG }}
 
       - name: Set deployment in progress
-        uses: chrnorm/deployment-action@v2
+        uses: chrnorm/deployment-status@v2
         with:
           token: ${{ github.token }}
           state: in_progress
           deployment-id: ${{ steps.create_deployment.outputs.deployment_id }}
 
       - name: Download release artifact
-        run: curl https://github.com/${{ github.repository }}/releases/download/${{ env.RELEASE }}/release.zip --output release.zip -L
+        run: curl https://github.com/${{ github.repository }}/releases/download/${{ env.TAG }}/release.zip --output release.zip -L
 
       - name: Unzip release artifact
         run: unzip release.zip -d release
@@ -72,7 +98,7 @@ jobs:
         run: cd release && ../azcopy sync . "https://${STORAGE_ACCOUNT}.blob.core.windows.net/\$web" --delete-destination true
 
       - name: Update deployment status
-        uses: chrnorm/deployment-action@v2
+        uses: chrnorm/deployment-status@v2
         if: always()
         with:
           token: ${{ github.token }}
