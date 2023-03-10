@@ -17,7 +17,6 @@ export default defineConfig({
       output: {
         manualChunks: {
           mui: ['@mui/material', '@emotion/react', '@emotion/styled'],
-          tr46: ['tr46'],
         },
       },
     },
