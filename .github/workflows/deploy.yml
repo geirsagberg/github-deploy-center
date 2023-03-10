@@ -11,7 +11,7 @@ on:
         required: true
 
   workflow_run:
-    workflows: [build-and-publish]
+    workflows: [Build and publish]
     types: [completed]
 
 env:
