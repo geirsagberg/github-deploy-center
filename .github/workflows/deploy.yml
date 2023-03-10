@@ -18,6 +18,7 @@ env:
   GITHUB_TOKEN: ${{ github.token }}
   ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
   RELEASE: ${{ github.event.inputs.ref || 'latest' }}
+  REF: ${{ github.event.inputs.ref || github.event.workflow_run.head_sha }}
 
 jobs:
   deploy:
@@ -34,19 +35,20 @@ jobs:
 
       - name: Create deployment
         id: create_deployment
-        uses: avakar/create-deployment@8711a60d47672e4d77a3d1298802410a9edc877e
+        uses: chrnorm/deployment-action@v2
         with:
+          token: ${{ github.token }}
           environment: ${{ env.ENVIRONMENT }}
-          production_environment: ${{ env.ENVIRONMENT == 'prod' }}
+          production-environment: ${{ env.ENVIRONMENT == 'prod' }}
           description: Deployment of release ${{ env.RELEASE }} to ${{ env.ENVIRONMENT }}
-          ref: ${{ env.RELEASE }}
-          auto_merge: false
+          ref: ${{ env.REF }}
 
       - name: Set deployment in progress
-        uses: avakar/set-deployment-status@578b982d2ad5f56e50864f9e21ec354a073cd6f5
+        uses: chrnorm/deployment-action@v2
         with:
+          token: ${{ github.token }}
           state: in_progress
-          deployment_id: ${{ steps.create_deployment.outputs.deployment_id }}
+          deployment-id: ${{ steps.create_deployment.outputs.deployment_id }}
 
       - name: Download release artifact
         run: curl https://github.com/${{ github.repository }}/releases/download/${{ env.RELEASE }}/release.zip --output release.zip -L
@@ -70,8 +72,9 @@ jobs:
         run: cd release && ../azcopy sync . "https://${STORAGE_ACCOUNT}.blob.core.windows.net/\$web" --delete-destination true
 
       - name: Update deployment status
-        uses: avakar/set-deployment-status@578b982d2ad5f56e50864f9e21ec354a073cd6f5
+        uses: chrnorm/deployment-action@v2
         if: always()
         with:
-          deployment_id: ${{ steps.create_deployment.outputs.deployment_id }}
+          token: ${{ github.token }}
+          deployment-id: ${{ steps.create_deployment.outputs.deployment_id }}
           state: ${{ job.status == 'success' && 'success' || 'failure' }}
