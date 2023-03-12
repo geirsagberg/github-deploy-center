@@ -7,7 +7,6 @@ import {
   Select,
 } from '@mui/material'
 import { map, orderBy, size } from 'lodash-es'
-import React from 'react'
 import { useActions, useAppState } from '../overmind'
 
 export const SelectApplicationView = () => {
@@ -16,6 +15,7 @@ export const SelectApplicationView = () => {
   const sortedApplications = orderBy(applicationsById, (x) =>
     x.name.toLowerCase()
   )
+
   return size(sortedApplications) ? (
     <Box display="flex" alignItems="center" style={{ gap: '1rem' }}>
       <FormControl variant="outlined" style={{ flex: 1 }}>

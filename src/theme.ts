@@ -11,4 +11,24 @@ export const theme = createMuiTheme({
     primary: green,
     secondary: purple,
   },
+  components: {
+    MuiDialogContent: {
+      styleOverrides: {
+        root: {
+          paddingTop: '0.5rem !important',
+        },
+      },
+    },
+    MuiTooltip: {
+      defaultProps: {
+        arrow: true,
+        placement: 'top',
+      },
+      styleOverrides: {
+        tooltip: {
+          fontSize: '1rem',
+        },
+      },
+    },
+  },
 })

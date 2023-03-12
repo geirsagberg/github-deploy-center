@@ -11,9 +11,9 @@ export const RepoCodec = t.type({
   defaultBranch: t.string,
 })
 
-export type RepoModel = t.TypeOf<typeof RepoCodec>
+export interface RepoModel extends t.TypeOf<typeof RepoCodec> {}
 
-export type ReleaseModel = {
+export interface ReleaseModel {
   id: string
   name: string
   tagName: string
@@ -22,12 +22,13 @@ export type ReleaseModel = {
   deployments: DeploymentModel[]
 }
 
-export type DeploymentModel = {
+export interface DeploymentModel {
   id: string
   createdAt: Dayjs
   environment: string
   state: DeploymentState
   modifiedAt?: Dayjs
+  workflowRunId?: number
 }
 
 export const DeployWorkflowCodec = t.type({
@@ -39,7 +40,8 @@ export const DeployWorkflowCodec = t.type({
   extraArgs: t.record(t.string, t.string),
 })
 
-export type DeployWorkflowSettings = t.TypeOf<typeof DeployWorkflowCodec>
+export interface DeployWorkflowSettings
+  extends t.TypeOf<typeof DeployWorkflowCodec> {}
 
 export const createDeployWorkflowSettings = ({
   workflowId = 0,
@@ -65,24 +67,36 @@ export const DeploySettingsCodec = t.union([
   DeployDeploymentCodec,
 ])
 
-export const GitHubEnvironmentCodec = t.exact(
-  t.type({
-    name: t.string,
-  })
-)
+export const WorkflowRunCodec = t.strict({
+  id: t.number,
+  name: t.string,
+  status: t.string,
+  created_at: t.string,
+  conclusion: t.union([t.string, t.null]),
+  run_number: t.number,
+  html_url: t.string,
+})
+
+export interface WorkflowRun extends t.TypeOf<typeof WorkflowRunCodec> {}
+
+export const WorkflowRunsCodec = t.array(WorkflowRunCodec)
+
+export const GitHubEnvironmentCodec = t.strict({
+  name: t.string,
+})
 
 export const GitHubEnvironmentsCodec = t.array(GitHubEnvironmentCodec)
 
-export type GitHubEnvironment = t.TypeOf<typeof GitHubEnvironmentCodec>
+export interface GitHubEnvironment
+  extends t.TypeOf<typeof GitHubEnvironmentCodec> {}
 
-export const EnvironmentSettingsCodec = t.exact(
-  t.type({
-    name: t.string,
-    workflowInputValue: t.string,
-  })
-)
+export const EnvironmentSettingsCodec = t.strict({
+  name: t.string,
+  workflowInputValue: t.string,
+})
 
-export type EnvironmentSettings = t.TypeOf<typeof EnvironmentSettingsCodec>
+export interface EnvironmentSettings
+  extends t.TypeOf<typeof EnvironmentSettingsCodec> {}
 
 type HasEnvironmentSettings = {
   environmentSettingsByName: {

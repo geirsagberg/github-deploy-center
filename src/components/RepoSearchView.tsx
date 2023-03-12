@@ -1,5 +1,4 @@
 import { Autocomplete, Box, CircularProgress, TextField } from '@mui/material'
-import { FC } from 'react'
 import { RepoModel } from '../overmind/state'
 
 interface RepoSearchBoxProps {
@@ -9,12 +8,12 @@ interface RepoSearchBoxProps {
   setSelectedRepo: (value: RepoModel | null) => void
 }
 
-export const RepoSearchBox: FC<RepoSearchBoxProps> = ({
+export const RepoSearchBox = ({
   isLoading,
   options,
   selectedRepo,
   setSelectedRepo,
-}) => (
+}: RepoSearchBoxProps) => (
   <Autocomplete
     loading={isLoading}
     options={options}
@@ -22,7 +21,7 @@ export const RepoSearchBox: FC<RepoSearchBoxProps> = ({
     renderInput={(params) => (
       <TextField
         variant="outlined"
-        label="Search"
+        label="Find repository"
         {...params}
         InputProps={{
           ...params.InputProps,

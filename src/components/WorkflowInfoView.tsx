@@ -1,14 +1,5 @@
-import {
-  Icon,
-  Link,
-  LinkProps,
-  List,
-  ListItem,
-  Typography,
-} from '@mui/material'
-import dayjs from 'dayjs'
-import { size } from 'lodash-es'
-import { useFetchWorkflowRuns, useFetchWorkflows } from '../api/fetchHooks'
+import { Icon, Link, LinkProps, Typography } from '@mui/material'
+import { useFetchWorkflows } from '../api/fetchHooks'
 import { useAppState } from '../overmind'
 import { DeployWorkflowCodec } from '../overmind/state'
 
@@ -30,7 +21,6 @@ const ExternalLink = ({ children, ...props }: LinkProps) => (
 const WorkflowInfoView = () => {
   const { selectedApplication } = useAppState()
   const workflows = useFetchWorkflows()
-  const runs = useFetchWorkflowRuns()
 
   if (
     !selectedApplication ||
@@ -62,21 +52,6 @@ const WorkflowInfoView = () => {
           {workflow.name} to {ref}
         </ExternalLink>
       </Typography>
-      {runs.data && size(runs.data) ? (
-        <div>
-          <Typography>Recent runs:</Typography>
-          <List>
-            {runs.data.map((run) => (
-              <ListItem key={run.id}>
-                <ExternalLink href={run.html_url}>
-                  Run {run.run_number} - {dayjs(run.created_at).fromNow()} -{' '}
-                  {run.status} - {run.conclusion}
-                </ExternalLink>
-              </ListItem>
-            ))}
-          </List>
-        </div>
-      ) : null}
     </>
   )
 }

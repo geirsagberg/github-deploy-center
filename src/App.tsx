@@ -7,24 +7,24 @@ import {
   Paper,
   TextField,
   Typography,
-} from '@mui/material';
-import ModalContainer from 'react-modal-promise';
+} from '@mui/material'
+import ModalContainer from 'react-modal-promise'
 import {
   EditApplicationDialog,
   NewApplicationDialog,
-} from './components/ApplicationDialog';
-import { DeploymentDialog } from './components/DeploymentDialog';
-import { EnvironmentsView } from './components/EnvironmentsView';
-import { ManageApplicationsView } from './components/ManageApplicationsView';
-import { ReleasesTableView } from './components/ReleasesTableView';
-import { SelectApplicationView } from './components/SelectApplicationView';
-import { SettingsDialog } from './components/SettingsDialog';
-import WorkflowInfoView from './components/WorkflowInfoView';
-import { useActions, useAppState } from './overmind';
+} from './components/ApplicationDialog'
+import { DeploymentDialog } from './components/DeploymentDialog'
+import { EnvironmentsView } from './components/EnvironmentsView'
+import { ManageApplicationsView } from './components/ManageApplicationsView'
+import { ReleasesTableView } from './components/ReleasesTableView'
+import { SelectApplicationView } from './components/SelectApplicationView'
+import { SettingsDialog } from './components/SettingsDialog'
+import WorkflowInfoView from './components/WorkflowInfoView'
+import { useActions, useAppState } from './overmind'
 
 const App = () => {
-  const { token } = useAppState();
-  const { setToken, showSettings } = useActions();
+  const { token } = useAppState()
+  const { setToken, showSettings } = useActions()
   return (
     <Container>
       <Box p={4} display="grid" gap="1rem" component={Paper}>
@@ -74,7 +74,7 @@ const App = () => {
       <SettingsDialog />
       <ModalContainer />
     </Container>
-  );
-};
+  )
+}
 
-export default App;
+export default App

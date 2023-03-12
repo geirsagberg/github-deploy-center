@@ -94,7 +94,6 @@ export const EnvironmentDialog: FC<{
               </>
             ) : (
               <>
-                <DialogContentText>Select environment</DialogContentText>
                 <Autocomplete
                   freeSolo
                   loading={isLoading}
@@ -133,7 +132,7 @@ export const EnvironmentDialog: FC<{
                     <TextField
                       autoFocus
                       variant="outlined"
-                      label="Search"
+                      label="Find or add environment"
                       {...params}
                       inputProps={{
                         ...params.inputProps,

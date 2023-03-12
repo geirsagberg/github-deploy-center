@@ -26844,11 +26844,11 @@ export type FetchReleasesQueryVariables = Exact<{
 }>;
 
 
-export type FetchReleasesQuery = { __typename: 'Query', repository: { __typename: 'Repository', refs: { __typename: 'RefConnection', nodes: Array<{ __typename: 'Ref', id: string, name: string, target: { __typename: 'Blob' } | { __typename: 'Commit', oid: any, pushedDate: any | null, committedDate: any, deployments: { __typename: 'DeploymentConnection', nodes: Array<{ __typename: 'Deployment', id: string, createdAt: any, environment: string | null, state: DeploymentState | null, latestStatus: { __typename: 'DeploymentStatus', createdAt: any } | null } | null> | null, pageInfo: { __typename: 'PageInfo', endCursor: string | null, hasNextPage: boolean } } | null } | { __typename: 'Tag' } | { __typename: 'Tree' } | null } | null> | null } | null } | null };
+export type FetchReleasesQuery = { __typename: 'Query', repository: { __typename: 'Repository', refs: { __typename: 'RefConnection', nodes: Array<{ __typename: 'Ref', id: string, name: string, target: { __typename: 'Blob' } | { __typename: 'Commit', oid: any, pushedDate: any | null, committedDate: any, deployments: { __typename: 'DeploymentConnection', nodes: Array<{ __typename: 'Deployment', id: string, createdAt: any, environment: string | null, state: DeploymentState | null, payload: string | null, latestStatus: { __typename: 'DeploymentStatus', createdAt: any } | null } | null> | null, pageInfo: { __typename: 'PageInfo', endCursor: string | null, hasNextPage: boolean } } | null } | { __typename: 'Tag' } | { __typename: 'Tree' } | null } | null> | null } | null } | null };
 
-export type CommitFragmentFragment = { __typename: 'Commit', oid: any, pushedDate: any | null, committedDate: any, deployments: { __typename: 'DeploymentConnection', nodes: Array<{ __typename: 'Deployment', id: string, createdAt: any, environment: string | null, state: DeploymentState | null, latestStatus: { __typename: 'DeploymentStatus', createdAt: any } | null } | null> | null, pageInfo: { __typename: 'PageInfo', endCursor: string | null, hasNextPage: boolean } } | null };
+export type CommitFragment = { __typename: 'Commit', oid: any, pushedDate: any | null, committedDate: any, deployments: { __typename: 'DeploymentConnection', nodes: Array<{ __typename: 'Deployment', id: string, createdAt: any, environment: string | null, state: DeploymentState | null, payload: string | null, latestStatus: { __typename: 'DeploymentStatus', createdAt: any } | null } | null> | null, pageInfo: { __typename: 'PageInfo', endCursor: string | null, hasNextPage: boolean } } | null };
 
-export type DeployFragment = { __typename: 'Deployment', id: string, createdAt: any, environment: string | null, state: DeploymentState | null, latestStatus: { __typename: 'DeploymentStatus', createdAt: any } | null };
+export type DeployFragment = { __typename: 'Deployment', id: string, createdAt: any, environment: string | null, state: DeploymentState | null, payload: string | null, latestStatus: { __typename: 'DeploymentStatus', createdAt: any } | null };
 
 export type FetchReposWithWriteAccessQueryVariables = Exact<{
   after: InputMaybe<Scalars['String']>;
@@ -26868,10 +26868,11 @@ export const DeployFragmentDoc = gql`
   latestStatus {
     createdAt
   }
+  payload
 }
     `;
-export const CommitFragmentFragmentDoc = gql`
-    fragment CommitFragment on Commit {
+export const CommitFragmentDoc = gql`
+    fragment Commit on Commit {
   __typename
   oid
   pushedDate
@@ -26919,13 +26920,13 @@ export const FetchReleasesDocument = gql`
         id
         name
         target {
-          ...CommitFragment
+          ...Commit
         }
       }
     }
   }
 }
-    ${CommitFragmentFragmentDoc}`;
+    ${CommitFragmentDoc}`;
 export const FetchReposWithWriteAccessDocument = gql`
     query fetchReposWithWriteAccess($after: String) {
   viewer {

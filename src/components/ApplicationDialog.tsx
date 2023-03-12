@@ -5,8 +5,8 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
+  Stack,
   TextField,
 } from '@mui/material'
 import { orderBy } from 'lodash-es'
@@ -57,13 +57,8 @@ export const ApplicationDialog: FC<{
             {error instanceof Error ? (
               <Alert severity="error">{error.message}</Alert>
             ) : (
-              <>
-                <DialogContentText>Select repository</DialogContentText>
-                <Box
-                  display="flex"
-                  flexDirection="column"
-                  style={{ gap: '1rem' }}
-                >
+              <Stack gap={1}>
+                <Stack gap={2}>
                   <RepoSearchBox
                     isLoading={isLoading}
                     options={options}
@@ -122,14 +117,14 @@ export const ApplicationDialog: FC<{
                       Set filter from name
                     </Button>
                   </Box>
-                </Box>
+                </Stack>
 
                 {dialogState.warning && (
                   <Box mt={2}>
                     <Alert severity="warning">{dialogState.warning}</Alert>
                   </Box>
                 )}
-              </>
+              </Stack>
             )}
           </DialogContent>
           <Box p={2} pt={1}>

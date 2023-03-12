@@ -10,14 +10,14 @@ query fetchReleases($repoName: String!, $repoOwner: String!, $prefix: String!) {
         id
         name
         target {
-          ...CommitFragment
+          ...Commit
         }
       }
     }
   }
 }
 
-fragment CommitFragment on Commit {
+fragment Commit on Commit {
   __typename
   oid
   pushedDate
@@ -41,4 +41,5 @@ fragment Deploy on Deployment {
   latestStatus {
     createdAt
   }
+  payload
 }
