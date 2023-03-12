@@ -6,72 +6,73 @@ import {
   Icon,
   IconButton,
   Link,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-} from '@mui/material'
-import { useMutation } from '@tanstack/react-query'
-import { orderBy, values } from 'lodash-es'
-import { useFetchReleases } from '../api/fetchHooks'
-import { DeploymentState } from '../generated/graphql'
-import { useActions, useAppState } from '../overmind'
+} from '@mui/material';
+import { useMutation } from '@tanstack/react-query';
+import { orderBy, values } from 'lodash-es';
+import { useFetchReleases } from '../api/fetchHooks';
+import { DeploymentState } from '../generated/graphql';
+import { useActions, useAppState } from '../overmind';
 import {
   DeploymentModel,
   DeployWorkflowCodec,
   EnvironmentSettings,
   ReleaseModel,
-} from '../overmind/state'
-import { getDeploymentId } from '../overmind/utils'
+} from '../overmind/state';
+import { getDeploymentId } from '../overmind/utils';
 
 const getButtonStyle = (state?: DeploymentState) => {
   switch (state) {
     case DeploymentState.Active:
-      return { backgroundColor: colors.blue[400] }
+      return { backgroundColor: colors.blue[400] };
     case DeploymentState.Failure:
-      return { color: colors.red[400] }
+      return { color: colors.red[400] };
     case DeploymentState.Pending:
-      return { color: colors.orange[400] }
+      return { color: colors.orange[400] };
     case DeploymentState.InProgress:
-      return { color: colors.yellow[400] }
+      return { color: colors.yellow[400] };
     case undefined:
-      return {}
+      return {};
     default:
-      return { color: colors.grey[50] }
+      return { color: colors.grey[50] };
   }
-}
+};
 
 export const ReleasesTableView = () => {
-  const { selectedApplication, pendingDeployments } = useAppState()
-  const repo = selectedApplication?.repo
-  const { triggerDeployment, removeEnvironment } = useActions()
-  const allReleaseResultsForTag = useFetchReleases()
+  const { selectedApplication, pendingDeployments } = useAppState();
+  const repo = selectedApplication?.repo;
+  const { triggerDeployment, removeEnvironment } = useActions();
+  const allReleaseResultsForTag = useFetchReleases();
 
-  const releases = allReleaseResultsForTag.data || []
+  const releases = allReleaseResultsForTag.data || [];
 
   const { mutate, error, isLoading } = useMutation(
     async ({
       release,
       environmentName,
     }: {
-      release: string
-      environmentName: string
+      release: string;
+      environmentName: string;
     }) => {
-      await triggerDeployment({ release, environmentName })
+      await triggerDeployment({ release, environmentName });
     }
-  )
+  );
 
   if (
     !selectedApplication ||
     !DeployWorkflowCodec.is(selectedApplication.deploySettings) ||
     !selectedApplication.deploySettings.workflowId
   ) {
-    return null
+    return null;
   }
 
   if (allReleaseResultsForTag.isLoading) {
-    return <CircularProgress />
+    return <CircularProgress />;
   }
 
   const releasesSorted = orderBy(
@@ -87,67 +88,69 @@ export const ReleasesTableView = () => {
       ),
     (r) => r.createdAt,
     'desc'
-  )
+  );
 
   const selectedEnvironments = values(
     selectedApplication.environmentSettingsByName
-  )
+  );
 
   const releasesByEnvironment = selectedEnvironments.reduce<
     Record<string, ReleaseModel[]>
   >((record, environment) => {
     record[environment.name] = releasesSorted.filter((r) =>
       r.deployments.some((d) => d.environment === environment.name)
-    )
-    return record
-  }, {})
+    );
+    return record;
+  }, {});
 
   const createButton = (
     deployment: DeploymentModel | undefined,
     release: ReleaseModel,
     environment: EnvironmentSettings
   ) => {
-    const latestRelease = releasesByEnvironment[environment.name]?.[0]
+    const latestRelease = releasesByEnvironment[environment.name]?.[0];
     const isAfterLatest =
-      !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
+      !latestRelease || release.createdAt.isAfter(latestRelease.createdAt);
 
     const deploymentId = getDeploymentId({
       release: release.tagName,
       environment: environment.name,
       repo: selectedApplication.repo.name,
       owner: selectedApplication.repo.owner,
-    })
-    const pendingDeployment = pendingDeployments[deploymentId]
-    const modifiedAt = deployment?.modifiedAt
+    });
+    const pendingDeployment = pendingDeployments[deploymentId];
+    const modifiedAt = deployment?.modifiedAt;
     const deploymentState =
       pendingDeployment &&
       (!modifiedAt || pendingDeployment.isAfter(modifiedAt))
         ? DeploymentState.Pending
-        : deployment?.state
+        : deployment?.state;
 
     const deployButtonVariant =
       (isAfterLatest && !deploymentState) ||
       deploymentState === DeploymentState.Active
         ? 'contained'
-        : 'outlined'
+        : 'outlined';
 
     return (
-      <Button
-        disabled={isLoading}
-        variant={deployButtonVariant}
-        color={!deploymentState && isAfterLatest ? 'primary' : 'inherit'}
-        style={getButtonStyle(deploymentState)}
-        onClick={() =>
-          mutate({
-            release: release.tagName,
-            environmentName: environment.name,
-          })
-        }
-      >
-        {deploymentState?.replaceAll('_', ' ') ?? 'Deploy'}
-      </Button>
-    )
-  }
+      <Stack direction="row" alignItems="center" gap={1}>
+        <Button
+          disabled={isLoading}
+          variant={deployButtonVariant}
+          color={!deploymentState && isAfterLatest ? 'primary' : 'inherit'}
+          style={getButtonStyle(deploymentState)}
+          onClick={() =>
+            mutate({
+              release: release.tagName,
+              environmentName: environment.name,
+            })
+          }
+        >
+          {deploymentState?.replaceAll('_', ' ') ?? 'Deploy'}
+        </Button>
+      </Stack>
+    );
+  };
 
   return (
     <>
@@ -193,17 +196,17 @@ export const ReleasesTableView = () => {
               {selectedEnvironments.map((environment) => {
                 const deployment = release.deployments.find(
                   (d) => d.environment === environment.name
-                )
+                );
                 return (
                   <TableCell key={environment.name}>
                     {createButton(deployment, release, environment)}
                   </TableCell>
-                )
+                );
               })}
             </TableRow>
           ))}
         </TableBody>
       </Table>
     </>
-  )
-}
+  );
+};

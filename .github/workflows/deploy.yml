@@ -45,7 +45,7 @@ jobs:
       tag: ${{ steps.set-tag.outputs.tag }}
 
   deploy:
-    name: Deploy to ${{ env.ENVIRONMENT }}
+    name: Deploy to ${{ inputs.environment }}
     runs-on: ubuntu-latest
     needs: find_tag
     env:
