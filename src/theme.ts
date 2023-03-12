@@ -15,7 +15,7 @@ export const theme = createMuiTheme({
     MuiDialogContent: {
       styleOverrides: {
         root: {
-          paddingTop: '0.5rem !important',
+          paddingTop: '1rem !important',
         },
       },
     },

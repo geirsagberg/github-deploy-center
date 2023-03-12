@@ -161,6 +161,7 @@ export const ReleasesTableView = () => {
         {workflowRun && (
           <Tooltip title={`${workflowRun.name} #${workflowRun.run_number}`}>
             <IconButton
+              size="medium"
               color={
                 workflowRun.conclusion
                   ? workflowRun.conclusion === 'success'
@@ -170,7 +171,7 @@ export const ReleasesTableView = () => {
               }
               target="_blank"
               href={workflowRun.html_url}>
-              <Icon>launch</Icon>
+              <Icon fontSize="small">launch</Icon>
             </IconButton>
           </Tooltip>
         )}
@@ -189,19 +190,22 @@ export const ReleasesTableView = () => {
             <TableCell>Release name</TableCell>
             {selectedEnvironments.map((environment) => (
               <TableCell key={environment.name}>
-                <Link
-                  href={`https://github.com/${repo?.owner}/${
-                    repo?.name
-                  }/deployments/activity_log?environment=${encodeURIComponent(
-                    environment.name
-                  )}`}
-                  target="_blank"
-                  color="inherit">
-                  {environment.name}
-                </Link>
-                <IconButton onClick={() => removeEnvironment(environment.name)}>
-                  <Icon>delete</Icon>
-                </IconButton>
+                <Stack direction="row" gap={1} alignItems="center">
+                  <Link
+                    href={`https://github.com/${repo?.owner}/${
+                      repo?.name
+                    }/deployments/activity_log?environment=${encodeURIComponent(
+                      environment.name
+                    )}`}
+                    target="_blank"
+                    color="inherit">
+                    {environment.name}
+                  </Link>
+                  <IconButton
+                    onClick={() => removeEnvironment(environment.name)}>
+                    <Icon>delete</Icon>
+                  </IconButton>
+                </Stack>
               </TableCell>
             ))}
           </TableRow>

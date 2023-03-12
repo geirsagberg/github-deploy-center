@@ -24,6 +24,7 @@ To use GDC, you need a couple of things:
     - `ref`: Which release version to deploy (e.g. v1.0.3)
     - `environment`: Which environment to deploy to (e.g. dev, test or prod)
   - The workflow must create a deployment for the same commit as the release, and update status on success or failure.
+    - RECOMMENDED: If you create the deployment with the `payload` of `{"workflow_run_id": ${{ github.run_id }}}`, the deployment will be linked to the workflow run in the UI.
   - See [the GDC Deploy workflow](./.github/workflows/deploy.yml) as an example.
 
 ## Hosting
