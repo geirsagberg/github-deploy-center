@@ -159,7 +159,16 @@ export const ReleasesTableView = () => {
         </Button>
         {workflowRun && (
           <Tooltip title={`${workflowRun.name} #${workflowRun.run_number}`}>
-            <IconButton target="_blank" href={workflowRun.html_url}>
+            <IconButton
+              color={
+                workflowRun.conclusion
+                  ? workflowRun.conclusion === 'success'
+                    ? 'success'
+                    : 'error'
+                  : 'warning'
+              }
+              target="_blank"
+              href={workflowRun.html_url}>
               <Icon>launch</Icon>
             </IconButton>
           </Tooltip>

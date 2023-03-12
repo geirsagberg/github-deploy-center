@@ -36,7 +36,7 @@ jobs:
 
       - name: Set release tag if not latest
         if: env.RELEASE != 'latest'
-        run: echo "TAG=${{ inputs.release }}" >> $GITHUB_ENV
+        run: echo "TAG=${{ env.RELEASE }}" >> $GITHUB_ENV
 
       - name: Output tag
         id: set-tag
