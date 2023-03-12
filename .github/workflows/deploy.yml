@@ -69,6 +69,7 @@ jobs:
           production-environment: ${{ env.ENVIRONMENT == 'prod' }}
           description: Deployment of release ${{ env.TAG }} to ${{ env.ENVIRONMENT }}
           ref: ${{ env.TAG }}
+          payload: '{"workflow_run_id": "${{ github.run_id }}"}'
 
       - name: Set deployment in progress
         uses: chrnorm/deployment-status@v2
