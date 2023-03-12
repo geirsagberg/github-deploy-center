@@ -24,6 +24,7 @@ export interface ReleaseModel {
 
 export interface DeploymentModel {
   id: string
+  databaseId?: number
   createdAt: Dayjs
   environment: string
   state: DeploymentState
@@ -198,7 +199,22 @@ export type DeploymentDialogState = DeployWorkflowSettings
 
 export type SettingsDialogState = {}
 
-export const PendingDeploymentsCodec = t.record(t.string, t.string)
+export const PendingDeploymentCodec = t.intersection([
+  t.type({
+    createdAt: t.string,
+  }),
+  t.partial({
+    workflowRunId: t.number,
+  }),
+])
+
+export interface PendingDeployment
+  extends t.TypeOf<typeof PendingDeploymentCodec> {}
+
+export const PendingDeploymentsCodec = t.record(
+  t.string,
+  PendingDeploymentCodec
+)
 
 export type AppState = {
   token: string
@@ -212,7 +228,7 @@ export type AppState = {
   editEnvironmentDialog?: EnvironmentDialogState
   deploymentDialog?: DeploymentDialogState
   settingsDialog?: SettingsDialogState
-  pendingDeployments: Record<string, Dayjs>
+  pendingDeployments: Record<string, PendingDeployment>
 }
 
 export const defaultAppSettings: AppSettings = {

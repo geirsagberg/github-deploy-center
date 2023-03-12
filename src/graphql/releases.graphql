@@ -35,6 +35,7 @@ fragment Commit on Commit {
 
 fragment Deploy on Deployment {
   id
+  databaseId
   createdAt
   environment
   state

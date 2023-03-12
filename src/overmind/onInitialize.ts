@@ -1,7 +1,7 @@
 import dayjs from 'dayjs'
 import { getOrElse } from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/function'
-import { mapValues, noop } from 'lodash-es'
+import { noop, pickBy } from 'lodash-es'
 import { Context } from '.'
 import graphQLApi from '../utils/graphQLApi'
 import { restApi } from './effects'
@@ -10,6 +10,7 @@ import {
   AppSettingsCodec,
   AppState,
   defaultAppSettings,
+  PendingDeployment,
   PendingDeploymentsCodec,
 } from './state'
 
@@ -94,9 +95,14 @@ export const onInitializeOvermind = ({
         PendingDeploymentsCodec.decode(data),
         getOrElse((e) => {
           console.error(e)
-          return {} as Record<string, string>
+          return {} as Record<string, PendingDeployment>
         }),
-        (data) => mapValues(data, (date) => dayjs(date))
+        (data) =>
+          pickBy(data, (pending) =>
+            dayjs(pending.createdAt).isBefore(
+              dayjs().add(state.appSettings.deployTimeoutSecs, 'seconds')
+            )
+          )
       )
     },
     { nested: true }

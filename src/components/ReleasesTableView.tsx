@@ -15,6 +15,7 @@ import {
   Tooltip,
 } from '@mui/material'
 import { useMutation } from '@tanstack/react-query'
+import dayjs from 'dayjs'
 import { orderBy, values } from 'lodash-es'
 import { useFetchReleases, useFetchWorkflowRuns } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
@@ -130,7 +131,7 @@ export const ReleasesTableView = () => {
     const modifiedAt = deployment?.modifiedAt
     const deploymentState =
       pendingDeployment &&
-      (!modifiedAt || pendingDeployment.isAfter(modifiedAt))
+      (!modifiedAt || dayjs(pendingDeployment.createdAt).isAfter(modifiedAt))
         ? DeploymentState.Pending
         : deployment?.state
 

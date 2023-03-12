@@ -60,8 +60,10 @@ export const useFetchReleases = () => {
                         state,
                         latestStatus,
                         payload,
+                        databaseId,
                       }): DeploymentModel => ({
                         id,
+                        databaseId: databaseId || undefined,
                         createdAt: dayjs(createdAt),
                         environment: environment || '',
                         state: state || DeploymentState.Inactive,

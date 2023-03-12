@@ -106,7 +106,9 @@ export const triggerDeployment = async (
       owner: repo.owner,
       repo: repo.name,
     })
-    state.pendingDeployments[deploymentId] = dayjs()
+    state.pendingDeployments[deploymentId] = {
+      createdAt: dayjs().toISOString(),
+    }
 
     const { owner, name } = repo
     const { ref, workflowId, environmentKey, releaseKey, extraArgs } =

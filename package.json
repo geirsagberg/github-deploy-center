@@ -6,7 +6,7 @@
     "start": "vite",
     "preview": "vite preview",
     "build": "tsc && vite build",
-    "codegen": "graphql-codegen --config codegen.yml && sed -i '' -e 's|graphql-request\/dist|graphql-request\/src|' src/generated/graphql.ts",
+    "codegen": "graphql-codegen --config codegen.yml && sed -i '' -e 's|graphql-request/dist|graphql-request/src|' src/generated/graphql.ts",
     "update-github-schema": "$GITHUB_PAT && curl -H \"Authorization: Bearer $GITHUB_PAT\" https://api.github.com/graphql --output github.schema.json && json-format github.schema.json --indent 2",
     "package": "mkdir -p artifacts && cd dist && zip -r ../artifacts/release.zip ."
   },
