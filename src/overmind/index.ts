@@ -24,4 +24,7 @@ export const useReaction = createReactionHook<Context>()
 
 // We set the delimiter to something other than '.', to avoid errors if release strings include dots
 // See e.g. https://github.com/cerebral/overmind/issues/441
-export const overmind = createOvermind(config, { delimiter: '|' })
+export const overmind = createOvermind(config, {
+  delimiter: '|',
+  devtoolsLogLevel: 'info',
+})

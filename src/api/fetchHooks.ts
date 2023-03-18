@@ -11,8 +11,8 @@ import {
 } from '../generated/graphql'
 import { useAppState, useEffects } from '../overmind'
 import {
-  DeploymentModel,
   DeployWorkflowCodec,
+  DeploymentModel,
   GitHubEnvironment,
   GitHubEnvironmentsCodec,
   ReleaseModel,
@@ -133,24 +133,20 @@ export const useFetchWorkflowRuns = () => {
 
       const { owner, name } = repo
 
-      const data = await restApi.octokit.paginate(
-        restApi.octokit.actions.listWorkflowRuns,
-        {
-          workflow_id: workflowId,
-          owner,
-          repo: name,
-          per_page: 100,
-        },
-        (response) => response.data
-      )
+      const { data } = await restApi.octokit.actions.listWorkflowRuns({
+        workflow_id: workflowId,
+        owner,
+        repo: name,
+        per_page: 100,
+      })
 
       return pipe(
-        WorkflowRunsCodec.decode(data),
+        WorkflowRunsCodec.decode(data.workflow_runs),
         getOrElse((e) => {
           console.error(e)
           return [] as WorkflowRun[]
         }),
-        () => keyBy(data, 'id') as Record<number, WorkflowRun>
+        (runs) => keyBy(runs, 'id') as Record<number, WorkflowRun>
       )
     }
   )
