@@ -1,5 +1,5 @@
 import { Autocomplete, Box, CircularProgress, TextField } from '@mui/material'
-import { RepoModel } from '../overmind/state'
+import { RepoModel } from '../state/schemas'
 
 interface RepoSearchBoxProps {
   isLoading: boolean

@@ -1,7 +1,5 @@
 import { Button, Typography } from '@mui/material'
-import React from 'react'
 import { useActions, useAppState } from '../overmind'
-import { DeployWorkflowCodec } from '../overmind/state'
 import { EnvironmentDialog } from './EnvironmentDialog'
 
 const AddEnvironmentDialog = () => {
@@ -25,11 +23,7 @@ export const EnvironmentsView = () => {
   const { selectedApplication } = useAppState()
   const { showAddEnvironmentModal } = useActions()
 
-  if (
-    !selectedApplication ||
-    !DeployWorkflowCodec.is(selectedApplication.deploySettings) ||
-    !selectedApplication.deploySettings.workflowId
-  ) {
+  if (!selectedApplication?.deploySettings?.workflowId) {
     return null
   }
 

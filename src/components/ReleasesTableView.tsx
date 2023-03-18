@@ -20,14 +20,9 @@ import { orderBy, values } from 'lodash-es'
 import { useFetchReleases, useFetchWorkflowRuns } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
 import { useActions, useAppState } from '../overmind'
-import {
-  DeploymentModel,
-  DeployWorkflowCodec,
-  EnvironmentSettings,
-  ReleaseModel,
-  WorkflowRun,
-} from '../overmind/state'
+import { DeploymentModel, ReleaseModel } from '../overmind/state'
 import { getDeploymentId } from '../overmind/utils'
+import { EnvironmentSettings, WorkflowRun } from '../state/schemas'
 
 const getButtonStyle = (state?: DeploymentState) => {
   switch (state) {
@@ -71,11 +66,7 @@ export const ReleasesTableView = () => {
     }
   )
 
-  if (
-    !selectedApplication ||
-    !DeployWorkflowCodec.is(selectedApplication.deploySettings) ||
-    !selectedApplication.deploySettings.workflowId
-  ) {
+  if (!selectedApplication?.deploySettings?.workflowId) {
     return null
   }
 
@@ -155,7 +146,8 @@ export const ReleasesTableView = () => {
               release: release.tagName,
               environmentName: environment.name,
             })
-          }>
+          }
+        >
           {deploymentState?.replaceAll('_', ' ') ?? 'Deploy'}
         </Button>
         {workflowRun && (
@@ -170,7 +162,8 @@ export const ReleasesTableView = () => {
                   : 'warning'
               }
               target="_blank"
-              href={workflowRun.html_url}>
+              href={workflowRun.html_url}
+            >
               <Icon fontSize="small">launch</Icon>
             </IconButton>
           </Tooltip>
@@ -198,11 +191,13 @@ export const ReleasesTableView = () => {
                       environment.name
                     )}`}
                     target="_blank"
-                    color="inherit">
+                    color="inherit"
+                  >
                     {environment.name}
                   </Link>
                   <IconButton
-                    onClick={() => removeEnvironment(environment.name)}>
+                    onClick={() => removeEnvironment(environment.name)}
+                  >
                     <Icon>delete</Icon>
                   </IconButton>
                 </Stack>
@@ -217,7 +212,8 @@ export const ReleasesTableView = () => {
                 <Link
                   href={`https://github.com/${repo?.owner}/${repo?.name}/releases/tag/${release.tagName}`}
                   target="_blank"
-                  color="inherit">
+                  color="inherit"
+                >
                   {release.name}
                 </Link>
               </TableCell>

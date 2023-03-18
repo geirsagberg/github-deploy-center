@@ -1,8 +1,6 @@
 import { components } from '@octokit/openapi-types/types'
-import { useQuery } from '@tanstack/react-query'
+import { UseQueryResult, useQuery } from '@tanstack/react-query'
 import dayjs from 'dayjs'
-import { getOrElse } from 'fp-ts/lib/Either'
-import { pipe } from 'fp-ts/lib/function'
 import { keyBy, orderBy } from 'lodash-es'
 import { useRecoilValue } from 'recoil'
 import {
@@ -11,17 +9,15 @@ import {
   RepoFragment,
 } from '../generated/graphql'
 import { useAppState, useEffects } from '../overmind'
+import { DeploymentModel, ReleaseModel } from '../overmind/state'
+import { appSettings } from '../state'
 import {
-  DeployWorkflowCodec,
-  DeploymentModel,
   GitHubEnvironment,
-  GitHubEnvironmentsCodec,
-  ReleaseModel,
   RepoModel,
   WorkflowRun,
-  WorkflowRunsCodec,
-} from '../overmind/state'
-import { appSettings } from '../state'
+  githubEnvironmentsSchema,
+  workflowRunsSchema,
+} from '../state/schemas'
 import graphQLApi from '../utils/graphQLApi'
 
 export const useFetchReleases = () => {
@@ -121,77 +117,69 @@ export const useFetchWorkflows = () => {
   return { data, isLoading, error }
 }
 
-export const useFetchWorkflowRuns = () => {
+export const useFetchWorkflowRuns = (): UseQueryResult<
+  Record<number, WorkflowRun>
+> => {
   const { token, selectedApplication } = useAppState()
   const { restApi } = useEffects()
   const workflowRuns = useRecoilValue(appSettings.workflowRuns)
 
   const repo = selectedApplication?.repo
-  const workflowId = DeployWorkflowCodec.is(selectedApplication?.deploySettings)
-    ? selectedApplication?.deploySettings.workflowId
-    : undefined
-  const { data, isLoading, error } = useQuery(
-    [`${repo?.owner}/${repo?.name}/workflow-runs`],
-    async () => {
-      if (!token || !repo || !workflowId) return []
+  const workflowId = selectedApplication?.deploySettings?.workflowId
+  return useQuery([`${repo?.owner}/${repo?.name}/workflow-runs`], async () => {
+    if (!token || !repo || !workflowId) return []
 
-      const { owner, name } = repo
+    const { owner, name } = repo
 
-      const { data } = await restApi.octokit.actions.listWorkflowRuns({
-        workflow_id: workflowId,
-        owner,
-        repo: name,
-        per_page: workflowRuns,
-      })
+    const { data } = await restApi.octokit.actions.listWorkflowRuns({
+      workflow_id: workflowId,
+      owner,
+      repo: name,
+      per_page: workflowRuns,
+    })
 
-      return pipe(
-        WorkflowRunsCodec.decode(data.workflow_runs),
-        getOrElse((e) => {
-          console.error(e)
-          return [] as WorkflowRun[]
-        }),
-        (runs) => keyBy(runs, 'id') as Record<number, WorkflowRun>
-      )
+    let workflows: WorkflowRun[] = []
+
+    try {
+      workflows = workflowRunsSchema.parse(data.workflow_runs)
+    } catch (error) {
+      console.error(error)
     }
-  )
-  return { data, isLoading, error }
+
+    return keyBy(workflows, 'id') as Record<number, WorkflowRun>
+  })
 }
 
-export const useFetchEnvironments = () => {
+export const useFetchEnvironments = (): UseQueryResult<GitHubEnvironment[]> => {
   const { token, selectedApplication } = useAppState()
   const { restApi } = useEffects()
 
   const repo = selectedApplication?.repo
 
-  const { data, isLoading, error } = useQuery(
-    [`${repo?.owner}/${repo?.name}/environments`],
-    async () => {
-      if (!token || !repo) return []
-      const { owner, name } = repo
+  return useQuery([`${repo?.owner}/${repo?.name}/environments`], async () => {
+    if (!token || !repo) return []
+    const { owner, name } = repo
 
-      const data = await restApi.octokit.paginate(
-        restApi.octokit.repos.getAllEnvironments,
-        {
-          owner,
-          repo: name,
-          per_page: 100,
-        },
-        (response) => response.data as any
-      )
-      return pipe(
-        GitHubEnvironmentsCodec.decode(data),
-        getOrElse((e) => {
-          console.error(e)
-          return [] as GitHubEnvironment[]
-        })
-      )
+    const data = await restApi.octokit.paginate(
+      restApi.octokit.repos.getAllEnvironments,
+      {
+        owner,
+        repo: name,
+        per_page: 100,
+      },
+      (response) => response.data as any
+    )
+    try {
+      return githubEnvironmentsSchema.parse(data)
+    } catch (error) {
+      console.error(error)
+      return []
     }
-  )
-  return { data, isLoading, error }
+  })
 }
 
-export const useFetchRepos = () => {
-  const { data, isLoading, error } = useQuery(['repos'], async () => {
+export const useFetchRepos = () =>
+  useQuery(['repos'], async () => {
     let after: string | null = null
     let keepFetching = true
     const repos: RepoFragment[] = []
@@ -215,8 +203,6 @@ export const useFetchRepos = () => {
       })
     )
   })
-  return { data, isLoading, error }
-}
 
 function tryParseWorkflowRunId(payload: string | null): number | undefined {
   if (!payload) return undefined

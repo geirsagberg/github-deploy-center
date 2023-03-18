@@ -1,21 +1,21 @@
 import dayjs from 'dayjs'
-import { getOrElse } from 'fp-ts/lib/Either'
-import { pipe } from 'fp-ts/lib/function'
 import { clone, some } from 'lodash-es'
 import { Context } from '.'
+import {
+  DeploySettings,
+  EnvironmentSettings,
+  RepoModel,
+  applicationsByIdSchema,
+  createApplicationConfig,
+  createDeploySettings,
+  deploySettingsSchema,
+} from '../state/schemas'
 import { showConfirm } from '../utils/dialog'
 import {
   ApplicationDialogState,
-  ApplicationsByIdCodec,
-  DeployWorkflowCodec,
-  DeployWorkflowSettings,
   DeploymentDialogState,
   EnvironmentDialogState,
-  EnvironmentSettings,
-  RepoModel,
-  createApplicationConfig,
   createApplicationDialogState,
-  createDeployWorkflowSettings,
 } from './state'
 import { getDeploymentId } from './utils'
 
@@ -37,18 +37,16 @@ export const showNewApplicationModal = ({ state }: Context) => {
 
 export const updateWorkflowSettings = (
   { state: { selectedApplication } }: Context,
-  update: (settings: DeployWorkflowSettings) => void
+  update: (settings: DeploySettings) => void
 ) => {
   if (selectedApplication) {
     let deploySettings = selectedApplication.deploySettings
-    if (DeployWorkflowCodec.is(deploySettings)) {
-      update(deploySettings)
-    } else {
-      deploySettings = createDeployWorkflowSettings({
+    if (!deploySettingsSchema.safeParse(deploySettings).success) {
+      deploySettings = createDeploySettings({
         ref: selectedApplication.repo.defaultBranch,
       })
-      update(deploySettings)
     }
+    update(deploySettings)
   }
 }
 
@@ -75,7 +73,6 @@ export const triggerDeployment = async (
 
   if (!selectedApplication) return
   const { deploySettings, environmentSettingsByName } = selectedApplication
-  if (!DeployWorkflowCodec.is(deploySettings)) return
 
   if (!(environmentName in environmentSettingsByName)) return
 
@@ -175,8 +172,7 @@ export const editApplication = ({ state }: Context) => {
 
 export const editDeployment = ({ state }: Context) => {
   const deploySettings = state.selectedApplication?.deploySettings
-  if (DeployWorkflowCodec.is(deploySettings))
-    state.deploymentDialog = clone(deploySettings)
+  state.deploymentDialog = clone(deploySettings)
 }
 
 export const saveDeployment = ({ state }: Context) => {
@@ -321,13 +317,12 @@ export const importApplications = async ({ state, effects }: Context) => {
   const json = await effects.uploadJson()
   if (json) {
     const imported = JSON.parse(json)
-    const applications = pipe(
-      ApplicationsByIdCodec.decode(imported),
-      getOrElse((e) => {
-        console.error(e)
-        return {}
-      })
-    )
+    let applications = {}
+    try {
+      applications = applicationsByIdSchema.parse(imported)
+    } catch (e) {
+      console.error(e)
+    }
     state.applicationsById = {
       ...state.applicationsById,
       ...applications,

@@ -1,16 +1,13 @@
 import dayjs from 'dayjs'
-import { getOrElse } from 'fp-ts/lib/Either'
-import { pipe } from 'fp-ts/lib/function'
 import { noop, pickBy } from 'lodash-es'
 import { Context } from '.'
+import {
+  applicationsByIdSchema,
+  pendingDeploymentsSchema,
+} from '../state/schemas'
 import graphQLApi from '../utils/graphQLApi'
 import { restApi } from './effects'
-import {
-  AppState,
-  ApplicationsByIdCodec,
-  PendingDeployment,
-  PendingDeploymentsCodec,
-} from './state'
+import { AppState } from './state'
 
 export const onInitializeOvermind = ({
   state,
@@ -55,13 +52,11 @@ export const onInitializeOvermind = ({
   sync(
     (state) => state.applicationsById,
     (data) => {
-      state.applicationsById = pipe(
-        ApplicationsByIdCodec.decode(data),
-        getOrElse((e) => {
-          console.error(e)
-          return {}
-        })
-      )
+      try {
+        state.applicationsById = applicationsByIdSchema.parse(data)
+      } catch (error) {
+        console.error(error)
+      }
     },
     { nested: true }
   )
@@ -75,18 +70,16 @@ export const onInitializeOvermind = ({
   sync(
     (state) => state.pendingDeployments,
     (data) => {
-      state.pendingDeployments = pipe(
-        PendingDeploymentsCodec.decode(data),
-        getOrElse((e) => {
-          console.error(e)
-          return {} as Record<string, PendingDeployment>
-        }),
-        (data) =>
-          pickBy(data, (pending) =>
+      try {
+        state.pendingDeployments = pickBy(
+          pendingDeploymentsSchema.parse(data),
+          (pending) =>
             // TODO: Move pending deployments to Recoil
             dayjs(pending.createdAt).isBefore(dayjs().add(60, 'seconds'))
-          )
-      )
+        )
+      } catch (error) {
+        console.error(error)
+      }
     },
     { nested: true }
   )

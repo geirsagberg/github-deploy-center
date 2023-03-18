@@ -12,12 +12,12 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material'
-import { identity } from 'fp-ts/lib/function'
 import { orderBy } from 'lodash-es'
 import { FC } from 'react'
 import { useFetchEnvironments } from '../api/fetchHooks'
 import { useAppState } from '../overmind'
-import { EnvironmentDialogState, EnvironmentSettings } from '../overmind/state'
+import { EnvironmentDialogState } from '../overmind/state'
+import { EnvironmentSettings } from '../state/schemas'
 
 type Option = {
   name: string
@@ -97,7 +97,7 @@ export const EnvironmentDialog: FC<{
                 <Autocomplete
                   freeSolo
                   loading={isLoading}
-                  options={filteredEnvironments.map<Option>(identity)}
+                  options={filteredEnvironments.map<Option>((x) => x)}
                   value={dialogState.environmentName}
                   openOnFocus
                   onChange={(_, value) =>

@@ -1,7 +1,6 @@
 import { Icon, Link, LinkProps, Typography } from '@mui/material'
 import { useFetchWorkflows } from '../api/fetchHooks'
 import { useAppState } from '../overmind'
-import { DeployWorkflowCodec } from '../overmind/state'
 
 const ExternalLink = ({ children, ...props }: LinkProps) => (
   <Link
@@ -22,12 +21,7 @@ const WorkflowInfoView = () => {
   const { selectedApplication } = useAppState()
   const workflows = useFetchWorkflows()
 
-  if (
-    !selectedApplication ||
-    !DeployWorkflowCodec.is(selectedApplication.deploySettings) ||
-    !selectedApplication.deploySettings.workflowId ||
-    !workflows.data
-  ) {
+  if (!selectedApplication?.deploySettings?.workflowId || !workflows.data) {
     return null
   }
 
