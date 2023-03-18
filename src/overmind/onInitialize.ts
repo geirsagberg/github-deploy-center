@@ -6,10 +6,8 @@ import { Context } from '.'
 import graphQLApi from '../utils/graphQLApi'
 import { restApi } from './effects'
 import {
-  ApplicationsByIdCodec,
-  AppSettingsCodec,
   AppState,
-  defaultAppSettings,
+  ApplicationsByIdCodec,
   PendingDeployment,
   PendingDeploymentsCodec,
 } from './state'
@@ -75,20 +73,6 @@ export const onInitializeOvermind = ({
   )
 
   sync(
-    (state) => state.appSettings,
-    (data) => {
-      state.appSettings = pipe(
-        AppSettingsCodec.decode(data),
-        getOrElse((e) => {
-          console.error(e)
-          return defaultAppSettings
-        })
-      )
-    },
-    { nested: true }
-  )
-
-  sync(
     (state) => state.pendingDeployments,
     (data) => {
       state.pendingDeployments = pipe(
@@ -99,9 +83,8 @@ export const onInitializeOvermind = ({
         }),
         (data) =>
           pickBy(data, (pending) =>
-            dayjs(pending.createdAt).isBefore(
-              dayjs().add(state.appSettings.deployTimeoutSecs, 'seconds')
-            )
+            // TODO: Move pending deployments to Recoil
+            dayjs(pending.createdAt).isBefore(dayjs().add(60, 'seconds'))
           )
       )
     },

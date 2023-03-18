@@ -1,22 +1,21 @@
 import dayjs from 'dayjs'
 import { getOrElse } from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/function'
-import { clone, get, set, some } from 'lodash-es'
+import { clone, some } from 'lodash-es'
 import { Context } from '.'
 import { showConfirm } from '../utils/dialog'
 import {
   ApplicationDialogState,
   ApplicationsByIdCodec,
-  AppState,
-  createApplicationConfig,
-  createApplicationDialogState,
-  createDeployWorkflowSettings,
-  DeploymentDialogState,
   DeployWorkflowCodec,
   DeployWorkflowSettings,
+  DeploymentDialogState,
   EnvironmentDialogState,
   EnvironmentSettings,
   RepoModel,
+  createApplicationConfig,
+  createApplicationDialogState,
+  createDeployWorkflowSettings,
 } from './state'
 import { getDeploymentId } from './utils'
 
@@ -27,17 +26,6 @@ export const setToken = ({ state }: Context, token: string) => {
 export const showSettings = ({ state }: Context) => (state.settingsDialog = {})
 
 export const hideSettings = ({ state }: Context) => delete state.settingsDialog
-
-export const setState = <T>(
-  { state }: Context,
-  { selector, value }: { selector: (state: AppState) => T; value: T }
-) => {
-  const path = selector.toString().replace(/^.*?\./, '')
-  if (get(state, path) === undefined) {
-    throw Error('Unkown path ' + path)
-  }
-  set(state, path, value)
-}
 
 export const showNewApplicationModal = ({ state }: Context) => {
   state.newApplicationDialog = createApplicationDialogState()

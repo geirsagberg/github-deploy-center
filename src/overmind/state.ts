@@ -168,13 +168,6 @@ export const ApplicationsByIdCodec = t.record(t.string, ApplicationConfigCodec)
 
 export const DeploySettingsByRepoCodec = t.record(t.string, DeploySettingsCodec)
 
-export const AppSettingsCodec = t.type({
-  deployTimeoutSecs: t.number,
-  refreshIntervalSecs: t.number,
-})
-
-export type AppSettings = t.TypeOf<typeof AppSettingsCodec>
-
 export type DeploySettings = t.TypeOf<typeof DeploySettingsCodec>
 
 export type ApplicationDialogState = {
@@ -218,7 +211,6 @@ export const PendingDeploymentsCodec = t.record(
 
 export type AppState = {
   token: string
-  appSettings: AppSettings
   applicationsById: Record<string, ApplicationConfig>
   selectedApplicationId: string
   selectedApplication?: ApplicationConfig
@@ -231,14 +223,8 @@ export type AppState = {
   pendingDeployments: Record<string, PendingDeployment>
 }
 
-export const defaultAppSettings: AppSettings = {
-  deployTimeoutSecs: 60,
-  refreshIntervalSecs: 60,
-}
-
 const state: AppState = {
   token: '',
-  appSettings: defaultAppSettings,
   applicationsById: {},
   selectedApplicationId: '',
   get selectedApplication() {

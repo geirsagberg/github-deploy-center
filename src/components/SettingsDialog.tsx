@@ -6,24 +6,29 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material'
+import { useRecoilState } from 'recoil'
 import { useActions, useAppState } from '../overmind'
-import { AppState } from '../overmind/state'
+import {
+  appSettings,
+  appSettingsDescription,
+  defaultAppSettings,
+} from '../state'
+import { AppSettings } from '../state/schemas'
+import { keysOf } from '../utils'
 
-interface EditorProps<T> {
-  selector: (state: AppState) => T
-  label: string
+interface EditorProps {
+  setting: keyof AppSettings
 }
 
-function Editor<T>({ selector, label }: EditorProps<T>) {
-  const state = useAppState()
-  const value = selector(state)
-  const { setState } = useActions()
+function Editor<T>({ setting }: EditorProps) {
+  const [value, setValue] = useRecoilState(appSettings[setting])
+  const label = appSettingsDescription[setting]
   if (typeof value === 'string') {
     return (
       <TextField
         label={label}
         value={value}
-        onChange={(e) => setState({ selector, value: e.target.value })}
+        onChange={(e) => setValue(e.target.value as any)}
         fullWidth
       />
     )
@@ -33,7 +38,7 @@ function Editor<T>({ selector, label }: EditorProps<T>) {
       <TextField
         label={label}
         value={value}
-        onChange={(e) => setState({ selector, value: +e.target.value })}
+        onChange={(e) => setValue(+e.target.value)}
         type="number"
         fullWidth
       />
@@ -48,15 +53,16 @@ export const SettingsDialog = () => {
   return (
     <Dialog open={!!settingsDialog} fullWidth onClose={hideSettings}>
       <DialogTitle>Settings</DialogTitle>
-      <DialogContent style={{ gap: '1rem', display: 'flex', padding: '1rem' }}>
-        <Editor
-          label="Deploy timeout (secs)"
-          selector={(state) => state.appSettings.deployTimeoutSecs}
-        />
-        <Editor
-          label="Status refresh interval (secs)"
-          selector={(state) => state.appSettings.refreshIntervalSecs}
-        />
+      <DialogContent
+        sx={{
+          gap: '1rem',
+          display: 'grid',
+          padding: '1rem',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(16rem, 1fr))',
+        }}>
+        {keysOf(defaultAppSettings).map((key) => (
+          <Editor key={key} setting={key} />
+        ))}
       </DialogContent>
       <DialogActions>
         <Button onClick={hideSettings}>Close</Button>

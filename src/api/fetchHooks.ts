@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import { getOrElse } from 'fp-ts/lib/Either'
 import { pipe } from 'fp-ts/lib/function'
 import { keyBy, orderBy } from 'lodash-es'
+import { useRecoilValue } from 'recoil'
 import {
   DeployFragment,
   DeploymentState,
@@ -20,10 +21,12 @@ import {
   WorkflowRun,
   WorkflowRunsCodec,
 } from '../overmind/state'
+import { appSettings } from '../state'
 import graphQLApi from '../utils/graphQLApi'
 
 export const useFetchReleases = () => {
-  const { selectedApplication, appSettings } = useAppState()
+  const { selectedApplication } = useAppState()
+  const refreshIntervalSecs = useRecoilValue(appSettings.refreshIntervalSecs)
 
   const repo = selectedApplication?.repo
   const prefix = selectedApplication?.releaseFilter ?? ''
@@ -79,7 +82,7 @@ export const useFetchReleases = () => {
       return releases
     },
     {
-      refetchInterval: 1000 * appSettings.refreshIntervalSecs,
+      refetchInterval: 1000 * refreshIntervalSecs,
     }
   )
 
@@ -121,6 +124,7 @@ export const useFetchWorkflows = () => {
 export const useFetchWorkflowRuns = () => {
   const { token, selectedApplication } = useAppState()
   const { restApi } = useEffects()
+  const workflowRuns = useRecoilValue(appSettings.workflowRuns)
 
   const repo = selectedApplication?.repo
   const workflowId = DeployWorkflowCodec.is(selectedApplication?.deploySettings)
@@ -137,7 +141,7 @@ export const useFetchWorkflowRuns = () => {
         workflow_id: workflowId,
         owner,
         repo: name,
-        per_page: 100,
+        per_page: workflowRuns,
       })
 
       return pipe(
