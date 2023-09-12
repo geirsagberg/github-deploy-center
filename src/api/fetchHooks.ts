@@ -100,18 +100,16 @@ export const useFetchWorkflows = () => {
 
       const { owner, name } = repo
 
-      const response = await restApi.octokit.paginate(
-        restApi.octokit.actions.listRepoWorkflows,
-        {
-          owner,
-          repo: name,
-          per_page: 100,
-        },
-        (response) => response.data as Workflow[]
-      )
+      const options = restApi.octokit.actions.listRepoWorkflows.endpoint.merge({
+        owner,
+        repo: name,
+        per_page: 100,
+      })
+
+      const workflows = await restApi.octokit.paginate<Workflow>(options)
 
       // TODO: Only return workflows with `workflow_dispatch` trigger
-      return orderBy(response, (w) => w.name)
+      return orderBy(workflows, (w) => w.name)
     }
   )
   return { data, isLoading, error }
@@ -160,15 +158,14 @@ export const useFetchEnvironments = (): UseQueryResult<GitHubEnvironment[]> => {
     if (!token || !repo) return []
     const { owner, name } = repo
 
-    const data = await restApi.octokit.paginate(
-      restApi.octokit.repos.getAllEnvironments,
-      {
-        owner,
-        repo: name,
-        per_page: 100,
-      },
-      (response) => response.data as any
-    )
+    const options = restApi.octokit.repos.getAllEnvironments.endpoint.merge({
+      owner,
+      repo: name,
+      per_page: 100,
+    })
+
+    const data = await restApi.octokit.paginate(options)
+
     try {
       return githubEnvironmentsSchema.parse(data)
     } catch (error) {
