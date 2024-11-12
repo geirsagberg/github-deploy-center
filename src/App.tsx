@@ -7,20 +7,20 @@ import {
   Paper,
   TextField,
   Typography,
-} from '@mui/material'
-import ModalContainer from 'react-modal-promise'
+} from "@mui/material"
+import ModalContainer from "react-modal-promise"
 import {
   EditApplicationDialog,
   NewApplicationDialog,
-} from './components/ApplicationDialog'
-import { DeploymentDialog } from './components/DeploymentDialog'
-import { EnvironmentsView } from './components/EnvironmentsView'
-import { ManageApplicationsView } from './components/ManageApplicationsView'
-import { ReleasesTableView } from './components/ReleasesTableView'
-import { SelectApplicationView } from './components/SelectApplicationView'
-import { SettingsDialog } from './components/SettingsDialog'
-import WorkflowInfoView from './components/WorkflowInfoView'
-import { useActions, useAppState } from './overmind'
+} from "./components/ApplicationDialog"
+import { DeploymentDialog } from "./components/DeploymentDialog"
+import { EnvironmentsView } from "./components/EnvironmentsView"
+import { ManageApplicationsView } from "./components/ManageApplicationsView"
+import { ReleasesTableView } from "./components/ReleasesTableView"
+import { SelectApplicationView } from "./components/SelectApplicationView"
+import { SettingsDialog } from "./components/SettingsDialog"
+import WorkflowInfoView from "./components/WorkflowInfoView"
+import { useActions, useAppState } from "./overmind"
 
 const App = () => {
   const { token } = useAppState()
@@ -29,7 +29,7 @@ const App = () => {
     <Container>
       <Box p={4} display="grid" gap="1rem" component={Paper}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h1">GitHub Deploy Center</Typography>
+          <Typography variant="h1">GitHub Deploy Center!</Typography>
           <IconButton title="Settings" onClick={() => showSettings()}>
             <Icon>settings</Icon>
           </IconButton>
@@ -54,14 +54,14 @@ const App = () => {
         ) : (
           <>
             <Typography>
-              Go to{' '}
+              Go to{" "}
               <Link
                 target="_blank"
                 href="https://github.com/settings/tokens/new"
               >
                 https://github.com/settings/tokens/new
-              </Link>{' '}
-              to create a new personal access token, and give it the{' '}
+              </Link>{" "}
+              to create a new personal access token, and give it the{" "}
               <code>repo</code> scope.
             </Typography>
             <Typography>
