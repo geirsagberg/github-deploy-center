@@ -29,7 +29,7 @@ To use GDC, you need a couple of things:
 
 ## Hosting
 
-The app is hosted in Azure at https://githubdeploy.z1.web.core.windows.net/, and will be kept updated to the latest version. If you want to host it yourself, you can build it for production with `yarn build`, then host the resulting static assets in `build/` anywhere you like, e.g. Azure Blob Storage, Heroku, Google Cloud Storage.
+The app is hosted in Azure at https://githubdeploy.z1.web.core.windows.net/, and will be kept updated to the latest version. If you want to host it yourself, you can build it for production with `bun run build`, then host the resulting static assets in `dist/` anywhere you like, e.g. Azure Blob Storage, Heroku, Google Cloud Storage.
 
 # Development
 
@@ -44,6 +44,6 @@ The app is built with:
 ## Start locally
 
 ```
-yarn
-yarn start
+bun install
+bun run start
 ```
