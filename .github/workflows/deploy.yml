@@ -14,10 +14,18 @@ on:
     workflows: [Build and publish]
     types: [completed]
 
+permissions:
+  contents: read
+  deployments: write
+  id-token: write
+
 env:
   GITHUB_TOKEN: ${{ github.token }}
   ENVIRONMENT: ${{ inputs.environment || 'dev' }}
   RELEASE: ${{ inputs.ref || 'latest' }}
+  AZURE_CLIENT_ID: 39bec033-4358-4ae1-abbd-ecb8de5729cf
+  AZURE_TENANT_ID: a7d6d49d-a422-491d-bc2f-e60e48013583
+  AZURE_SUBSCRIPTION_ID: 0d60de30-59ab-484b-b845-244c39b366ce
 
 jobs:
   find_tag:
@@ -87,16 +95,20 @@ jobs:
       - name: Download azcopy
         run: curl https://aka.ms/downloadazcopy-v10-linux --output azcopy_v10.tar.gz -L && tar -xf azcopy_v10.tar.gz --strip-components=1 && chmod +x azcopy
 
-      - name: Login with Azure Service Principal
-        env:
-          AZCOPY_SPA_CLIENT_SECRET: ${{ secrets.AZCOPY_SPA_CLIENT_SECRET }}
-        run: ./azcopy login --service-principal --application-id 39bec033-4358-4ae1-abbd-ecb8de5729cf --tenant-id a7d6d49d-a422-491d-bc2f-e60e48013583
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
 
       - name: Set storage account
         run: |
           echo "STORAGE_ACCOUNT=${{ env.ENVIRONMENT == 'prod' && 'githubdeploy' || env.ENVIRONMENT == 'test' && 'githubdeploytest' || 'githubdeploydev' }}" >> $GITHUB_ENV
 
       - name: Copy files to Azure Storage
+        env:
+          AZCOPY_AUTO_LOGIN_TYPE: AZCLI
         run: cd release && ../azcopy sync . "https://${STORAGE_ACCOUNT}.blob.core.windows.net/\$web" --delete-destination true
 
       - name: Update deployment status
