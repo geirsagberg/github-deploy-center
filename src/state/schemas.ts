@@ -23,7 +23,7 @@ export const deploySettingsSchema = z.object({
   releaseKey: z.string(),
   workflowId: z.number(),
   ref: z.string(),
-  extraArgs: z.record(z.string()),
+  extraArgs: z.record(z.string(), z.string()),
 })
 export interface DeploySettings extends z.infer<typeof deploySettingsSchema> {}
 export const createDeploySettings = ({
@@ -40,7 +40,10 @@ export const createDeploySettings = ({
   ref,
   extraArgs: {},
 })
-export const deploySettingsByRpoSchema = z.record(deploySettingsSchema)
+export const deploySettingsByRpoSchema = z.record(
+  z.string(),
+  deploySettingsSchema
+)
 
 export const enviromentSettingsSchema = z.object({
   name: z.string(),
@@ -55,7 +58,7 @@ export const applicationConfigSchema = z.object({
   releaseFilter: z.string(),
   repo: repoSchema,
   deploySettings: deploySettingsSchema,
-  environmentSettingsByName: z.record(enviromentSettingsSchema),
+  environmentSettingsByName: z.record(z.string(), enviromentSettingsSchema),
 })
 export interface ApplicationConfig
   extends z.infer<typeof applicationConfigSchema> {}
@@ -71,7 +74,10 @@ export const createApplicationConfig = (
   repo,
   deploySettings: createDeploySettings({ ref: repo.defaultBranch }),
 })
-export const applicationsByIdSchema = z.record(applicationConfigSchema)
+export const applicationsByIdSchema = z.record(
+  z.string(),
+  applicationConfigSchema
+)
 
 export const workflowRunSchema = z.object({
   id: z.number(),
@@ -98,4 +104,7 @@ export const pendingDeploymentSchema = z.object({
 })
 export interface PendingDeployment
   extends z.infer<typeof pendingDeploymentSchema> {}
-export const pendingDeploymentsSchema = z.record(pendingDeploymentSchema)
+export const pendingDeploymentsSchema = z.record(
+  z.string(),
+  pendingDeploymentSchema
+)
