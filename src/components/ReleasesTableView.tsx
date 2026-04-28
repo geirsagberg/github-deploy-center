@@ -19,13 +19,9 @@ import dayjs from 'dayjs'
 import { orderBy, values } from 'lodash-es'
 import { useFetchReleases, useFetchWorkflowRuns } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
-import {
-  getDeploymentId,
-  useActions,
-  useAppState,
-} from '../store'
-import type { DeploymentModel, ReleaseModel } from '../store'
 import type { EnvironmentSettings, WorkflowRun } from '../state/schemas'
+import type { DeploymentModel, ReleaseModel } from '../store'
+import { getDeploymentId, useActions, useAppState } from '../store'
 
 const getButtonStyle = (state?: DeploymentState) => {
   switch (state) {
@@ -81,26 +77,28 @@ export const ReleasesTableView = () => {
     releases
       .slice()
       .sort((a, b) =>
-        b.tagName.localeCompare(a.tagName, undefined, { numeric: true })
+        b.tagName.localeCompare(a.tagName, undefined, { numeric: true }),
       )
       .filter((r) =>
         r.name
           .toLowerCase()
-          .startsWith(selectedApplication.releaseFilter.toLowerCase())
+          .startsWith(selectedApplication.releaseFilter.toLowerCase()),
       ),
     (r) => r.createdAt,
-    'desc'
+    'desc',
   )
 
   const selectedEnvironments = values(
-    selectedApplication.environmentSettingsByName
+    selectedApplication.environmentSettingsByName,
   )
+  const releaseColumnWidth = '12rem'
+  const deploymentButtonWidth = '6rem'
 
   const releasesByEnvironment = selectedEnvironments.reduce<
     Record<string, ReleaseModel[]>
   >((record, environment) => {
     record[environment.name] = releasesSorted.filter((r) =>
-      r.deployments.some((d) => d.environment === environment.name)
+      r.deployments.some((d) => d.environment === environment.name),
     )
     return record
   }, {})
@@ -109,7 +107,7 @@ export const ReleasesTableView = () => {
     deployment: DeploymentModel | undefined,
     release: ReleaseModel,
     environment: EnvironmentSettings,
-    workflowRun?: WorkflowRun
+    workflowRun?: WorkflowRun,
   ) => {
     const latestRelease = releasesByEnvironment[environment.name]?.[0]
     const isAfterLatest =
@@ -143,6 +141,7 @@ export const ReleasesTableView = () => {
           disabled={isPending}
           variant={deployButtonVariant}
           color={!deploymentState && isAfterLatest ? 'primary' : 'inherit'}
+          sx={{ width: deploymentButtonWidth }}
           style={getButtonStyle(deploymentState)}
           onClick={() =>
             deploy({
@@ -180,7 +179,13 @@ export const ReleasesTableView = () => {
       {error instanceof Error && (
         <Alert severity="error">{error.message}</Alert>
       )}
-      <Table>
+      <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
+        <colgroup>
+          <col style={{ width: releaseColumnWidth }} />
+          {selectedEnvironments.map((environment) => (
+            <col key={environment.name} />
+          ))}
+        </colgroup>
         <TableHead>
           <TableRow>
             <TableCell>Release name</TableCell>
@@ -191,7 +196,7 @@ export const ReleasesTableView = () => {
                     href={`https://github.com/${repo?.owner}/${
                       repo?.name
                     }/deployments/activity_log?environment=${encodeURIComponent(
-                      environment.name
+                      environment.name,
                     )}`}
                     target="_blank"
                     color="inherit"
@@ -211,7 +216,7 @@ export const ReleasesTableView = () => {
         <TableBody>
           {releasesSorted.map((release) => (
             <TableRow key={release.id}>
-              <TableCell style={{ width: '20%' }}>
+              <TableCell>
                 <Link
                   href={`https://github.com/${repo?.owner}/${repo?.name}/releases/tag/${release.tagName}`}
                   target="_blank"
@@ -223,7 +228,7 @@ export const ReleasesTableView = () => {
               {selectedEnvironments.map((environment) => {
                 // Deployments are ordered by created at in the GraphQL, so the first one is the latest
                 const latestDeployment = release.deployments.find(
-                  (d) => d.environment === environment.name
+                  (d) => d.environment === environment.name,
                 )
                 const workflowRun = latestDeployment?.workflowRunId
                   ? workflowRuns[latestDeployment.workflowRunId]
@@ -234,7 +239,7 @@ export const ReleasesTableView = () => {
                       latestDeployment,
                       release,
                       environment,
-                      workflowRun
+                      workflowRun,
                     )}
                   </TableCell>
                 )
