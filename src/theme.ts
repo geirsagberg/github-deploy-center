@@ -1,7 +1,7 @@
-import { unstable_createMuiStrictModeTheme as createMuiTheme } from '@mui/material'
 import { green, grey, purple } from '@mui/material/colors'
+import { createTheme } from '@mui/material/styles'
 
-export const theme = createMuiTheme({
+export const theme = createTheme({
   palette: {
     mode: 'dark',
     background: {

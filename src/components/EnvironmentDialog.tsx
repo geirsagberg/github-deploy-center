@@ -65,7 +65,7 @@ export const EnvironmentDialog: FC<{
           <DialogContent style={{ display: 'flex', flexDirection: 'column' }}>
             {error instanceof Error ? (
               <>
-                <Box mb={2}>
+                <Box sx={{ mb: 2 }}>
                   <Alert severity="warning">
                     Could not fetch environments: {error.message}
                   </Alert>
@@ -113,7 +113,7 @@ export const EnvironmentDialog: FC<{
                     typeof option === 'string' ? option : option.name
                   }
                   isOptionEqualToValue={(option, value) =>
-                    option.name === value.name
+                    typeof value !== 'string' && option.name === value.name
                   }
                   filterOptions={(options, params) => {
                     const filtered = filter(options, params)
@@ -134,21 +134,19 @@ export const EnvironmentDialog: FC<{
                       variant="outlined"
                       label="Find or add environment"
                       {...params}
-                      inputProps={{
-                        ...params.inputProps,
-                        'data-lpignore': true,
-                      }}
-                      InputProps={{
-                        ...params.InputProps,
-                        endAdornment:
-                          isLoading && !dialogState.environmentName ? (
-                            <Box
-                              maxWidth={24}
-                              maxHeight={24}
-                              ml={1}
-                              component={CircularProgress}
-                            ></Box>
-                          ) : null,
+                      slotProps={{
+                        ...params.slotProps,
+                        htmlInput: {
+                          ...params.slotProps.htmlInput,
+                          'data-lpignore': true,
+                        },
+                        input: {
+                          ...params.slotProps.input,
+                          endAdornment:
+                            isLoading && !dialogState.environmentName ? (
+                              <CircularProgress size={24} sx={{ ml: 1 }} />
+                            ) : null,
+                        },
                       }}
                     />
                   )}
@@ -172,7 +170,7 @@ export const EnvironmentDialog: FC<{
               </>
             )}
           </DialogContent>
-          <Box p={2} pt={1}>
+          <Box sx={{ p: 2, pt: 1 }}>
             <DialogActions>
               <Button
                 type="submit"

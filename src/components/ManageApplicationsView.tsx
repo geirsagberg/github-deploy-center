@@ -6,7 +6,7 @@ export const ManageApplicationsView = () => {
   const { showNewApplicationModal, importApplications, exportApplications } =
     useActions()
   return (
-    <Box display="flex" style={{ gap: '1rem' }}>
+    <Box sx={{ display: 'flex', gap: '1rem' }}>
       <Button
         style={{ flex: 1 }}
         variant="contained"

@@ -27,8 +27,13 @@ const App = () => {
   const { setToken, showSettings } = useActions()
   return (
     <Container>
-      <Box p={4} display="grid" gap="1rem" component={Paper}>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
+      <Paper sx={{ p: 4, display: "grid", gap: "1rem" }}>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}>
           <Typography variant="h1">GitHub Deploy Center!</Typography>
           <IconButton title="Settings" onClick={() => showSettings()}>
             <Icon>settings</Icon>
@@ -70,7 +75,7 @@ const App = () => {
             </Typography>
           </>
         )}
-      </Box>
+      </Paper>
       <SettingsDialog />
       <ModalContainer />
     </Container>

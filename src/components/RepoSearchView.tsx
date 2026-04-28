@@ -1,4 +1,4 @@
-import { Autocomplete, Box, CircularProgress, TextField } from '@mui/material'
+import { Autocomplete, CircularProgress, TextField } from '@mui/material'
 import type { RepoModel } from '../state/schemas'
 
 interface RepoSearchBoxProps {
@@ -23,17 +23,15 @@ export const RepoSearchBox = ({
         variant="outlined"
         label="Find repository"
         {...params}
-        InputProps={{
-          ...params.InputProps,
-          endAdornment:
-            isLoading && !selectedRepo ? (
-              <Box
-                maxWidth={24}
-                maxHeight={24}
-                ml={1}
-                component={CircularProgress}
-              ></Box>
-            ) : null,
+        slotProps={{
+          ...params.slotProps,
+          input: {
+            ...params.slotProps.input,
+            endAdornment:
+              isLoading && !selectedRepo ? (
+                <CircularProgress size={24} sx={{ ml: 1 }} />
+              ) : null,
+          },
         }}
       />
     )}

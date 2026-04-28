@@ -138,7 +138,7 @@ export const ReleasesTableView = () => {
     deployment?.workflowRunId
 
     return (
-      <Stack direction="row" alignItems="center" gap={1}>
+      <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
         <Button
           disabled={isPending}
           variant={deployButtonVariant}
@@ -186,7 +186,7 @@ export const ReleasesTableView = () => {
             <TableCell>Release name</TableCell>
             {selectedEnvironments.map((environment) => (
               <TableCell key={environment.name}>
-                <Stack direction="row" gap={1} alignItems="center">
+                <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
                   <Link
                     href={`https://github.com/${repo?.owner}/${
                       repo?.name

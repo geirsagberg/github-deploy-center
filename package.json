@@ -15,10 +15,12 @@
     "package": "mkdir -p artifacts && cd dist && zip -r ../artifacts/release.zip ."
   },
   "dependencies": {
-    "@emotion/react": "^11.11.1",
-    "@emotion/styled": "^11.11.0",
-    "@mui/material": "^5.14.8",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/material": "^9.0.0",
+    "@mui/material-pigment-css": "^9.0.0",
     "@octokit/rest": "^22.0.1",
+    "@pigment-css/react": "^0.0.30",
     "@tanstack/react-query": "^5.100.5",
     "@tanstack/react-query-devtools": "^5.100.5",
     "browser-fs-access": "^0.38.0",

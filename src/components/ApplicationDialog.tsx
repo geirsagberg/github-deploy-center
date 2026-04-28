@@ -58,8 +58,8 @@ export const ApplicationDialog: FC<{
             {error instanceof Error ? (
               <Alert severity="error">{error.message}</Alert>
             ) : (
-              <Stack gap={1}>
-                <Stack gap={2}>
+              <Stack sx={{ gap: 1 }}>
+                <Stack sx={{ gap: 2 }}>
                   <RepoSearchBox
                     isLoading={isLoading}
                     options={options}
@@ -71,8 +71,10 @@ export const ApplicationDialog: FC<{
                   <TextField
                     variant="outlined"
                     label="Name"
-                    inputProps={{
-                      'data-lpignore': true,
+                    slotProps={{
+                      htmlInput: {
+                        'data-lpignore': true,
+                      },
                     }}
                     placeholder="Defaults to same as repository"
                     value={dialogState.name}
@@ -84,9 +86,11 @@ export const ApplicationDialog: FC<{
                     }}
                   />
                   <Box
-                    display="flex"
-                    alignItems="center"
-                    style={{ gap: '1rem' }}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '1rem',
+                    }}
                   >
                     <TextField
                       style={{ flex: 2 }}
@@ -121,14 +125,14 @@ export const ApplicationDialog: FC<{
                 </Stack>
 
                 {dialogState.warning && (
-                  <Box mt={2}>
+                  <Box sx={{ mt: 2 }}>
                     <Alert severity="warning">{dialogState.warning}</Alert>
                   </Box>
                 )}
               </Stack>
             )}
           </DialogContent>
-          <Box p={2} pt={1}>
+          <Box sx={{ p: 2, pt: 1 }}>
             <DialogActions>
               {newOrEdit === 'edit' && (
                 <Button

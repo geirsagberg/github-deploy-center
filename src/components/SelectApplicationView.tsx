@@ -17,7 +17,7 @@ export const SelectApplicationView = () => {
   )
 
   return size(sortedApplications) ? (
-    <Box display="flex" alignItems="center" style={{ gap: '1rem' }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
       <FormControl variant="outlined" style={{ flex: 1 }}>
         <InputLabel id="application-select-label">Application</InputLabel>
         <Select
