@@ -46,7 +46,6 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/file-saver": "^2.0.5",
-    "@types/jest": "^29.5.4",
     "@types/lodash-es": "^4.17.9",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
@@ -55,7 +54,6 @@
     "json-format": "^1.0.1",
     "json-format-cli": "^1.1.1",
     "rollup-plugin-visualizer": "^7.0.1",
-    "type-fest": "^4.3.1",
     "typescript": "^6.0.3",
     "vite": "^8.0.10"
   },
