@@ -31,7 +31,7 @@
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-modal-promise": "^1.0.2",
-    "uuid": "^9.0.1",
+    "uuid": "^14.0.0",
     "valtio": "^2.3.1",
     "zod": "^4.3.6"
   },
@@ -51,7 +51,6 @@
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@types/uuid": "^9.0.3",
     "@vitejs/plugin-react": "^6.0.1",
     "json-format": "^1.0.1",
     "json-format-cli": "^1.1.1",
