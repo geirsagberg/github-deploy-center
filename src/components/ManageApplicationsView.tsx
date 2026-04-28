@@ -1,5 +1,4 @@
 import { Box, Button } from '@mui/material'
-import { supported } from 'browser-fs-access'
 import { useActions } from '../store'
 
 export const ManageApplicationsView = () => {
@@ -15,18 +14,10 @@ export const ManageApplicationsView = () => {
       >
         New application
       </Button>
-      <Button
-        onClick={() => exportApplications()}
-        disabled={!supported}
-        title={supported ? '' : 'Not supported in your browser'}
-      >
+      <Button onClick={() => exportApplications()}>
         Export
       </Button>
-      <Button
-        onClick={() => importApplications()}
-        disabled={!supported}
-        title={supported ? '' : 'Not supported in your browser'}
-      >
+      <Button onClick={() => importApplications()}>
         Import
       </Button>
     </Box>
