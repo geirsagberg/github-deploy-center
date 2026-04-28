@@ -8,8 +8,6 @@ import {
   RepoModel,
   applicationsByIdSchema,
   createApplicationConfig,
-  createDeploySettings,
-  deploySettingsSchema,
 } from '../state/schemas'
 import { showConfirm } from '../utils/dialog'
 import { appState } from './state'
@@ -42,22 +40,6 @@ export const showNewApplicationModal = () => {
 
   if (appState.selectedApplication) {
     appState.newApplicationDialog.repo = clone(appState.selectedApplication.repo)
-  }
-}
-
-export const updateWorkflowSettings = (
-  update: (settings: DeploySettings) => void
-) => {
-  const { selectedApplication } = appState
-  if (selectedApplication) {
-    let deploySettings = selectedApplication.deploySettings
-    if (!deploySettingsSchema.safeParse(deploySettings).success) {
-      deploySettings = createDeploySettings({
-        ref: selectedApplication.repo.defaultBranch,
-      })
-      selectedApplication.deploySettings = deploySettings
-    }
-    update(deploySettings)
   }
 }
 
@@ -354,7 +336,6 @@ export const actions = {
   updateApplicationDialog,
   updateDeployWorkflowDialog,
   updateEnvironmentDialog,
-  updateWorkflowSettings,
 }
 
 export const useActions = () => actions

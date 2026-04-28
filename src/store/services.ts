@@ -29,11 +29,3 @@ export const uploadJson = async () => {
   const json = await blob.text()
   return json
 }
-
-export const effects = {
-  restApi,
-  downloadJson,
-  uploadJson,
-}
-
-export const useEffects = () => effects

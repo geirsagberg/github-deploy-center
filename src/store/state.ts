@@ -1,6 +1,6 @@
 import { Dayjs } from 'dayjs'
 import { useSnapshot } from 'valtio'
-import { proxy } from 'valtio/vanilla'
+import { proxy, type Snapshot } from 'valtio/vanilla'
 import { DeploymentState } from '../generated/graphql'
 import { defaultAppSettings } from '../state'
 import {
@@ -78,6 +78,6 @@ export const appState = proxy<AppState>({
   settings: { ...defaultAppSettings },
 })
 
-export const getSelectedApplication = () => appState.selectedApplication
+export type AppSnapshot = Snapshot<AppState>
 
-export const useAppState = () => useSnapshot(appState) as AppState
+export const useAppState = () => useSnapshot(appState)

@@ -121,28 +121,31 @@ export const useFetchWorkflowRuns = (): UseQueryResult<
 
   const repo = selectedApplication?.repo
   const workflowId = selectedApplication?.deploySettings?.workflowId
-  return useQuery([`${repo?.owner}/${repo?.name}/workflow-runs`], async () => {
-    if (!token || !repo || !workflowId) return []
+  return useQuery(
+    [`${repo?.owner}/${repo?.name}/workflow-runs`, workflowRuns],
+    async () => {
+      if (!token || !repo || !workflowId) return []
 
-    const { owner, name } = repo
+      const { owner, name } = repo
 
-    const { data } = await restApi.octokit.actions.listWorkflowRuns({
-      workflow_id: workflowId,
-      owner,
-      repo: name,
-      per_page: workflowRuns,
-    })
+      const { data } = await restApi.octokit.actions.listWorkflowRuns({
+        workflow_id: workflowId,
+        owner,
+        repo: name,
+        per_page: workflowRuns,
+      })
 
-    let workflows: WorkflowRun[] = []
+      let workflows: WorkflowRun[] = []
 
-    try {
-      workflows = workflowRunsSchema.parse(data.workflow_runs)
-    } catch (error) {
-      console.error(error)
+      try {
+        workflows = workflowRunsSchema.parse(data.workflow_runs)
+      } catch (error) {
+        console.error(error)
+      }
+
+      return keyBy(workflows, 'id') as Record<number, WorkflowRun>
     }
-
-    return keyBy(workflows, 'id') as Record<number, WorkflowRun>
-  })
+  )
 }
 
 export const useFetchEnvironments = (): UseQueryResult<GitHubEnvironment[]> => {
