@@ -92,7 +92,7 @@ export const ReleasesTableView = () => {
     selectedApplication.environmentSettingsByName,
   )
   const releaseColumnWidth = '12rem'
-  const deploymentButtonWidth = '6rem'
+  const deploymentButtonWidth = '8rem'
 
   const releasesByEnvironment = selectedEnvironments.reduce<
     Record<string, ReleaseModel[]>
