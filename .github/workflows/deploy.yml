@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Find latest tag
         if: env.RELEASE == 'latest'
@@ -64,7 +64,7 @@ jobs:
         run: echo "::error::Invalid environment $ENVIRONMENT" && exit 1
 
       - name: Validate release
-        uses: octokit/request-action@v2.x
+        uses: octokit/request-action@v3.x
         with:
           route: GET /repos/${{ github.repository }}/releases/tags/${{ env.TAG }}
 
@@ -96,7 +96,7 @@ jobs:
         run: curl https://aka.ms/downloadazcopy-v10-linux --output azcopy_v10.tar.gz -L && tar -xf azcopy_v10.tar.gz --strip-components=1 && chmod +x azcopy
 
       - name: Login to Azure
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ env.AZURE_CLIENT_ID }}
           tenant-id: ${{ env.AZURE_TENANT_ID }}
