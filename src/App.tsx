@@ -13,6 +13,7 @@ import {
   EditApplicationDialog,
   NewApplicationDialog,
 } from "./components/ApplicationDialog"
+import { useFetchRepos } from "./api/fetchHooks"
 import { DeploymentDialog } from "./components/DeploymentDialog"
 import { EnvironmentsView } from "./components/EnvironmentsView"
 import { ManageApplicationsView } from "./components/ManageApplicationsView"
@@ -21,6 +22,11 @@ import { SelectApplicationView } from "./components/SelectApplicationView"
 import { SettingsDialog } from "./components/SettingsDialog"
 import WorkflowInfoView from "./components/WorkflowInfoView"
 import { useActions, useAppState } from "./store"
+
+const RepoPreloader = () => {
+  useFetchRepos({ autoFetchAll: true })
+  return null
+}
 
 const App = () => {
   const { token } = useAppState()
@@ -47,6 +53,7 @@ const App = () => {
         />
         {token ? (
           <>
+            <RepoPreloader />
             <ManageApplicationsView />
             <SelectApplicationView />
             <EnvironmentsView />

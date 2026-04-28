@@ -34,11 +34,13 @@ export const ApplicationDialog: FC<{
   }) => void
   onCancel: () => void
 }> = ({ dialogState, newOrEdit, title, onSave, onCancel }) => {
-  const { data, error, isLoading } = useFetchRepos()
+  const repoQuery = useFetchRepos()
+  const { data, error } = repoQuery
   const { updateApplicationDialog, deleteApplication } = useActions()
   const updateDialogState = (update: (state: ApplicationDialogState) => void) =>
     updateApplicationDialog({ newOrEdit, update })
   const options = orderBy(data ?? [], (d) => d.owner.toLowerCase())
+  const repoStatusText = getRepoStatusText(repoQuery)
   return (
     <Dialog open={!!dialogState} fullWidth onClose={onCancel}>
       {dialogState ? (
@@ -61,7 +63,20 @@ export const ApplicationDialog: FC<{
               <Stack sx={{ gap: 1 }}>
                 <Stack sx={{ gap: 2 }}>
                   <RepoSearchBox
-                    isLoading={isLoading}
+                    isLoading={
+                      repoQuery.isInitialLoading ||
+                      repoQuery.isFetchingNextPage ||
+                      repoQuery.isRefreshing
+                    }
+                    statusText={repoStatusText}
+                    onLoadMore={
+                      repoQuery.hasNextPage && !repoQuery.isFetching
+                        ? () =>
+                            void repoQuery.fetchNextPage({
+                              cancelRefetch: false,
+                            })
+                        : undefined
+                    }
                     options={options}
                     selectedRepo={dialogState.repo}
                     setSelectedRepo={(repo) =>
@@ -158,6 +173,29 @@ export const ApplicationDialog: FC<{
       ) : null}
     </Dialog>
   )
+}
+
+function getRepoStatusText({
+  hasNextPage,
+  isFetchingNextPage,
+  isInitialLoading,
+  isRefreshing,
+  loadedCount,
+  totalCount,
+}: ReturnType<typeof useFetchRepos>) {
+  if (isInitialLoading) return 'Loading repositories...'
+
+  if (hasNextPage || isFetchingNextPage) {
+    return `Loaded ${formatRepoCount(loadedCount, totalCount)} repositories. Still loading...`
+  }
+
+  if (isRefreshing) {
+    return `Showing ${loadedCount} cached repositories while refreshing.`
+  }
+}
+
+function formatRepoCount(loadedCount: number, totalCount?: number) {
+  return totalCount ? `${loadedCount} of ${totalCount}` : `${loadedCount}`
 }
 
 export const NewApplicationDialog = () => {
