@@ -18,7 +18,7 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@mui/material": "^5.14.8",
-    "@octokit/rest": "^20.0.1",
+    "@octokit/rest": "^22.0.1",
     "@tanstack/react-query": "^5.100.5",
     "@tanstack/react-query-devtools": "^5.100.5",
     "browser-fs-access": "^0.34",

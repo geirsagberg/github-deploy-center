@@ -16,6 +16,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
+          if (id.includes('/node_modules/@octokit/')) {
+            return 'octokit'
+          }
+
           if (
             id.includes('/node_modules/@mui/material/') ||
             id.includes('/node_modules/@emotion/react/') ||
