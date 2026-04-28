@@ -2,20 +2,22 @@ import dayjs from 'dayjs'
 import { clone, some } from 'lodash-es'
 import { snapshot } from 'valtio/vanilla'
 import {
+  applicationsByIdSchema,
+  createApplicationConfig,
+} from '../state/schemas'
+import type {
   AppSettings,
   DeploySettings,
   EnvironmentSettings,
   RepoModel,
-  applicationsByIdSchema,
-  createApplicationConfig,
 } from '../state/schemas'
 import { showConfirm } from '../utils/dialog'
 import { appState } from './state'
-import {
+import { createApplicationDialogState } from './state'
+import type {
   ApplicationDialogState,
   DeploymentDialogState,
   EnvironmentDialogState,
-  createApplicationDialogState,
 } from './state'
 import { downloadJson, restApi, uploadJson } from './services'
 import { getDeploymentId } from './utils'

@@ -1,4 +1,5 @@
-import { Icon, Link, LinkProps, Typography } from '@mui/material'
+import { Icon, Link, Typography } from '@mui/material'
+import type { LinkProps } from '@mui/material'
 import { useFetchWorkflows } from '../api/fetchHooks'
 import { useAppState } from '../store'
 

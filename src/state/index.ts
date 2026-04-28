@@ -1,4 +1,4 @@
-import { AppSettings } from './schemas'
+import type { AppSettings } from './schemas'
 
 export const defaultAppSettings: AppSettings = {
   deployTimeoutSecs: 60,

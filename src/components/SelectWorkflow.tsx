@@ -2,11 +2,11 @@ import {
   Alert,
   CircularProgress,
   FormControl,
-  FormControlProps,
   InputLabel,
   MenuItem,
   Select,
 } from '@mui/material'
+import type { FormControlProps } from '@mui/material'
 import { useFetchWorkflows } from '../api/fetchHooks'
 import { useAppState } from '../store'
 

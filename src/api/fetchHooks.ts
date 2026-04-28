@@ -1,19 +1,20 @@
-import { components } from '@octokit/openapi-types/types'
-import { UseQueryResult, useQuery } from '@tanstack/react-query'
+import type { components } from '@octokit/openapi-types/types'
+import { useQuery } from '@tanstack/react-query'
+import type { UseQueryResult } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { keyBy, orderBy } from 'lodash-es'
+import { DeploymentState } from '../generated/graphql'
+import type { DeployFragment, RepoFragment } from '../generated/graphql'
+import { restApi, useAppState } from '../store'
+import type { DeploymentModel, ReleaseModel } from '../store'
 import {
-  DeployFragment,
-  DeploymentState,
-  RepoFragment,
-} from '../generated/graphql'
-import { DeploymentModel, ReleaseModel, restApi, useAppState } from '../store'
-import {
+  githubEnvironmentsSchema,
+  workflowRunsSchema,
+} from '../state/schemas'
+import type {
   GitHubEnvironment,
   RepoModel,
   WorkflowRun,
-  githubEnvironmentsSchema,
-  workflowRunsSchema,
 } from '../state/schemas'
 import graphQLApi from '../utils/graphQLApi'
 

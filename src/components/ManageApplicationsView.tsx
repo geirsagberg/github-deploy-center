@@ -1,6 +1,5 @@
 import { Box, Button } from '@mui/material'
 import { supported } from 'browser-fs-access'
-import React from 'react'
 import { useActions } from '../store'
 
 export const ManageApplicationsView = () => {

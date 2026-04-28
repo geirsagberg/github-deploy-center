@@ -5,8 +5,8 @@ import {
   DialogContent,
   DialogContentText,
 } from '@mui/material'
-import React from 'react'
-import { create, InstanceProps } from 'react-modal-promise'
+import { create } from 'react-modal-promise'
+import type { InstanceProps } from 'react-modal-promise'
 
 type ConfirmDialogProps = InstanceProps<boolean> & {
   message: string

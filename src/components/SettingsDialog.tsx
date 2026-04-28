@@ -8,7 +8,7 @@ import {
 } from '@mui/material'
 import { appSettingsDescription, defaultAppSettings } from '../state'
 import { useActions, useAppState } from '../store'
-import { AppSettings } from '../state/schemas'
+import type { AppSettings } from '../state/schemas'
 import { keysOf } from '../utils'
 
 interface EditorProps {

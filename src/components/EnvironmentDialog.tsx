@@ -13,10 +13,11 @@ import {
   TextField,
 } from '@mui/material'
 import { orderBy } from 'lodash-es'
-import { FC } from 'react'
+import type { FC } from 'react'
 import { useFetchEnvironments } from '../api/fetchHooks'
-import { EnvironmentDialogState, useAppState } from '../store'
-import { EnvironmentSettings } from '../state/schemas'
+import { useAppState } from '../store'
+import type { EnvironmentDialogState } from '../store'
+import type { EnvironmentSettings } from '../state/schemas'
 
 type Option = {
   name: string

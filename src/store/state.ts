@@ -1,9 +1,9 @@
-import { Dayjs } from 'dayjs'
+import type { Dayjs } from 'dayjs'
 import { useSnapshot } from 'valtio'
 import { proxy, type Snapshot } from 'valtio/vanilla'
 import { DeploymentState } from '../generated/graphql'
 import { defaultAppSettings } from '../state'
-import {
+import type {
   AppSettings,
   ApplicationConfig,
   DeploySettings,

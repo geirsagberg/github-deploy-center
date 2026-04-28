@@ -1,5 +1,4 @@
-import { GraphQLClient } from 'graphql-request';
-import { GraphQLClientRequestHeaders } from 'graphql-request/build/cjs/types';
+import type { GraphQLClient, RequestOptions } from 'graphql-request';
 import gql from 'graphql-tag';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -8,6 +7,7 @@ export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: 
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
 export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
+type GraphQLClientRequestHeaders = RequestOptions['requestHeaders'];
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
   ID: { input: string; output: string; }
@@ -28694,7 +28694,12 @@ export type FetchReleasesQueryVariables = Exact<{
 }>;
 
 
-export type FetchReleasesQuery = { __typename: 'Query', repository: { __typename: 'Repository', refs: { __typename: 'RefConnection', nodes: Array<{ __typename: 'Ref', id: string, name: string, target: { __typename: 'Blob' } | { __typename: 'Commit', oid: any, pushedDate: any | null, committedDate: any, deployments: { __typename: 'DeploymentConnection', nodes: Array<{ __typename: 'Deployment', id: string, databaseId: number | null, createdAt: any, environment: string | null, state: DeploymentState | null, payload: string | null, latestStatus: { __typename: 'DeploymentStatus', createdAt: any } | null } | null> | null, pageInfo: { __typename: 'PageInfo', endCursor: string | null, hasNextPage: boolean } } | null } | { __typename: 'Tag' } | { __typename: 'Tree' } | null } | null> | null } | null } | null };
+export type FetchReleasesQuery = { __typename: 'Query', repository: { __typename: 'Repository', refs: { __typename: 'RefConnection', nodes: Array<{ __typename: 'Ref', id: string, name: string, target:
+          | { __typename: 'Blob' }
+          | { __typename: 'Commit', oid: any, pushedDate: any | null, committedDate: any, deployments: { __typename: 'DeploymentConnection', nodes: Array<{ __typename: 'Deployment', id: string, databaseId: number | null, createdAt: any, environment: string | null, state: DeploymentState | null, payload: string | null, latestStatus: { __typename: 'DeploymentStatus', createdAt: any } | null } | null> | null, pageInfo: { __typename: 'PageInfo', endCursor: string | null, hasNextPage: boolean } } | null }
+          | { __typename: 'Tag' }
+          | { __typename: 'Tree' }
+         | null } | null> | null } | null } | null };
 
 export type CommitFragment = { __typename: 'Commit', oid: any, pushedDate: any | null, committedDate: any, deployments: { __typename: 'DeploymentConnection', nodes: Array<{ __typename: 'Deployment', id: string, databaseId: number | null, createdAt: any, environment: string | null, state: DeploymentState | null, payload: string | null, latestStatus: { __typename: 'DeploymentStatus', createdAt: any } | null } | null> | null, pageInfo: { __typename: 'PageInfo', endCursor: string | null, hasNextPage: boolean } } | null };
 
@@ -28705,9 +28710,15 @@ export type FetchReposWithWriteAccessQueryVariables = Exact<{
 }>;
 
 
-export type FetchReposWithWriteAccessQuery = { __typename: 'Query', viewer: { __typename: 'User', repositories: { __typename: 'RepositoryConnection', totalCount: number, nodes: Array<{ __typename: 'Repository', id: string, name: string, owner: { __typename: 'Organization', login: string } | { __typename: 'User', login: string }, defaultBranchRef: { __typename: 'Ref', name: string } | null } | null> | null, pageInfo: { __typename: 'PageInfo', endCursor: string | null, hasNextPage: boolean } } } };
+export type FetchReposWithWriteAccessQuery = { __typename: 'Query', viewer: { __typename: 'User', repositories: { __typename: 'RepositoryConnection', totalCount: number, nodes: Array<{ __typename: 'Repository', id: string, name: string, owner:
+          | { __typename: 'Organization', login: string }
+          | { __typename: 'User', login: string }
+        , defaultBranchRef: { __typename: 'Ref', name: string } | null } | null> | null, pageInfo: { __typename: 'PageInfo', endCursor: string | null, hasNextPage: boolean } } } };
 
-export type RepoFragment = { __typename: 'Repository', id: string, name: string, owner: { __typename: 'Organization', login: string } | { __typename: 'User', login: string }, defaultBranchRef: { __typename: 'Ref', name: string } | null };
+export type RepoFragment = { __typename: 'Repository', id: string, name: string, owner:
+    | { __typename: 'Organization', login: string }
+    | { __typename: 'User', login: string }
+  , defaultBranchRef: { __typename: 'Ref', name: string } | null };
 
 export const DeployFragmentDoc = gql`
     fragment Deploy on Deployment {
@@ -28801,21 +28812,21 @@ export const FetchReposWithWriteAccessDocument = gql`
 }
     ${RepoFragmentDoc}`;
 
-export type SdkFunctionWrapper = <T>(action: (requestHeaders?:Record<string, string>) => Promise<T>, operationName: string, operationType?: string) => Promise<T>;
+export type SdkFunctionWrapper = <T>(action: (requestHeaders?:Record<string, string>) => Promise<T>, operationName: string, operationType?: string, variables?: any) => Promise<T>;
 
 
-const defaultWrapper: SdkFunctionWrapper = (action, _operationName, _operationType) => action();
+const defaultWrapper: SdkFunctionWrapper = (action, _operationName, _operationType, _variables) => action();
 
 export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = defaultWrapper) {
   return {
-    fetchCurrentUserId(variables?: FetchCurrentUserIdQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<FetchCurrentUserIdQuery> {
-      return withWrapper((wrappedRequestHeaders) => client.request<FetchCurrentUserIdQuery>(FetchCurrentUserIdDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'fetchCurrentUserId', 'query');
+    fetchCurrentUserId(variables?: FetchCurrentUserIdQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<FetchCurrentUserIdQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<FetchCurrentUserIdQuery>({ document: FetchCurrentUserIdDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'fetchCurrentUserId', 'query', variables);
     },
-    fetchReleases(variables: FetchReleasesQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<FetchReleasesQuery> {
-      return withWrapper((wrappedRequestHeaders) => client.request<FetchReleasesQuery>(FetchReleasesDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'fetchReleases', 'query');
+    fetchReleases(variables: FetchReleasesQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<FetchReleasesQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<FetchReleasesQuery>({ document: FetchReleasesDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'fetchReleases', 'query', variables);
     },
-    fetchReposWithWriteAccess(variables?: FetchReposWithWriteAccessQueryVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<FetchReposWithWriteAccessQuery> {
-      return withWrapper((wrappedRequestHeaders) => client.request<FetchReposWithWriteAccessQuery>(FetchReposWithWriteAccessDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'fetchReposWithWriteAccess', 'query');
+    fetchReposWithWriteAccess(variables?: FetchReposWithWriteAccessQueryVariables, requestHeaders?: GraphQLClientRequestHeaders, signal?: RequestInit['signal']): Promise<FetchReposWithWriteAccessQuery> {
+      return withWrapper((wrappedRequestHeaders) => client.request<FetchReposWithWriteAccessQuery>({ document: FetchReposWithWriteAccessDocument, variables, requestHeaders: { ...requestHeaders, ...wrappedRequestHeaders }, signal }), 'fetchReposWithWriteAccess', 'query', variables);
     }
   };
 }

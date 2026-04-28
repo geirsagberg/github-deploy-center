@@ -20,13 +20,12 @@ import { orderBy, values } from 'lodash-es'
 import { useFetchReleases, useFetchWorkflowRuns } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
 import {
-  DeploymentModel,
   getDeploymentId,
-  ReleaseModel,
   useActions,
   useAppState,
 } from '../store'
-import { EnvironmentSettings, WorkflowRun } from '../state/schemas'
+import type { DeploymentModel, ReleaseModel } from '../store'
+import type { EnvironmentSettings, WorkflowRun } from '../state/schemas'
 
 const getButtonStyle = (state?: DeploymentState) => {
   switch (state) {
