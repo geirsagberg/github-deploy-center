@@ -57,9 +57,9 @@ export const ReleasesTableView = () => {
   const {
     mutate: deploy,
     error,
-    isLoading,
-  } = useMutation(
-    async ({
+    isPending,
+  } = useMutation({
+    mutationFn: async ({
       release,
       environmentName,
     }: {
@@ -67,8 +67,8 @@ export const ReleasesTableView = () => {
       environmentName: string
     }) => {
       await triggerDeployment({ release, environmentName })
-    }
-  )
+    },
+  })
 
   if (!selectedApplication?.deploySettings?.workflowId) {
     return null
@@ -141,7 +141,7 @@ export const ReleasesTableView = () => {
     return (
       <Stack direction="row" alignItems="center" gap={1}>
         <Button
-          disabled={isLoading}
+          disabled={isPending}
           variant={deployButtonVariant}
           color={!deploymentState && isAfterLatest ? 'primary' : 'inherit'}
           style={getButtonStyle(deploymentState)}

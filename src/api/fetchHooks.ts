@@ -24,9 +24,9 @@ export const useFetchReleases = () => {
   const repo = selectedApplication?.repo
   const prefix = selectedApplication?.releaseFilter ?? ''
 
-  const { data, isLoading, error } = useQuery(
-    [`${repo?.owner}/${repo?.name}/releases/${prefix}`],
-    async () => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['releases', repo?.owner, repo?.name, prefix],
+    queryFn: async () => {
       if (!repo) return []
 
       const result = await graphQLApi.fetchReleases({
@@ -74,10 +74,8 @@ export const useFetchReleases = () => {
         .filter((n): n is ReleaseModel => !!n)
       return releases
     },
-    {
-      refetchInterval: 1000 * refreshIntervalSecs,
-    }
-  )
+    refetchInterval: 1000 * refreshIntervalSecs,
+  })
 
   return { data, isLoading, error }
 }
@@ -89,9 +87,9 @@ export const useFetchWorkflows = () => {
 
   const repo = selectedApplication?.repo
 
-  const { data, isLoading, error } = useQuery(
-    [`${repo?.owner}/${repo?.name}/workflows`],
-    async () => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['workflows', repo?.owner, repo?.name],
+    queryFn: async () => {
       if (!token || !repo) return []
 
       const { owner, name } = repo
@@ -108,8 +106,8 @@ export const useFetchWorkflows = () => {
 
       // TODO: Only return workflows with `workflow_dispatch` trigger
       return orderBy(response, (w) => w.name)
-    }
-  )
+    },
+  })
   return { data, isLoading, error }
 }
 
@@ -121,10 +119,16 @@ export const useFetchWorkflowRuns = (): UseQueryResult<
 
   const repo = selectedApplication?.repo
   const workflowId = selectedApplication?.deploySettings?.workflowId
-  return useQuery(
-    [`${repo?.owner}/${repo?.name}/workflow-runs`, workflowRuns],
-    async () => {
-      if (!token || !repo || !workflowId) return []
+  return useQuery({
+    queryKey: [
+      'workflow-runs',
+      repo?.owner,
+      repo?.name,
+      workflowId,
+      workflowRuns,
+    ],
+    queryFn: async () => {
+      if (!token || !repo || !workflowId) return {}
 
       const { owner, name } = repo
 
@@ -144,8 +148,8 @@ export const useFetchWorkflowRuns = (): UseQueryResult<
       }
 
       return keyBy(workflows, 'id') as Record<number, WorkflowRun>
-    }
-  )
+    },
+  })
 }
 
 export const useFetchEnvironments = (): UseQueryResult<GitHubEnvironment[]> => {
@@ -153,52 +157,58 @@ export const useFetchEnvironments = (): UseQueryResult<GitHubEnvironment[]> => {
 
   const repo = selectedApplication?.repo
 
-  return useQuery([`${repo?.owner}/${repo?.name}/environments`], async () => {
-    if (!token || !repo) return []
-    const { owner, name } = repo
+  return useQuery({
+    queryKey: ['environments', repo?.owner, repo?.name],
+    queryFn: async () => {
+      if (!token || !repo) return []
+      const { owner, name } = repo
 
-    const data = await restApi.octokit.paginate(
-      restApi.octokit.repos.getAllEnvironments,
-      {
-        owner,
-        repo: name,
-        per_page: 100,
-      },
-      (response) => response.data as any
-    )
-    try {
-      return githubEnvironmentsSchema.parse(data)
-    } catch (error) {
-      console.error(error)
-      return []
-    }
+      const data = await restApi.octokit.paginate(
+        restApi.octokit.repos.getAllEnvironments,
+        {
+          owner,
+          repo: name,
+          per_page: 100,
+        },
+        (response) => response.data as any
+      )
+      try {
+        return githubEnvironmentsSchema.parse(data)
+      } catch (error) {
+        console.error(error)
+        return []
+      }
+    },
   })
 }
 
 export const useFetchRepos = () =>
-  useQuery(['repos'], async () => {
-    let after: string | null = null
-    let keepFetching = true
-    const repos: RepoFragment[] = []
-    while (keepFetching) {
-      const result = await graphQLApi.fetchReposWithWriteAccess({
-        after,
-      })
-      const { hasNextPage, endCursor } = result.viewer.repositories.pageInfo
-      const nodes =
-        result.viewer.repositories.nodes?.map((e) => e as RepoFragment) ?? []
-      repos.push(...nodes)
-      keepFetching = hasNextPage
-      after = endCursor as string | null
-    }
-    return repos.map(
-      (r): RepoModel => ({
-        id: r.id,
-        name: r.name,
-        owner: r.owner.login,
-        defaultBranch: r.defaultBranchRef?.name ?? '',
-      })
-    )
+  useQuery({
+    queryKey: ['repos'],
+    queryFn: async () => {
+      let after: string | null = null
+      let keepFetching = true
+      const repos: RepoFragment[] = []
+      while (keepFetching) {
+        const result = await graphQLApi.fetchReposWithWriteAccess({
+          after,
+        })
+        const { hasNextPage, endCursor } = result.viewer.repositories.pageInfo
+        const nodes =
+          result.viewer.repositories.nodes?.map((e) => e as RepoFragment) ?? []
+        repos.push(...nodes)
+        keepFetching = hasNextPage
+        after = endCursor as string | null
+      }
+      return repos.map(
+        (r): RepoModel => ({
+          id: r.id,
+          name: r.name,
+          owner: r.owner.login,
+          defaultBranch: r.defaultBranchRef?.name ?? '',
+        })
+      )
+    },
   })
 
 function tryParseWorkflowRunId(payload: string | null): number | undefined {
