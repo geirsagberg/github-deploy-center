@@ -1,6 +1,10 @@
 import { Dayjs } from 'dayjs'
+import { useSnapshot } from 'valtio'
+import { proxy } from 'valtio/vanilla'
 import { DeploymentState } from '../generated/graphql'
+import { defaultAppSettings } from '../state'
 import {
+  AppSettings,
   ApplicationConfig,
   DeploySettings,
   PendingDeployment,
@@ -60,9 +64,10 @@ export type AppState = {
   deploymentDialog?: DeploymentDialogState
   settingsDialog?: SettingsDialogState
   pendingDeployments: Record<string, PendingDeployment>
+  settings: AppSettings
 }
 
-const state: AppState = {
+export const appState = proxy<AppState>({
   token: '',
   applicationsById: {},
   selectedApplicationId: '',
@@ -70,6 +75,9 @@ const state: AppState = {
     return this.applicationsById[this.selectedApplicationId]
   },
   pendingDeployments: {},
-}
+  settings: { ...defaultAppSettings },
+})
 
-export default state
+export const getSelectedApplication = () => appState.selectedApplication
+
+export const useAppState = () => useSnapshot(appState) as AppState

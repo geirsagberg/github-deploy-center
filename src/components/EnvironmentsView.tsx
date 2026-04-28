@@ -1,5 +1,5 @@
 import { Button, Typography } from '@mui/material'
-import { useActions, useAppState } from '../overmind'
+import { useActions, useAppState } from '../store'
 import { EnvironmentDialog } from './EnvironmentDialog'
 
 const AddEnvironmentDialog = () => {

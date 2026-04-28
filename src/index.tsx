@@ -1,31 +1,27 @@
 import { CssBaseline, ThemeProvider } from '@mui/material'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { Provider } from 'overmind-react'
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { RecoilRoot } from 'recoil'
 import './@setup'
 import App from './App'
-import { overmind } from './overmind'
 import * as serviceWorker from './serviceWorker'
+import { initializeAppStore } from './store'
 import { theme } from './theme'
 
 const queryClient = new QueryClient()
 
+initializeAppStore()
+
 ReactDOM.render(
   <React.StrictMode>
-    <RecoilRoot>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <Provider value={overmind}>
-            <App />
-          </Provider>
-        </ThemeProvider>
-        <ReactQueryDevtools />
-      </QueryClientProvider>
-    </RecoilRoot>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <App />
+      </ThemeProvider>
+      <ReactQueryDevtools />
+    </QueryClientProvider>
   </React.StrictMode>,
   document.getElementById('root')
 )

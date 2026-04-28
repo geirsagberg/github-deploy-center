@@ -1,6 +1,6 @@
 import { Icon, Link, LinkProps, Typography } from '@mui/material'
 import { useFetchWorkflows } from '../api/fetchHooks'
-import { useAppState } from '../overmind'
+import { useAppState } from '../store'
 
 const ExternalLink = ({ children, ...props }: LinkProps) => (
   <Link

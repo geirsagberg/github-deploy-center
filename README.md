@@ -37,7 +37,7 @@ The app is built with:
 
 - [Vite](https://vitejs.dev/)
 - [Material UI](https://material-ui.com/)
-- [Overmind](https://overmindjs.org/)
+- [Valtio](https://valtio.dev/)
 - [React Query](https://@tanstack/react-query.tanstack.com/)
 - [GraphQL](https://graphql.org/)
 

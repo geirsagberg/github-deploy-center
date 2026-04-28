@@ -8,7 +8,7 @@ import {
   TextField,
 } from '@mui/material'
 import { fromPairs } from 'lodash-es'
-import { useActions, useAppState } from '../overmind'
+import { useActions, useAppState } from '../store'
 import { SelectWorkflow } from './SelectWorkflow'
 
 export const DeploymentDialog = () => {

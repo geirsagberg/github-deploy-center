@@ -15,8 +15,7 @@ import {
 import { orderBy } from 'lodash-es'
 import { FC } from 'react'
 import { useFetchEnvironments } from '../api/fetchHooks'
-import { useAppState } from '../overmind'
-import { EnvironmentDialogState } from '../overmind/state'
+import { EnvironmentDialogState, useAppState } from '../store'
 import { EnvironmentSettings } from '../state/schemas'
 
 type Option = {

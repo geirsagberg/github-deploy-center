@@ -20,7 +20,7 @@ import { ReleasesTableView } from "./components/ReleasesTableView"
 import { SelectApplicationView } from "./components/SelectApplicationView"
 import { SettingsDialog } from "./components/SettingsDialog"
 import WorkflowInfoView from "./components/WorkflowInfoView"
-import { useActions, useAppState } from "./overmind"
+import { useActions, useAppState } from "./store"
 
 const App = () => {
   const { token } = useAppState()

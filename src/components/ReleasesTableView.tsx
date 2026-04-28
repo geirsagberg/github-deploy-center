@@ -19,9 +19,13 @@ import dayjs from 'dayjs'
 import { orderBy, values } from 'lodash-es'
 import { useFetchReleases, useFetchWorkflowRuns } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
-import { useActions, useAppState } from '../overmind'
-import { DeploymentModel, ReleaseModel } from '../overmind/state'
-import { getDeploymentId } from '../overmind/utils'
+import {
+  DeploymentModel,
+  getDeploymentId,
+  ReleaseModel,
+  useActions,
+  useAppState,
+} from '../store'
 import { EnvironmentSettings, WorkflowRun } from '../state/schemas'
 
 const getButtonStyle = (state?: DeploymentState) => {

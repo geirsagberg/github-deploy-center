@@ -6,13 +6,8 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material'
-import { useRecoilState } from 'recoil'
-import { useActions, useAppState } from '../overmind'
-import {
-  appSettings,
-  appSettingsDescription,
-  defaultAppSettings,
-} from '../state'
+import { appSettingsDescription, defaultAppSettings } from '../state'
+import { useActions, useAppState } from '../store'
 import { AppSettings } from '../state/schemas'
 import { keysOf } from '../utils'
 
@@ -20,15 +15,17 @@ interface EditorProps {
   setting: keyof AppSettings
 }
 
-function Editor<T>({ setting }: EditorProps) {
-  const [value, setValue] = useRecoilState(appSettings[setting])
+function Editor({ setting }: EditorProps) {
+  const { settings } = useAppState()
+  const { setAppSetting } = useActions()
+  const value = settings[setting]
   const label = appSettingsDescription[setting]
   if (typeof value === 'string') {
     return (
       <TextField
         label={label}
         value={value}
-        onChange={(e) => setValue(e.target.value as any)}
+        onChange={(e) => setAppSetting(setting, e.target.value as any)}
         fullWidth
       />
     )
@@ -38,7 +35,7 @@ function Editor<T>({ setting }: EditorProps) {
       <TextField
         label={label}
         value={value}
-        onChange={(e) => setValue(+e.target.value)}
+        onChange={(e) => setAppSetting(setting, +e.target.value as any)}
         type="number"
         fullWidth
       />

@@ -2,15 +2,12 @@ import { components } from '@octokit/openapi-types/types'
 import { UseQueryResult, useQuery } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { keyBy, orderBy } from 'lodash-es'
-import { useRecoilValue } from 'recoil'
 import {
   DeployFragment,
   DeploymentState,
   RepoFragment,
 } from '../generated/graphql'
-import { useAppState, useEffects } from '../overmind'
-import { DeploymentModel, ReleaseModel } from '../overmind/state'
-import { appSettings } from '../state'
+import { DeploymentModel, ReleaseModel, restApi, useAppState } from '../store'
 import {
   GitHubEnvironment,
   RepoModel,
@@ -21,8 +18,8 @@ import {
 import graphQLApi from '../utils/graphQLApi'
 
 export const useFetchReleases = () => {
-  const { selectedApplication } = useAppState()
-  const refreshIntervalSecs = useRecoilValue(appSettings.refreshIntervalSecs)
+  const { selectedApplication, settings } = useAppState()
+  const refreshIntervalSecs = settings.refreshIntervalSecs
 
   const repo = selectedApplication?.repo
   const prefix = selectedApplication?.releaseFilter ?? ''
@@ -89,7 +86,6 @@ type Workflow = components['schemas']['workflow']
 
 export const useFetchWorkflows = () => {
   const { token, selectedApplication } = useAppState()
-  const { restApi } = useEffects()
 
   const repo = selectedApplication?.repo
 
@@ -120,9 +116,8 @@ export const useFetchWorkflows = () => {
 export const useFetchWorkflowRuns = (): UseQueryResult<
   Record<number, WorkflowRun>
 > => {
-  const { token, selectedApplication } = useAppState()
-  const { restApi } = useEffects()
-  const workflowRuns = useRecoilValue(appSettings.workflowRuns)
+  const { token, selectedApplication, settings } = useAppState()
+  const workflowRuns = settings.workflowRuns
 
   const repo = selectedApplication?.repo
   const workflowId = selectedApplication?.deploySettings?.workflowId
@@ -152,7 +147,6 @@ export const useFetchWorkflowRuns = (): UseQueryResult<
 
 export const useFetchEnvironments = (): UseQueryResult<GitHubEnvironment[]> => {
   const { token, selectedApplication } = useAppState()
-  const { restApi } = useEffects()
 
   const repo = selectedApplication?.repo
 

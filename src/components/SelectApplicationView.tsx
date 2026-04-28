@@ -7,7 +7,7 @@ import {
   Select,
 } from '@mui/material'
 import { map, orderBy, size } from 'lodash-es'
-import { useActions, useAppState } from '../overmind'
+import { useActions, useAppState } from '../store'
 
 export const SelectApplicationView = () => {
   const { applicationsById, selectedApplicationId } = useAppState()

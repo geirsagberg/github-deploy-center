@@ -8,7 +8,7 @@ import {
   Select,
 } from '@mui/material'
 import { useFetchWorkflows } from '../api/fetchHooks'
-import { useAppState } from '../overmind'
+import { useAppState } from '../store'
 
 enum WorkflowRelevance {
   None = 0,
