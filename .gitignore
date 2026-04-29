@@ -19,6 +19,7 @@ bun-error.log*
 .terraform
 .eslintcache
 .env
+.envrc
 .secrets
 *.local
 
