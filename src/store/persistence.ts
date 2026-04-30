@@ -19,6 +19,8 @@ export function initializeAppStore() {
   const persistedState = loadPersistedState()
   if (persistedState) {
     applyPersistedState(persistedState)
+    // Rewrite normalized state immediately so legacy migrations are durable.
+    savePersistedState()
   }
 
   syncToken(appState.token)
