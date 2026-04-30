@@ -1,3 +1,4 @@
+import { v4 as uuid } from 'uuid'
 import type {
   AccountProfile,
   AccountWorkspace,
@@ -78,6 +79,34 @@ export function createDefaultAccount({
   })
 }
 
+export function addAccountProfile(
+  state: AccountContainerState,
+  {
+    id = uuid(),
+    label,
+    token,
+    githubLogin,
+    githubUserId,
+  }: {
+    id?: string
+    label: string
+    token: string
+    githubLogin: string
+    githubUserId: string
+  }
+) {
+  const account = createAccountProfile({
+    id,
+    label,
+    token,
+    githubLogin,
+    githubUserId,
+  })
+  state.accountsById[account.id] = account
+  state.activeAccountId = account.id
+  return account
+}
+
 export function normalizeSelectedApplicationId(
   applicationsById: Record<string, ApplicationConfig>,
   selectedApplicationId?: string
@@ -91,6 +120,39 @@ export function normalizeSelectedApplicationId(
 
 export function getActiveAccount(state: AccountContainerState) {
   return state.accountsById[state.activeAccountId]
+}
+
+export function setActiveAccount(
+  state: AccountContainerState,
+  accountId: string
+) {
+  if (!state.accountsById[accountId]) return false
+
+  state.activeAccountId = accountId
+  return true
+}
+
+export function updateAccountProfile(
+  state: AccountContainerState,
+  accountId: string,
+  update: Pick<AccountProfile, 'label'> &
+    Partial<Pick<AccountProfile, 'token' | 'githubLogin' | 'githubUserId'>>
+) {
+  const account = state.accountsById[accountId]
+  if (!account) return undefined
+
+  account.label = update.label
+  if (update.token !== undefined) {
+    account.token = update.token
+  }
+  if (update.githubLogin !== undefined) {
+    account.githubLogin = update.githubLogin
+  }
+  if (update.githubUserId !== undefined) {
+    account.githubUserId = update.githubUserId
+  }
+
+  return account
 }
 
 export function ensureActiveAccount(state: AccountContainerState) {

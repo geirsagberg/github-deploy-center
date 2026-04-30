@@ -11,18 +11,26 @@ import type {
   EnvironmentSettings,
   RepoModel,
 } from '../state/schemas'
+import {
+  resolveGitHubIdentity,
+  type GitHubIdentityResolver,
+} from '../api/githubIdentity'
 import { showConfirm } from '../utils/dialog'
 import {
+  addAccountProfile,
   deleteActiveApplication,
   getActiveWorkspace,
   getSelectedApplication,
   selectActiveApplication,
+  setActiveAccount,
   setActiveAccountApplications,
   setActiveAccountToken,
+  updateAccountProfile,
 } from './accounts'
 import { appState } from './state'
 import { createApplicationDialogState } from './state'
 import type {
+  AppState,
   ApplicationDialogState,
   DeploymentDialogState,
   EnvironmentDialogState,
@@ -32,6 +40,106 @@ import { getDeploymentId } from './utils'
 
 export const setToken = (token: string) => {
   setActiveAccountToken(appState, token)
+}
+
+export type AddAccountInput = {
+  label: string
+  token: string
+}
+
+export async function addAccountToState(
+  state: AppState,
+  { label, token }: AddAccountInput,
+  resolveIdentity: GitHubIdentityResolver = resolveGitHubIdentity
+) {
+  const normalizedLabel = label.trim()
+  const normalizedToken = token.trim()
+
+  if (!normalizedLabel) {
+    throw new Error('Enter an account label.')
+  }
+
+  if (!normalizedToken) {
+    throw new Error('Enter a personal access token.')
+  }
+
+  let identity
+  try {
+    identity = await resolveIdentity(normalizedToken)
+  } catch {
+    throw new Error(
+      'Could not validate that personal access token. Check the token and try again.'
+    )
+  }
+
+  return addAccountProfile(state, {
+    label: normalizedLabel,
+    token: normalizedToken,
+    githubLogin: identity.login,
+    githubUserId: identity.id,
+  })
+}
+
+export const addAccount = (input: AddAccountInput) =>
+  addAccountToState(appState, input)
+
+export type EditAccountInput = {
+  accountId: string
+  label: string
+  token?: string
+}
+
+export async function editAccountInState(
+  state: AppState,
+  { accountId, label, token = '' }: EditAccountInput,
+  resolveIdentity: GitHubIdentityResolver = resolveGitHubIdentity
+) {
+  const account = state.accountsById[accountId]
+  if (!account) {
+    throw new Error('Account not found.')
+  }
+
+  const normalizedLabel = label.trim()
+  const normalizedToken = token.trim()
+
+  if (!normalizedLabel) {
+    throw new Error('Enter an account label.')
+  }
+
+  if (!normalizedToken) {
+    return updateAccountProfile(state, accountId, {
+      label: normalizedLabel,
+    })
+  }
+
+  let identity
+  try {
+    identity = await resolveIdentity(normalizedToken)
+  } catch {
+    throw new Error(
+      'Could not validate that personal access token. Check the token and try again.'
+    )
+  }
+
+  if (account.githubUserId && identity.id !== account.githubUserId) {
+    throw new Error(
+      `That token belongs to @${identity.login}, not @${account.githubLogin ?? account.label}. Add it as a new account instead.`
+    )
+  }
+
+  return updateAccountProfile(state, accountId, {
+    label: normalizedLabel,
+    token: normalizedToken,
+    githubLogin: identity.login,
+    githubUserId: identity.id,
+  })
+}
+
+export const editAccount = (input: EditAccountInput) =>
+  editAccountInState(appState, input)
+
+export const selectAccount = (accountId: string) => {
+  setActiveAccount(appState, accountId)
 }
 
 export const showSettings = () => (appState.settingsDialog = {})
@@ -324,6 +432,7 @@ export const importApplications = async () => {
 }
 
 export const actions = {
+  addAccount,
   addEnvironment,
   cancelAddEnvironment,
   cancelEditApplication,
@@ -332,6 +441,7 @@ export const actions = {
   createNewApplication,
   deleteApplication,
   editApplication,
+  editAccount,
   editDeployment,
   exportApplications,
   hideSettings,
@@ -339,6 +449,7 @@ export const actions = {
   removeEnvironment,
   saveApplication,
   saveDeployment,
+  selectAccount,
   selectApplication,
   setAppSetting,
   setToken,

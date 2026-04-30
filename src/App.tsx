@@ -3,13 +3,13 @@ import {
   Container,
   Icon,
   IconButton,
-  Link,
   Paper,
-  TextField,
   Typography,
 } from '@mui/material'
 import ModalContainer from 'react-modal-promise'
 import { useFetchRepos } from './api/fetchHooks'
+import { AccountSetupView } from './components/AccountSetupView'
+import { AccountSwitcherView } from './components/AccountSwitcherView'
 import {
   EditApplicationDialog,
   NewApplicationDialog,
@@ -29,8 +29,11 @@ const RepoPreloader = () => {
 }
 
 const App = () => {
-  const { token } = useAppState()
-  const { setToken, showSettings } = useActions()
+  const { accountsById, activeAccountId, token } = useAppState()
+  const { addAccount, editAccount, selectAccount, showSettings } = useActions()
+  const hasAccounts = Object.keys(accountsById).length > 0
+  const hasActiveAccountToken = hasAccounts && !!token
+
   return (
     <Container>
       <Paper sx={{ p: 4, display: 'grid', gap: '1rem' }}>
@@ -46,42 +49,36 @@ const App = () => {
             <Icon>settings</Icon>
           </IconButton>
         </Box>
-        <TextField
-          label="Personal Access Token"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-          type="password"
-        />
-        {token ? (
+        {hasAccounts ? (
           <>
-            <RepoPreloader />
-            <ManageApplicationsView />
-            <SelectApplicationView />
-            <EnvironmentsView />
-            <WorkflowInfoView />
-            <ReleasesTableView />
-            <NewApplicationDialog />
-            <EditApplicationDialog />
-            <DeploymentDialog />
+            <AccountSwitcherView
+              accountsById={accountsById}
+              activeAccountId={activeAccountId}
+              addAccount={addAccount}
+              editAccount={editAccount}
+              selectAccount={selectAccount}
+            />
+            {hasActiveAccountToken ? (
+              <>
+                <RepoPreloader />
+                <ManageApplicationsView />
+                <SelectApplicationView />
+                <EnvironmentsView />
+                <WorkflowInfoView />
+                <ReleasesTableView />
+                <NewApplicationDialog />
+                <EditApplicationDialog />
+                <DeploymentDialog />
+              </>
+            ) : (
+              <Typography color="text.secondary">
+                Add a valid personal access token to this account before GitHub
+                data can load.
+              </Typography>
+            )}
           </>
         ) : (
-          <>
-            <Typography>
-              Go to{' '}
-              <Link
-                target="_blank"
-                href="https://github.com/settings/tokens/new"
-              >
-                https://github.com/settings/tokens/new
-              </Link>{' '}
-              to create a new personal access token, and give it the{' '}
-              <code>repo</code> scope.
-            </Typography>
-            <Typography>
-              Your token will be stored in your browser&apos;s local storage,
-              and never leaves your machine.
-            </Typography>
-          </>
+          <AccountSetupView addAccount={addAccount} />
         )}
       </Paper>
       <SettingsDialog />
