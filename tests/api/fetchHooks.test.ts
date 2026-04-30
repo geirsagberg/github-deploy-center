@@ -3,7 +3,7 @@ import {
   getGitHubQueryScope,
   githubQueryKeys,
   hashString,
-} from '../../src/api/fetchHooks'
+} from '../../src/api/githubRuntime'
 import type { RepoModel } from '../../src/state/schemas'
 
 const repo: RepoModel = {

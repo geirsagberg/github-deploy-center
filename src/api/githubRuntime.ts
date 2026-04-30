@@ -1,0 +1,99 @@
+import { Octokit } from '@octokit/rest'
+import { GraphQLClient } from 'graphql-request'
+import { getSdk } from '../generated/graphql'
+import type { RepoModel } from '../state/schemas'
+
+const GITHUB_GRAPHQL_API_URL = 'https://api.github.com/graphql'
+
+export type GitHubQueryScope = {
+  activeAccountId: string
+  tokenKey: string
+}
+
+export const getGitHubQueryScope = ({
+  activeAccountId,
+  token,
+}: {
+  activeAccountId: string
+  token: string
+}): GitHubQueryScope => ({
+  activeAccountId,
+  tokenKey: token ? hashString(token) : '',
+})
+
+export const githubQueryKeys = {
+  releases: (
+    scope: GitHubQueryScope,
+    repo: RepoModel | undefined,
+    prefix: string
+  ) =>
+    [
+      'github',
+      'releases',
+      scope.activeAccountId,
+      scope.tokenKey,
+      repo?.owner,
+      repo?.name,
+      prefix,
+    ] as const,
+  workflows: (scope: GitHubQueryScope, repo: RepoModel | undefined) =>
+    [
+      'github',
+      'workflows',
+      scope.activeAccountId,
+      scope.tokenKey,
+      repo?.owner,
+      repo?.name,
+    ] as const,
+  workflowRuns: (
+    scope: GitHubQueryScope,
+    repo: RepoModel | undefined,
+    workflowId: number | undefined,
+    workflowRuns: number
+  ) =>
+    [
+      'github',
+      'workflow-runs',
+      scope.activeAccountId,
+      scope.tokenKey,
+      repo?.owner,
+      repo?.name,
+      workflowId,
+      workflowRuns,
+    ] as const,
+  environments: (scope: GitHubQueryScope, repo: RepoModel | undefined) =>
+    [
+      'github',
+      'environments',
+      scope.activeAccountId,
+      scope.tokenKey,
+      repo?.owner,
+      repo?.name,
+    ] as const,
+  repos: (scope: GitHubQueryScope) =>
+    ['github', 'repos', scope.activeAccountId, scope.tokenKey] as const,
+}
+
+export function createGraphQLApi(token: string) {
+  const client = new GraphQLClient(GITHUB_GRAPHQL_API_URL, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  return getSdk(client)
+}
+
+export function createOctokit(token: string) {
+  return new Octokit({ auth: token })
+}
+
+export function hashString(value: string) {
+  let hash = 5381
+
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 33) ^ value.charCodeAt(i)
+  }
+
+  return (hash >>> 0).toString(36)
+}

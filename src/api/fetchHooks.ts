@@ -1,16 +1,20 @@
 import type { components } from '@octokit/openapi-types/types'
-import { Octokit } from '@octokit/rest'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import type { UseQueryResult } from '@tanstack/react-query'
 import dayjs from 'dayjs'
-import { GraphQLClient } from 'graphql-request'
 import { keyBy, orderBy } from 'lodash-es'
 import { useEffect, useMemo } from 'react'
 import { z } from 'zod'
-import { DeploymentState, getSdk } from '../generated/graphql'
+import { DeploymentState } from '../generated/graphql'
 import type { DeployFragment, RepoFragment } from '../generated/graphql'
 import { useAppState } from '../store'
 import type { DeploymentModel, ReleaseModel } from '../store'
+import {
+  createGraphQLApi,
+  createOctokit,
+  getGitHubQueryScope,
+  githubQueryKeys,
+} from './githubRuntime'
 import {
   githubEnvironmentsSchema,
   repoSchema,
@@ -24,76 +28,6 @@ import type {
 
 const REPO_STALE_TIME_MS = 30 * 60 * 1000
 const REPO_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
-const GITHUB_GRAPHQL_API_URL = 'https://api.github.com/graphql'
-
-export type GitHubQueryScope = {
-  activeAccountId: string
-  tokenKey: string
-}
-
-export const getGitHubQueryScope = ({
-  activeAccountId,
-  token,
-}: {
-  activeAccountId: string
-  token: string
-}): GitHubQueryScope => ({
-  activeAccountId,
-  tokenKey: token ? hashString(token) : '',
-})
-
-export const githubQueryKeys = {
-  releases: (
-    scope: GitHubQueryScope,
-    repo: RepoModel | undefined,
-    prefix: string
-  ) =>
-    [
-      'github',
-      'releases',
-      scope.activeAccountId,
-      scope.tokenKey,
-      repo?.owner,
-      repo?.name,
-      prefix,
-    ] as const,
-  workflows: (scope: GitHubQueryScope, repo: RepoModel | undefined) =>
-    [
-      'github',
-      'workflows',
-      scope.activeAccountId,
-      scope.tokenKey,
-      repo?.owner,
-      repo?.name,
-    ] as const,
-  workflowRuns: (
-    scope: GitHubQueryScope,
-    repo: RepoModel | undefined,
-    workflowId: number | undefined,
-    workflowRuns: number
-  ) =>
-    [
-      'github',
-      'workflow-runs',
-      scope.activeAccountId,
-      scope.tokenKey,
-      repo?.owner,
-      repo?.name,
-      workflowId,
-      workflowRuns,
-    ] as const,
-  environments: (scope: GitHubQueryScope, repo: RepoModel | undefined) =>
-    [
-      'github',
-      'environments',
-      scope.activeAccountId,
-      scope.tokenKey,
-      repo?.owner,
-      repo?.name,
-    ] as const,
-  repos: (scope: GitHubQueryScope) =>
-    ['github', 'repos', scope.activeAccountId, scope.tokenKey] as const,
-}
 
 type RepoPage = {
   repos: RepoModel[]
@@ -365,20 +299,6 @@ export const useFetchRepos = ({
   }
 }
 
-function createGraphQLApi(token: string) {
-  const client = new GraphQLClient(GITHUB_GRAPHQL_API_URL, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
-
-  return getSdk(client)
-}
-
-function createOctokit(token: string) {
-  return new Octokit({ auth: token })
-}
-
 async function fetchRepoPage(
   token: string,
   after: string | null,
@@ -468,16 +388,6 @@ function saveRepoCache(
 
 function getRepoCacheStorageKey(tokenKey: string) {
   return `gdc.v2.repos.${tokenKey}`
-}
-
-export function hashString(value: string) {
-  let hash = 5381
-
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash * 33) ^ value.charCodeAt(i)
-  }
-
-  return (hash >>> 0).toString(36)
 }
 
 function tryParseWorkflowRunId(payload: string | null): number | undefined {
