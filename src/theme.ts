@@ -11,6 +11,13 @@ export const theme = createTheme({
     primary: green,
     secondary: purple,
   },
+  typography: {
+    h1: {
+      fontSize: '2rem',
+      fontWeight: 500,
+      lineHeight: 1.2,
+    },
+  },
   components: {
     MuiDialogContent: {
       styleOverrides: {
