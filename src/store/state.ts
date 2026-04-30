@@ -4,6 +4,7 @@ import { proxy, type Snapshot } from 'valtio/vanilla'
 import { DeploymentState } from '../generated/graphql'
 import { defaultAppSettings } from '../state'
 import type {
+  AccountProfile,
   AppSettings,
   ApplicationConfig,
   DeploySettings,
@@ -53,30 +54,51 @@ export type DeploymentDialogState = DeploySettings
 export type SettingsDialogState = {}
 
 export type AppState = {
-  token: string
-  applicationsById: Record<string, ApplicationConfig>
-  selectedApplicationId: string
-  selectedApplication?: ApplicationConfig
+  accountsById: Record<string, AccountProfile>
+  activeAccountId: string
+  readonly activeAccount?: AccountProfile
+  readonly token: string
+  readonly applicationsById: Record<string, ApplicationConfig>
+  readonly selectedApplicationId: string
+  readonly selectedApplication?: ApplicationConfig
   newApplicationDialog?: ApplicationDialogState
   editApplicationDialog?: ApplicationDialogState
   addEnvironmentDialog?: EnvironmentDialogState
   editEnvironmentDialog?: EnvironmentDialogState
   deploymentDialog?: DeploymentDialogState
   settingsDialog?: SettingsDialogState
-  pendingDeployments: Record<string, PendingDeployment>
+  readonly pendingDeployments: Record<string, PendingDeployment>
   settings: AppSettings
 }
 
-export const appState = proxy<AppState>({
-  token: '',
-  applicationsById: {},
-  selectedApplicationId: '',
-  get selectedApplication() {
-    return this.applicationsById[this.selectedApplicationId]
+export const createInitialAppState = (): AppState => ({
+  accountsById: {},
+  activeAccountId: '',
+  get activeAccount() {
+    return this.accountsById[this.activeAccountId]
   },
-  pendingDeployments: {},
+  get token() {
+    return this.activeAccount?.token ?? ''
+  },
+  get applicationsById() {
+    return this.activeAccount?.workspace.applicationsById ?? {}
+  },
+  get selectedApplicationId() {
+    return this.activeAccount?.workspace.selectedApplicationId ?? ''
+  },
+  get selectedApplication() {
+    const workspace = this.activeAccount?.workspace
+    if (!workspace) return undefined
+
+    return workspace.applicationsById[workspace.selectedApplicationId]
+  },
+  get pendingDeployments() {
+    return this.activeAccount?.workspace.pendingDeployments ?? {}
+  },
   settings: { ...defaultAppSettings },
 })
+
+export const appState = proxy<AppState>(createInitialAppState())
 
 export type AppSnapshot = Snapshot<AppState>
 

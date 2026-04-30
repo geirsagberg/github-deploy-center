@@ -12,6 +12,14 @@ import type {
   RepoModel,
 } from '../state/schemas'
 import { showConfirm } from '../utils/dialog'
+import {
+  deleteActiveApplication,
+  getActiveWorkspace,
+  getSelectedApplication,
+  selectActiveApplication,
+  setActiveAccountApplications,
+  setActiveAccountToken,
+} from './accounts'
 import { appState } from './state'
 import { createApplicationDialogState } from './state'
 import type {
@@ -23,7 +31,7 @@ import { downloadJson, restApi, uploadJson } from './services'
 import { getDeploymentId } from './utils'
 
 export const setToken = (token: string) => {
-  appState.token = token
+  setActiveAccountToken(appState, token)
 }
 
 export const showSettings = () => (appState.settingsDialog = {})
@@ -40,8 +48,9 @@ export const setAppSetting = <Key extends keyof AppSettings>(
 export const showNewApplicationModal = () => {
   appState.newApplicationDialog = createApplicationDialogState()
 
-  if (appState.selectedApplication) {
-    appState.newApplicationDialog.repo = clone(appState.selectedApplication.repo)
+  const selectedApplication = getSelectedApplication(appState)
+  if (selectedApplication) {
+    appState.newApplicationDialog.repo = clone(selectedApplication.repo)
   }
 }
 
@@ -82,7 +91,7 @@ export const triggerDeployment = async ({
       owner: repo.owner,
       repo: repo.name,
     })
-    appState.pendingDeployments[deploymentId] = {
+    getActiveWorkspace(appState).pendingDeployments[deploymentId] = {
       createdAt: dayjs().toISOString(),
     }
 
@@ -124,8 +133,9 @@ export const createNewApplication = ({
   releaseFilter: string
 }) => {
   if (!appState.newApplicationDialog) return
+  const workspace = getActiveWorkspace(appState)
   if (
-    Object.values(appState.applicationsById).some(
+    Object.values(workspace.applicationsById).some(
       (app) => app.repo.id === repo.id && app.name === name
     )
   ) {
@@ -134,8 +144,8 @@ export const createNewApplication = ({
     return
   }
   const appConfig = createApplicationConfig(clone(repo), name, releaseFilter)
-  appState.applicationsById[appConfig.id] = appConfig
-  appState.selectedApplicationId = appConfig.id
+  workspace.applicationsById[appConfig.id] = appConfig
+  workspace.selectedApplicationId = appConfig.id
   delete appState.newApplicationDialog
   actions.editDeployment()
 }
@@ -145,7 +155,7 @@ export const cancelNewApplication = () => {
 }
 
 export const selectApplication = (id: string) => {
-  appState.selectedApplicationId = id
+  selectActiveApplication(appState, id)
 }
 
 export const editApplication = () => {
@@ -188,13 +198,14 @@ export const saveApplication = ({
   releaseFilter: string
 }) => {
   if (!appState.editApplicationDialog) return
-  const id = appState.selectedApplicationId
-  const application = appState.applicationsById[id]
+  const workspace = getActiveWorkspace(appState)
+  const id = workspace.selectedApplicationId
+  const application = workspace.applicationsById[id]
   if (!application) return
 
   if (
     some(
-      appState.applicationsById,
+      workspace.applicationsById,
       (app) => app.id !== id && app.repo.id === repo.id && app.name === name
     )
   ) {
@@ -233,7 +244,7 @@ export const deleteApplication = async () => {
       'Are you sure you want to delete ' + appState.selectedApplication.name + '?'
     ))
   ) {
-    delete appState.applicationsById[appState.selectedApplicationId]
+    deleteActiveApplication(appState, appState.selectedApplicationId)
     delete appState.editApplicationDialog
   }
 }
@@ -290,7 +301,7 @@ export const removeEnvironment = async (name: string) => {
 
 export const exportApplications = async () => {
   await downloadJson(
-    snapshot(appState.applicationsById),
+    snapshot(getActiveWorkspace(appState).applicationsById),
     'gdc-applications.json'
   )
 }
@@ -305,10 +316,10 @@ export const importApplications = async () => {
     } catch (e) {
       console.error(e)
     }
-    appState.applicationsById = {
-      ...snapshot(appState.applicationsById),
+    setActiveAccountApplications(appState, {
+      ...snapshot(getActiveWorkspace(appState).applicationsById),
       ...applications,
-    }
+    })
   }
 }
 

@@ -108,3 +108,23 @@ export const pendingDeploymentsSchema = z.record(
   z.string(),
   pendingDeploymentSchema
 )
+
+export const accountWorkspaceSchema = z.object({
+  applicationsById: applicationsByIdSchema,
+  selectedApplicationId: z.string(),
+  pendingDeployments: pendingDeploymentsSchema,
+})
+export interface AccountWorkspace
+  extends z.infer<typeof accountWorkspaceSchema> {}
+
+export const accountProfileSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  token: z.string(),
+  githubLogin: z.string().optional(),
+  githubUserId: z.string().optional(),
+  workspace: accountWorkspaceSchema,
+})
+export interface AccountProfile extends z.infer<typeof accountProfileSchema> {}
+
+export const accountsByIdSchema = z.record(z.string(), accountProfileSchema)
