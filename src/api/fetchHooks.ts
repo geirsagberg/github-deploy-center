@@ -1,13 +1,15 @@
 import type { components } from '@octokit/openapi-types/types'
+import { Octokit } from '@octokit/rest'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import type { UseQueryResult } from '@tanstack/react-query'
 import dayjs from 'dayjs'
+import { GraphQLClient } from 'graphql-request'
 import { keyBy, orderBy } from 'lodash-es'
 import { useEffect, useMemo } from 'react'
 import { z } from 'zod'
-import { DeploymentState } from '../generated/graphql'
+import { DeploymentState, getSdk } from '../generated/graphql'
 import type { DeployFragment, RepoFragment } from '../generated/graphql'
-import { restApi, useAppState } from '../store'
+import { useAppState } from '../store'
 import type { DeploymentModel, ReleaseModel } from '../store'
 import {
   githubEnvironmentsSchema,
@@ -19,10 +21,79 @@ import type {
   RepoModel,
   WorkflowRun,
 } from '../state/schemas'
-import graphQLApi from '../utils/graphQLApi'
 
 const REPO_STALE_TIME_MS = 30 * 60 * 1000
 const REPO_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+const GITHUB_GRAPHQL_API_URL = 'https://api.github.com/graphql'
+
+export type GitHubQueryScope = {
+  activeAccountId: string
+  tokenKey: string
+}
+
+export const getGitHubQueryScope = ({
+  activeAccountId,
+  token,
+}: {
+  activeAccountId: string
+  token: string
+}): GitHubQueryScope => ({
+  activeAccountId,
+  tokenKey: token ? hashString(token) : '',
+})
+
+export const githubQueryKeys = {
+  releases: (
+    scope: GitHubQueryScope,
+    repo: RepoModel | undefined,
+    prefix: string
+  ) =>
+    [
+      'github',
+      'releases',
+      scope.activeAccountId,
+      scope.tokenKey,
+      repo?.owner,
+      repo?.name,
+      prefix,
+    ] as const,
+  workflows: (scope: GitHubQueryScope, repo: RepoModel | undefined) =>
+    [
+      'github',
+      'workflows',
+      scope.activeAccountId,
+      scope.tokenKey,
+      repo?.owner,
+      repo?.name,
+    ] as const,
+  workflowRuns: (
+    scope: GitHubQueryScope,
+    repo: RepoModel | undefined,
+    workflowId: number | undefined,
+    workflowRuns: number
+  ) =>
+    [
+      'github',
+      'workflow-runs',
+      scope.activeAccountId,
+      scope.tokenKey,
+      repo?.owner,
+      repo?.name,
+      workflowId,
+      workflowRuns,
+    ] as const,
+  environments: (scope: GitHubQueryScope, repo: RepoModel | undefined) =>
+    [
+      'github',
+      'environments',
+      scope.activeAccountId,
+      scope.tokenKey,
+      repo?.owner,
+      repo?.name,
+    ] as const,
+  repos: (scope: GitHubQueryScope) =>
+    ['github', 'repos', scope.activeAccountId, scope.tokenKey] as const,
+}
 
 type RepoPage = {
   repos: RepoModel[]
@@ -40,28 +111,26 @@ const repoCacheSchema = z.object({
 export const useFetchReleases = () => {
   const { activeAccountId, selectedApplication, settings, token } = useAppState()
   const refreshIntervalSecs = settings.refreshIntervalSecs
-  const tokenKey = token ? hashString(token) : ''
+  const scope = getGitHubQueryScope({ activeAccountId, token })
 
   const repo = selectedApplication?.repo
   const prefix = selectedApplication?.releaseFilter ?? ''
 
   const { data, isLoading, error } = useQuery({
-    queryKey: [
-      'releases',
-      activeAccountId,
-      tokenKey,
-      repo?.owner,
-      repo?.name,
-      prefix,
-    ],
-    queryFn: async () => {
-      if (!repo) return []
+    queryKey: githubQueryKeys.releases(scope, repo, prefix),
+    enabled: !!token && !!repo,
+    queryFn: async ({ signal }) => {
+      if (!token || !repo) return []
 
-      const result = await graphQLApi.fetchReleases({
-        repoName: repo.name,
-        repoOwner: repo.owner,
-        prefix,
-      })
+      const result = await createGraphQLApi(token).fetchReleases(
+        {
+          repoName: repo.name,
+          repoOwner: repo.owner,
+          prefix,
+        },
+        undefined,
+        signal
+      )
       const fragments = result.repository?.refs?.nodes?.map((n) => n!) ?? []
       const releases = fragments
         .map(({ id, name, target }): ReleaseModel | null =>
@@ -112,23 +181,26 @@ type Workflow = components['schemas']['workflow']
 
 export const useFetchWorkflows = () => {
   const { activeAccountId, token, selectedApplication } = useAppState()
-  const tokenKey = token ? hashString(token) : ''
+  const scope = getGitHubQueryScope({ activeAccountId, token })
 
   const repo = selectedApplication?.repo
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['workflows', activeAccountId, tokenKey, repo?.owner, repo?.name],
-    queryFn: async () => {
+    queryKey: githubQueryKeys.workflows(scope, repo),
+    enabled: !!token && !!repo,
+    queryFn: async ({ signal }) => {
       if (!token || !repo) return []
 
       const { owner, name } = repo
+      const octokit = createOctokit(token)
 
-      const response = await restApi.octokit.paginate(
-        restApi.octokit.actions.listRepoWorkflows,
+      const response = await octokit.paginate(
+        octokit.actions.listRepoWorkflows,
         {
           owner,
           repo: name,
           per_page: 100,
+          request: { signal },
         },
         (response) => response.data as Workflow[]
       )
@@ -145,31 +217,30 @@ export const useFetchWorkflowRuns = (): UseQueryResult<
 > => {
   const { activeAccountId, token, selectedApplication, settings } =
     useAppState()
-  const tokenKey = token ? hashString(token) : ''
+  const scope = getGitHubQueryScope({ activeAccountId, token })
   const workflowRuns = settings.workflowRuns
 
   const repo = selectedApplication?.repo
   const workflowId = selectedApplication?.deploySettings?.workflowId
   return useQuery({
-    queryKey: [
-      'workflow-runs',
-      activeAccountId,
-      tokenKey,
-      repo?.owner,
-      repo?.name,
+    queryKey: githubQueryKeys.workflowRuns(
+      scope,
+      repo,
       workflowId,
-      workflowRuns,
-    ],
-    queryFn: async () => {
+      workflowRuns
+    ),
+    enabled: !!token && !!repo && !!workflowId,
+    queryFn: async ({ signal }) => {
       if (!token || !repo || !workflowId) return {}
 
       const { owner, name } = repo
 
-      const { data } = await restApi.octokit.actions.listWorkflowRuns({
+      const { data } = await createOctokit(token).actions.listWorkflowRuns({
         workflow_id: workflowId,
         owner,
         repo: name,
         per_page: workflowRuns,
+        request: { signal },
       })
 
       let workflows: WorkflowRun[] = []
@@ -187,28 +258,25 @@ export const useFetchWorkflowRuns = (): UseQueryResult<
 
 export const useFetchEnvironments = (): UseQueryResult<GitHubEnvironment[]> => {
   const { activeAccountId, token, selectedApplication } = useAppState()
-  const tokenKey = token ? hashString(token) : ''
+  const scope = getGitHubQueryScope({ activeAccountId, token })
 
   const repo = selectedApplication?.repo
 
   return useQuery({
-    queryKey: [
-      'environments',
-      activeAccountId,
-      tokenKey,
-      repo?.owner,
-      repo?.name,
-    ],
-    queryFn: async () => {
+    queryKey: githubQueryKeys.environments(scope, repo),
+    enabled: !!token && !!repo,
+    queryFn: async ({ signal }) => {
       if (!token || !repo) return []
       const { owner, name } = repo
+      const octokit = createOctokit(token)
 
-      const data = await restApi.octokit.paginate(
-        restApi.octokit.repos.getAllEnvironments,
+      const data = await octokit.paginate(
+        octokit.repos.getAllEnvironments,
         {
           owner,
           repo: name,
           per_page: 100,
+          request: { signal },
         },
         (response) => response.data as any
       )
@@ -226,11 +294,14 @@ export const useFetchRepos = ({
   autoFetchAll = false,
 }: { autoFetchAll?: boolean } = {}) => {
   const { activeAccountId, token } = useAppState()
-  const tokenKey = useMemo(() => (token ? hashString(token) : ''), [token])
-  const cachedPage = useMemo(() => loadRepoCache(tokenKey), [tokenKey])
+  const scope = useMemo(
+    () => getGitHubQueryScope({ activeAccountId, token }),
+    [activeAccountId, token]
+  )
+  const cachedPage = useMemo(() => loadRepoCache(scope.tokenKey), [scope.tokenKey])
 
   const query = useInfiniteQuery({
-    queryKey: ['repos', activeAccountId, tokenKey],
+    queryKey: githubQueryKeys.repos(scope),
     enabled: !!token,
     staleTime: REPO_STALE_TIME_MS,
     gcTime: REPO_CACHE_MAX_AGE_MS,
@@ -242,7 +313,8 @@ export const useFetchRepos = ({
         }
       : undefined,
     initialDataUpdatedAt: cachedPage?.savedAt,
-    queryFn: ({ pageParam, signal }) => fetchRepoPage(pageParam, signal),
+    queryFn: ({ pageParam, signal }) =>
+      fetchRepoPage(token, pageParam, signal),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
   })
 
@@ -267,10 +339,10 @@ export const useFetchRepos = ({
   ])
 
   useEffect(() => {
-    if (!tokenKey || !query.data?.pages.length) return
+    if (!scope.tokenKey || !query.data?.pages.length) return
 
-    saveRepoCache(tokenKey, buildRepoCache(query.data.pages))
-  }, [query.data, tokenKey])
+    saveRepoCache(scope.tokenKey, buildRepoCache(query.data.pages))
+  }, [query.data, scope.tokenKey])
 
   const repos = useMemo(
     () => collectRepos(query.data?.pages ?? []),
@@ -293,11 +365,26 @@ export const useFetchRepos = ({
   }
 }
 
+function createGraphQLApi(token: string) {
+  const client = new GraphQLClient(GITHUB_GRAPHQL_API_URL, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  return getSdk(client)
+}
+
+function createOctokit(token: string) {
+  return new Octokit({ auth: token })
+}
+
 async function fetchRepoPage(
+  token: string,
   after: string | null,
   signal: AbortSignal
 ): Promise<RepoPage> {
-  const result = await graphQLApi.fetchReposWithWriteAccess(
+  const result = await createGraphQLApi(token).fetchReposWithWriteAccess(
     { after },
     undefined,
     signal
@@ -383,7 +470,7 @@ function getRepoCacheStorageKey(tokenKey: string) {
   return `gdc.v2.repos.${tokenKey}`
 }
 
-function hashString(value: string) {
+export function hashString(value: string) {
   let hash = 5381
 
   for (let i = 0; i < value.length; i++) {

@@ -16,6 +16,7 @@ import { useActions, useAppState } from '../store'
 import type { ApplicationDialogState } from '../store'
 import type { RepoModel } from '../state/schemas'
 import { theme } from '../theme'
+import { CredentialErrorAlert } from './CredentialErrorAlert'
 import Expander from './Expander'
 import { RepoSearchBox } from './RepoSearchView'
 
@@ -58,7 +59,7 @@ export const ApplicationDialog: FC<{
           <DialogTitle>{title}</DialogTitle>
           <DialogContent>
             {error instanceof Error ? (
-              <Alert severity="error">{error.message}</Alert>
+              <CredentialErrorAlert title="Could not load repositories" />
             ) : (
               <Stack sx={{ gap: 1 }}>
                 <Stack sx={{ gap: 2 }}>

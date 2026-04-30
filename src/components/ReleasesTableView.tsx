@@ -22,6 +22,7 @@ import { DeploymentState } from '../generated/graphql'
 import type { EnvironmentSettings, WorkflowRun } from '../state/schemas'
 import type { DeploymentModel, ReleaseModel } from '../store'
 import { getDeploymentId, useActions, useAppState } from '../store'
+import { CredentialErrorAlert } from './CredentialErrorAlert'
 
 const getButtonStyle = (state?: DeploymentState) => {
   switch (state) {
@@ -45,7 +46,8 @@ export const ReleasesTableView = () => {
   const repo = selectedApplication?.repo
   const { triggerDeployment, removeEnvironment } = useActions()
   const allReleaseResultsForTag = useFetchReleases()
-  const { data: workflowRuns = [] } = useFetchWorkflowRuns()
+  const workflowRunsQuery = useFetchWorkflowRuns()
+  const { data: workflowRuns = [] } = workflowRunsQuery
 
   const releases = allReleaseResultsForTag.data || []
 
@@ -71,6 +73,14 @@ export const ReleasesTableView = () => {
 
   if (allReleaseResultsForTag.isLoading) {
     return <CircularProgress />
+  }
+
+  if (allReleaseResultsForTag.error) {
+    return <CredentialErrorAlert title="Could not load releases" />
+  }
+
+  if (workflowRunsQuery.error) {
+    return <CredentialErrorAlert title="Could not load workflow runs" />
   }
 
   const releasesSorted = orderBy(
