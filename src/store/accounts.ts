@@ -97,10 +97,10 @@ export function ensureActiveAccount(state: AccountContainerState) {
   const activeAccount = getActiveAccount(state)
   if (activeAccount) return activeAccount
 
-  const firstAccount = Object.values(state.accountsById)[0]
-  if (firstAccount) {
-    state.activeAccountId = firstAccount.id
-    return firstAccount
+  const firstAccountId = Object.keys(state.accountsById)[0]
+  if (firstAccountId) {
+    state.activeAccountId = firstAccountId
+    return state.accountsById[firstAccountId]
   }
 
   const account = createDefaultAccount()
@@ -132,9 +132,9 @@ export function setActiveAccountApplications(
   applicationsById: Record<string, ApplicationConfig>
 ) {
   const workspace = getActiveWorkspace(state)
-  workspace.applicationsById = applicationsById
+  workspace.applicationsById = { ...applicationsById }
   workspace.selectedApplicationId = normalizeSelectedApplicationId(
-    applicationsById,
+    workspace.applicationsById,
     workspace.selectedApplicationId
   )
 }

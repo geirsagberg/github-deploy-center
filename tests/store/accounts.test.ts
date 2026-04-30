@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import {
   DEFAULT_ACCOUNT_ID,
+  getActiveAccount,
   getActiveWorkspace,
   selectActiveApplication,
+  setActiveAccountApplications,
   setActiveAccountToken,
 } from '../../src/store/accounts'
 import { MIGRATED_ACCOUNT_ID } from '../../src/store/legacyMigration'
@@ -102,6 +104,39 @@ describe('persisted account migration', () => {
   test('ignores malformed persisted state without throwing', () => {
     expect(parsePersistedState({ token: 42 })).toBeUndefined()
   })
+
+  test('recovers valid account-shaped state while dropping invalid accounts', () => {
+    const app = appConfig('app-1')
+    const migrated = parsePersistedState({
+      accountsById: {
+        valid: {
+          id: 'stale-id',
+          token: 'ghp_valid',
+          workspace: {
+            applicationsById: { [app.id]: app },
+            selectedApplicationId: app.id,
+            pendingDeployments: {},
+          },
+        },
+        invalid: 42,
+      },
+      activeAccountId: 'invalid',
+      settings: {
+        deployTimeoutSecs: 30,
+        refreshIntervalSecs: 15,
+        workflowRuns: 50,
+      },
+    })
+
+    expect(migrated?.activeAccountId).toBe('valid')
+    expect(Object.keys(migrated?.accountsById ?? {})).toEqual(['valid'])
+    expect(migrated?.accountsById.valid.id).toBe('valid')
+    expect(migrated?.accountsById.valid.token).toBe('ghp_valid')
+    expect(migrated?.accountsById.valid.workspace.selectedApplicationId).toBe(
+      app.id
+    )
+    expect(migrated?.settings?.workflowRuns).toBe(50)
+  })
 })
 
 describe('active account workspace helpers', () => {
@@ -119,5 +154,31 @@ describe('active account workspace helpers', () => {
     expect(state.applicationsById).toEqual({ [app.id]: app })
     expect(state.selectedApplicationId).toBe(app.id)
     expect(state.selectedApplication).toBe(app)
+  })
+
+  test('recovers active account by dictionary key when account id mismatches', () => {
+    const state = createInitialAppState()
+    const workspace = getActiveWorkspace(state)
+    workspace.applicationsById = { 'app-1': appConfig('app-1') }
+
+    state.accountsById[DEFAULT_ACCOUNT_ID].id = 'stale-id'
+    state.activeAccountId = 'missing'
+
+    expect(getActiveAccount(state)).toBeUndefined()
+    expect(getActiveWorkspace(state)).toBe(
+      state.accountsById[DEFAULT_ACCOUNT_ID].workspace
+    )
+    expect(state.activeAccountId).toBe(DEFAULT_ACCOUNT_ID)
+  })
+
+  test('copies application records when replacing active applications', () => {
+    const state = createInitialAppState()
+    const app = appConfig('app-1')
+    const applicationsById = { [app.id]: app }
+
+    setActiveAccountApplications(state, applicationsById)
+    delete applicationsById[app.id]
+
+    expect(state.applicationsById).toEqual({ [app.id]: app })
   })
 })

@@ -102,7 +102,7 @@ function filterPendingDeployments(
   pendingDeployments: Record<string, PendingDeployment>
 ) {
   return pickBy(pendingDeployments, (pending) =>
-    dayjs(pending.createdAt).isBefore(dayjs().add(60, 'seconds'))
+    dayjs(pending.createdAt).isAfter(dayjs().subtract(60, 'seconds'))
   )
 }
 

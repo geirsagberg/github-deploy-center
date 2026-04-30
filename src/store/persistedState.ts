@@ -1,10 +1,18 @@
 import { z } from 'zod'
 import {
-  accountsByIdSchema,
+  applicationConfigSchema,
   appSettingsSchema,
+  pendingDeploymentSchema,
 } from '../state/schemas'
-import type { AccountProfile, AppSettings } from '../state/schemas'
-import { createAccountProfile } from './accounts'
+import type {
+  AccountProfile,
+  AccountWorkspace,
+  AppSettings,
+} from '../state/schemas'
+import {
+  createAccountProfile,
+  createAccountWorkspace,
+} from './accounts'
 import { migrateLegacyPersistedState } from './legacyMigration'
 
 export type PersistedState = {
@@ -14,12 +22,26 @@ export type PersistedState = {
 }
 
 const accountPersistedStateSchema = z.object({
-  accountsById: accountsByIdSchema.optional(),
+  accountsById: z.record(z.string(), z.unknown()).optional(),
   activeAccountId: z.string().optional(),
-  settings: appSettingsSchema.optional(),
+  settings: z.unknown().optional(),
 })
 
 type AccountPersistedState = z.infer<typeof accountPersistedStateSchema>
+
+const partialAccountProfileSchema = z.object({
+  label: z.string().optional(),
+  token: z.string().optional(),
+  githubLogin: z.string().optional(),
+  githubUserId: z.string().optional(),
+  workspace: z.unknown().optional(),
+})
+
+const partialAccountWorkspaceSchema = z.object({
+  applicationsById: z.record(z.string(), z.unknown()).optional(),
+  selectedApplicationId: z.string().optional(),
+  pendingDeployments: z.record(z.string(), z.unknown()).optional(),
+})
 
 export function parsePersistedState(data: unknown): PersistedState | undefined {
   if (isAccountPersistedStateLike(data)) {
@@ -35,14 +57,12 @@ function normalizeAccountPersistedState(
   state: AccountPersistedState
 ): PersistedState {
   const accountsById = Object.fromEntries(
-    Object.entries(state.accountsById ?? {}).map(([id, account]) => [
-      id,
-      createAccountProfile({
-        ...account,
-        id,
-        workspace: account.workspace,
-      }),
-    ])
+    Object.entries(state.accountsById ?? {})
+      .map(
+        ([id, account]) =>
+          [id, normalizeAccountProfile(id, account)] as const
+      )
+      .filter((entry): entry is readonly [string, AccountProfile] => !!entry[1])
   )
   const activeAccountId = pickActiveAccountId(
     accountsById,
@@ -52,8 +72,58 @@ function normalizeAccountPersistedState(
   return {
     accountsById,
     activeAccountId,
-    settings: state.settings,
+    settings: parseSettings(state.settings),
   }
+}
+
+function normalizeAccountProfile(id: string, data: unknown) {
+  const parsed = partialAccountProfileSchema.safeParse(data)
+  if (!parsed.success) return undefined
+
+  return createAccountProfile({
+    id,
+    label: parsed.data.label,
+    token: parsed.data.token,
+    githubLogin: parsed.data.githubLogin,
+    githubUserId: parsed.data.githubUserId,
+    workspace: normalizeAccountWorkspace(parsed.data.workspace),
+  })
+}
+
+function normalizeAccountWorkspace(data: unknown): Partial<AccountWorkspace> {
+  const parsed = partialAccountWorkspaceSchema.safeParse(data)
+  if (!parsed.success) return createAccountWorkspace()
+
+  return {
+    applicationsById: parseRecord(
+      parsed.data.applicationsById,
+      applicationConfigSchema
+    ),
+    selectedApplicationId: parsed.data.selectedApplicationId,
+    pendingDeployments: parseRecord(
+      parsed.data.pendingDeployments,
+      pendingDeploymentSchema
+    ),
+  }
+}
+
+function parseRecord<T>(
+  data: Record<string, unknown> | undefined,
+  schema: z.ZodType<T>
+): Record<string, T> | undefined {
+  if (!data) return undefined
+
+  return Object.fromEntries(
+    Object.entries(data).flatMap(([id, value]) => {
+      const parsed = schema.safeParse(value)
+      return parsed.success ? [[id, parsed.data]] : []
+    })
+  )
+}
+
+function parseSettings(data: unknown) {
+  const parsed = appSettingsSchema.safeParse(data)
+  return parsed.success ? parsed.data : undefined
 }
 
 function pickActiveAccountId(
