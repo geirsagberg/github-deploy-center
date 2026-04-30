@@ -4,13 +4,20 @@ import {
   createAccountProfile,
   getActiveAccount,
   getActiveWorkspace,
+  removeAccountProfile,
   selectActiveApplication,
   setActiveAccount,
   setActiveAccountApplications,
   setActiveAccountToken,
 } from '../../src/store/accounts'
-import { addAccountToState } from '../../src/store/actions'
-import { editAccountInState } from '../../src/store/actions'
+import {
+  addAccountToState,
+  editAccountInState,
+  exportApplicationsFromState,
+  importApplicationsToState,
+  removeAccountFromState,
+} from '../../src/store/actions'
+import { mergeImportedApplications } from '../../src/store/applicationImport'
 import { MIGRATED_ACCOUNT_ID } from '../../src/store/legacyMigration'
 import { parsePersistedState } from '../../src/store/persistedState'
 import { createInitialAppState } from '../../src/store/state'
@@ -275,6 +282,44 @@ describe('add account action', () => {
     })
     expect(account.workspace.applicationsById).toEqual({})
   })
+
+  test('updates an existing identity instead of creating a duplicate account', async () => {
+    const state = createInitialAppState()
+    const workApp = appConfig('work-app')
+    state.accountsById.work = createAccountProfile({
+      id: 'work',
+      label: 'Work',
+      token: 'ghp_old',
+      githubLogin: 'work-octocat',
+      githubUserId: 'U_work',
+      workspace: {
+        applicationsById: { [workApp.id]: workApp },
+        selectedApplicationId: workApp.id,
+      },
+    })
+    state.activeAccountId = 'work'
+
+    const account = await addAccountToState(
+      state,
+      {
+        label: 'Work rotated',
+        token: 'ghp_new',
+      },
+      async () => ({
+        id: 'U_work',
+        login: 'work-octocat',
+      })
+    )
+
+    expect(account.id).toBe('work')
+    expect(Object.keys(state.accountsById)).toEqual(['work'])
+    expect(state.activeAccountId).toBe('work')
+    expect(state.accountsById.work.label).toBe('Work rotated')
+    expect(state.accountsById.work.token).toBe('ghp_new')
+    expect(state.accountsById.work.workspace.applicationsById).toEqual({
+      [workApp.id]: workApp,
+    })
+  })
 })
 
 describe('account switching', () => {
@@ -471,5 +516,180 @@ describe('edit account action', () => {
     expect((error as Error).message).toContain('Add it as a new account')
     expect(state.accountsById.work.token).toBe('ghp_work')
     expect(state.accountsById.work.githubLogin).toBe('work-octocat')
+  })
+})
+
+describe('account removal', () => {
+  test('confirms removal with application count and switches away from the active account', async () => {
+    const state = createInitialAppState()
+    const workApp = appConfig('work-app')
+    state.accountsById.work = createAccountProfile({
+      id: 'work',
+      label: 'Work',
+      token: 'ghp_work',
+      githubLogin: 'work-octocat',
+      workspace: {
+        applicationsById: { [workApp.id]: workApp },
+        selectedApplicationId: workApp.id,
+      },
+    })
+    state.accountsById.personal = createAccountProfile({
+      id: 'personal',
+      label: 'Personal',
+      token: 'ghp_personal',
+    })
+    state.activeAccountId = 'work'
+    const messages: string[] = []
+
+    const removed = await removeAccountFromState(
+      state,
+      'work',
+      async (message) => {
+        messages.push(message)
+        return true
+      }
+    )
+
+    expect(removed).toBe(true)
+    expect(messages[0]).toContain('1 application')
+    expect(messages[0]).toContain('Work (@work-octocat)')
+    expect(state.accountsById.work).toBeUndefined()
+    expect(state.activeAccountId).toBe('personal')
+  })
+
+  test('keeps the account when removal is cancelled', async () => {
+    const state = createInitialAppState()
+    state.accountsById.work = createAccountProfile({
+      id: 'work',
+      label: 'Work',
+      token: 'ghp_work',
+    })
+    state.activeAccountId = 'work'
+
+    const removed = await removeAccountFromState(
+      state,
+      'work',
+      async () => false
+    )
+
+    expect(removed).toBe(false)
+    expect(state.accountsById.work).toBeTruthy()
+    expect(state.activeAccountId).toBe('work')
+  })
+
+  test('clears the active account when the final account is removed', () => {
+    const state = createInitialAppState()
+    state.accountsById.work = createAccountProfile({
+      id: 'work',
+      label: 'Work',
+      token: 'ghp_work',
+    })
+    state.activeAccountId = 'work'
+
+    removeAccountProfile(state, 'work')
+
+    expect(state.accountsById).toEqual({})
+    expect(state.activeAccountId).toBe('')
+  })
+})
+
+describe('application import and export', () => {
+  test('exports only active-account applications without account credentials', async () => {
+    const state = createInitialAppState()
+    const workApp = appConfig('work-app')
+    const personalApp = appConfig('personal-app')
+    state.accountsById.work = createAccountProfile({
+      id: 'work',
+      label: 'Work',
+      token: 'ghp_work',
+      workspace: {
+        applicationsById: { [workApp.id]: workApp },
+        selectedApplicationId: workApp.id,
+      },
+    })
+    state.accountsById.personal = createAccountProfile({
+      id: 'personal',
+      label: 'Personal',
+      token: 'ghp_personal',
+      workspace: {
+        applicationsById: { [personalApp.id]: personalApp },
+        selectedApplicationId: personalApp.id,
+      },
+    })
+    state.activeAccountId = 'personal'
+    const downloads: { obj: unknown; fileName: string }[] = []
+
+    await exportApplicationsFromState(state, (obj, fileName) => {
+      downloads.push({ obj, fileName })
+    })
+
+    expect(downloads).toEqual([
+      {
+        obj: { [personalApp.id]: personalApp },
+        fileName: 'gdc-applications.json',
+      },
+    ])
+    expect(JSON.stringify(downloads[0].obj)).not.toContain('ghp_')
+  })
+
+  test('imports applications into the active account and selects the first import when nothing is selected', async () => {
+    const state = createInitialAppState()
+    const workApp = appConfig('work-app')
+    const personalApp = appConfig('personal-app')
+    state.accountsById.work = createAccountProfile({
+      id: 'work',
+      label: 'Work',
+      token: 'ghp_work',
+      workspace: {
+        applicationsById: { [workApp.id]: workApp },
+        selectedApplicationId: workApp.id,
+      },
+    })
+    state.accountsById.personal = createAccountProfile({
+      id: 'personal',
+      label: 'Personal',
+      token: 'ghp_personal',
+    })
+    state.activeAccountId = 'personal'
+
+    await importApplicationsToState(state, async () =>
+      JSON.stringify({ [personalApp.id]: personalApp })
+    )
+
+    expect(state.accountsById.work.workspace.applicationsById).toEqual({
+      [workApp.id]: workApp,
+    })
+    expect(state.accountsById.personal.workspace.applicationsById).toEqual({
+      [personalApp.id]: personalApp,
+    })
+    expect(
+      state.accountsById.personal.workspace.selectedApplicationId
+    ).toBe(personalApp.id)
+  })
+
+  test('keeps existing applications and assigns fresh ids for import collisions', () => {
+    const existing = appConfig('shared', 'Existing')
+    const collidingImport = appConfig('shared', 'Imported')
+    const freshImport = appConfig('fresh', 'Fresh')
+    const generatedIds = ['shared', 'generated']
+
+    const result = mergeImportedApplications(
+      { [existing.id]: existing },
+      existing.id,
+      {
+        [collidingImport.id]: collidingImport,
+        [freshImport.id]: freshImport,
+      },
+      () => generatedIds.shift() ?? 'fallback'
+    )
+
+    expect(result.applicationsById.shared.name).toBe('Existing')
+    expect(result.applicationsById.generated).toEqual({
+      ...collidingImport,
+      id: 'generated',
+    })
+    expect(result.applicationsById.fresh).toEqual(freshImport)
+    expect(result.selectedApplicationId).toBe(existing.id)
+    expect(result.importedApplicationIds).toEqual(['generated', 'fresh'])
   })
 })

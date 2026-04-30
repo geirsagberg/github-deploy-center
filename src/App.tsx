@@ -30,7 +30,8 @@ const RepoPreloader = () => {
 
 const App = () => {
   const { accountsById, activeAccountId, token } = useAppState()
-  const { addAccount, editAccount, selectAccount, showSettings } = useActions()
+  const { addAccount, editAccount, removeAccount, selectAccount, showSettings } =
+    useActions()
   const hasAccounts = Object.keys(accountsById).length > 0
   const hasActiveAccountToken = hasAccounts && !!token
 
@@ -56,6 +57,7 @@ const App = () => {
               activeAccountId={activeAccountId}
               addAccount={addAccount}
               editAccount={editAccount}
+              removeAccount={removeAccount}
               selectAccount={selectAccount}
             />
             {hasActiveAccountToken ? (

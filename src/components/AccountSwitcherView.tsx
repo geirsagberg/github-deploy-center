@@ -21,6 +21,7 @@ type AccountSwitcherViewProps = {
   activeAccountId: string
   addAccount: (input: AddAccountInput) => Promise<unknown>
   editAccount: (input: EditAccountInput) => Promise<unknown>
+  removeAccount: (accountId: string) => Promise<boolean>
   selectAccount: (accountId: string) => void
 }
 
@@ -29,6 +30,7 @@ export function AccountSwitcherView({
   activeAccountId,
   addAccount,
   editAccount,
+  removeAccount,
   selectAccount,
 }: AccountSwitcherViewProps) {
   const [addDialogOpen, setAddDialogOpen] = useState(false)
@@ -114,7 +116,9 @@ export function AccountSwitcherView({
           {activeAccount ? (
             <AccountEditView
               account={activeAccount}
+              addAccount={addAccount}
               editAccount={editAccount}
+              removeAccount={removeAccount}
               onSaved={() => setEditDialogOpen(false)}
             />
           ) : null}
