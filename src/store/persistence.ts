@@ -1,27 +1,14 @@
 import dayjs from 'dayjs'
 import { pickBy } from 'lodash-es'
 import { snapshot, subscribe } from 'valtio/vanilla'
-import { z } from 'zod'
-import {
-  applicationsByIdSchema,
-  appSettingsSchema,
-  pendingDeploymentsSchema,
-} from '../state/schemas'
+import type { AccountProfile, PendingDeployment } from '../state/schemas'
 import graphQLApi from '../utils/graphQLApi'
 import { restApi } from './services'
 import { appState } from './state'
+import { parsePersistedState } from './persistedState'
+import type { PersistedState } from './persistedState'
 
 const STORAGE_KEY = 'gdc.v2.state'
-
-const persistedStateSchema = z.object({
-  token: z.string().optional(),
-  applicationsById: applicationsByIdSchema.optional(),
-  selectedApplicationId: z.string().optional(),
-  pendingDeployments: pendingDeploymentsSchema.optional(),
-  settings: appSettingsSchema.optional(),
-})
-
-type PersistedState = z.infer<typeof persistedStateSchema>
 
 let initialized = false
 
@@ -52,20 +39,9 @@ function syncToken(token: string) {
 }
 
 function applyPersistedState(state: PersistedState) {
-  if (state.token !== undefined) {
-    appState.token = state.token
-  }
-  if (state.applicationsById !== undefined) {
-    appState.applicationsById = state.applicationsById
-  }
-  if (state.selectedApplicationId !== undefined) {
-    appState.selectedApplicationId = state.selectedApplicationId
-  }
-  if (state.pendingDeployments !== undefined) {
-    appState.pendingDeployments = filterPendingDeployments(
-      state.pendingDeployments
-    )
-  }
+  appState.accountsById = filterAccountsPendingDeployments(state.accountsById)
+  appState.activeAccountId = state.activeAccountId
+
   if (state.settings !== undefined) {
     appState.settings = state.settings
   }
@@ -79,10 +55,8 @@ function savePersistedState() {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        token: state.token,
-        applicationsById: state.applicationsById,
-        selectedApplicationId: state.selectedApplicationId,
-        pendingDeployments: state.pendingDeployments,
+        accountsById: state.accountsById,
+        activeAccountId: state.activeAccountId,
         settings: state.settings,
       })
     )
@@ -96,15 +70,34 @@ function loadPersistedState(): PersistedState | undefined {
   if (data === undefined) return undefined
 
   try {
-    return persistedStateSchema.parse(data)
+    return parsePersistedState(data)
   } catch (error) {
     console.error(`Could not load ${STORAGE_KEY}`, error)
     return undefined
   }
 }
 
+function filterAccountsPendingDeployments(
+  accountsById: Record<string, AccountProfile>
+) {
+  return Object.fromEntries(
+    Object.entries(accountsById).map(([id, account]) => [
+      id,
+      {
+        ...account,
+        workspace: {
+          ...account.workspace,
+          pendingDeployments: filterPendingDeployments(
+            account.workspace.pendingDeployments
+          ),
+        },
+      },
+    ])
+  )
+}
+
 function filterPendingDeployments(
-  pendingDeployments: PersistedState['pendingDeployments']
+  pendingDeployments: Record<string, PendingDeployment>
 ) {
   return pickBy(pendingDeployments, (pending) =>
     dayjs(pending.createdAt).isBefore(dayjs().add(60, 'seconds'))

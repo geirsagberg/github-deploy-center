@@ -8,6 +8,7 @@
   "scripts": {
     "analyze": "bun run build && open stats.html",
     "start": "vite",
+    "test": "bun test",
     "preview": "vite preview",
     "build": "tsc && vite build",
     "codegen": "graphql-codegen --config codegen.yml",

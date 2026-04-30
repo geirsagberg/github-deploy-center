@@ -38,14 +38,22 @@ const repoCacheSchema = z.object({
 })
 
 export const useFetchReleases = () => {
-  const { selectedApplication, settings } = useAppState()
+  const { activeAccountId, selectedApplication, settings, token } = useAppState()
   const refreshIntervalSecs = settings.refreshIntervalSecs
+  const tokenKey = token ? hashString(token) : ''
 
   const repo = selectedApplication?.repo
   const prefix = selectedApplication?.releaseFilter ?? ''
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['releases', repo?.owner, repo?.name, prefix],
+    queryKey: [
+      'releases',
+      activeAccountId,
+      tokenKey,
+      repo?.owner,
+      repo?.name,
+      prefix,
+    ],
     queryFn: async () => {
       if (!repo) return []
 
@@ -103,12 +111,13 @@ export const useFetchReleases = () => {
 type Workflow = components['schemas']['workflow']
 
 export const useFetchWorkflows = () => {
-  const { token, selectedApplication } = useAppState()
+  const { activeAccountId, token, selectedApplication } = useAppState()
+  const tokenKey = token ? hashString(token) : ''
 
   const repo = selectedApplication?.repo
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['workflows', repo?.owner, repo?.name],
+    queryKey: ['workflows', activeAccountId, tokenKey, repo?.owner, repo?.name],
     queryFn: async () => {
       if (!token || !repo) return []
 
@@ -134,7 +143,9 @@ export const useFetchWorkflows = () => {
 export const useFetchWorkflowRuns = (): UseQueryResult<
   Record<number, WorkflowRun>
 > => {
-  const { token, selectedApplication, settings } = useAppState()
+  const { activeAccountId, token, selectedApplication, settings } =
+    useAppState()
+  const tokenKey = token ? hashString(token) : ''
   const workflowRuns = settings.workflowRuns
 
   const repo = selectedApplication?.repo
@@ -142,6 +153,8 @@ export const useFetchWorkflowRuns = (): UseQueryResult<
   return useQuery({
     queryKey: [
       'workflow-runs',
+      activeAccountId,
+      tokenKey,
       repo?.owner,
       repo?.name,
       workflowId,
@@ -173,12 +186,19 @@ export const useFetchWorkflowRuns = (): UseQueryResult<
 }
 
 export const useFetchEnvironments = (): UseQueryResult<GitHubEnvironment[]> => {
-  const { token, selectedApplication } = useAppState()
+  const { activeAccountId, token, selectedApplication } = useAppState()
+  const tokenKey = token ? hashString(token) : ''
 
   const repo = selectedApplication?.repo
 
   return useQuery({
-    queryKey: ['environments', repo?.owner, repo?.name],
+    queryKey: [
+      'environments',
+      activeAccountId,
+      tokenKey,
+      repo?.owner,
+      repo?.name,
+    ],
     queryFn: async () => {
       if (!token || !repo) return []
       const { owner, name } = repo
@@ -205,12 +225,12 @@ export const useFetchEnvironments = (): UseQueryResult<GitHubEnvironment[]> => {
 export const useFetchRepos = ({
   autoFetchAll = false,
 }: { autoFetchAll?: boolean } = {}) => {
-  const { token } = useAppState()
+  const { activeAccountId, token } = useAppState()
   const tokenKey = useMemo(() => (token ? hashString(token) : ''), [token])
   const cachedPage = useMemo(() => loadRepoCache(tokenKey), [tokenKey])
 
   const query = useInfiniteQuery({
-    queryKey: ['repos', tokenKey],
+    queryKey: ['repos', activeAccountId, tokenKey],
     enabled: !!token,
     staleTime: REPO_STALE_TIME_MS,
     gcTime: REPO_CACHE_MAX_AGE_MS,
