@@ -3,6 +3,10 @@ import { pickBy } from 'lodash-es'
 import { snapshot, subscribe } from 'valtio/vanilla'
 import type { AccountProfile, PendingDeployment } from '../state/schemas'
 import graphQLApi from '../utils/graphQLApi'
+import {
+  replaceApplicationInQueryString,
+  selectApplicationFromQueryString,
+} from './applicationQueryString'
 import { restApi } from './services'
 import { appState } from './state'
 import { parsePersistedState } from './persistedState'
@@ -23,21 +27,37 @@ export function initializeAppStore() {
     savePersistedState()
   }
 
+  syncApplicationQueryString()
+
   syncToken(appState.token)
   let lastToken = appState.token
+  let lastSelectedApplicationId = appState.selectedApplicationId
 
   subscribe(appState, () => {
     if (appState.token !== lastToken) {
       lastToken = appState.token
       syncToken(lastToken)
     }
+    if (appState.selectedApplicationId !== lastSelectedApplicationId) {
+      lastSelectedApplicationId = appState.selectedApplicationId
+      replaceApplicationInQueryString(lastSelectedApplicationId)
+    }
     savePersistedState()
   })
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('popstate', syncApplicationQueryString)
+  }
 }
 
 function syncToken(token: string) {
   graphQLApi.setToken(token)
   restApi.setToken(token)
+}
+
+function syncApplicationQueryString() {
+  selectApplicationFromQueryString(appState)
+  replaceApplicationInQueryString(appState.selectedApplicationId)
 }
 
 function applyPersistedState(state: PersistedState) {
