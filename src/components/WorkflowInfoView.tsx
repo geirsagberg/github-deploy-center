@@ -2,6 +2,7 @@ import { Icon, Link, Typography } from '@mui/material'
 import type { LinkProps } from '@mui/material'
 import { useFetchWorkflows } from '../api/fetchHooks'
 import { useAppState } from '../store'
+import { CredentialErrorAlert } from './CredentialErrorAlert'
 
 const ExternalLink = ({ children, ...props }: LinkProps) => (
   <Link
@@ -21,6 +22,10 @@ const ExternalLink = ({ children, ...props }: LinkProps) => (
 const WorkflowInfoView = () => {
   const { selectedApplication } = useAppState()
   const workflows = useFetchWorkflows()
+
+  if (workflows.error) {
+    return <CredentialErrorAlert title="Could not load workflows" />
+  }
 
   if (!selectedApplication?.deploySettings?.workflowId || !workflows.data) {
     return null

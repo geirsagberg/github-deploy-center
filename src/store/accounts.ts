@@ -107,6 +107,15 @@ export function addAccountProfile(
   return account
 }
 
+export function findAccountByGitHubUserId(
+  state: AccountContainerState,
+  githubUserId: string
+) {
+  return Object.values(state.accountsById).find(
+    (account) => account.githubUserId === githubUserId
+  )
+}
+
 export function normalizeSelectedApplicationId(
   applicationsById: Record<string, ApplicationConfig>,
   selectedApplicationId?: string
@@ -150,6 +159,22 @@ export function updateAccountProfile(
   }
   if (update.githubUserId !== undefined) {
     account.githubUserId = update.githubUserId
+  }
+
+  return account
+}
+
+export function removeAccountProfile(
+  state: AccountContainerState,
+  accountId: string
+) {
+  const account = state.accountsById[accountId]
+  if (!account) return undefined
+
+  delete state.accountsById[accountId]
+
+  if (state.activeAccountId === accountId) {
+    state.activeAccountId = Object.keys(state.accountsById)[0] ?? ''
   }
 
   return account

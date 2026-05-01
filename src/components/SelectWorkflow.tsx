@@ -1,5 +1,4 @@
 import {
-  Alert,
   CircularProgress,
   FormControl,
   InputLabel,
@@ -9,6 +8,7 @@ import {
 import type { FormControlProps } from '@mui/material'
 import { useFetchWorkflows } from '../api/fetchHooks'
 import { useAppState } from '../store'
+import { CredentialErrorAlert } from './CredentialErrorAlert'
 
 enum WorkflowRelevance {
   None = 0,
@@ -32,7 +32,7 @@ export function SelectWorkflow({
   if (!selectedApplication) return null
 
   if (workflows.error) {
-    return <Alert severity="error">Could not load workflows</Alert>
+    return <CredentialErrorAlert title="Could not load workflows" />
   }
 
   const workflowsSorted = (workflows.data ?? []).orderBy(

@@ -1,12 +1,13 @@
 import dayjs from 'dayjs'
 import { clone, some } from 'lodash-es'
-import { snapshot } from 'valtio/vanilla'
 import {
   applicationsByIdSchema,
   createApplicationConfig,
 } from '../state/schemas'
 import type {
+  AccountProfile,
   AppSettings,
+  ApplicationConfig,
   DeploySettings,
   EnvironmentSettings,
   RepoModel,
@@ -19,14 +20,16 @@ import { showConfirm } from '../utils/dialog'
 import {
   addAccountProfile,
   deleteActiveApplication,
+  findAccountByGitHubUserId,
   getActiveWorkspace,
   getSelectedApplication,
+  removeAccountProfile,
   selectActiveApplication,
   setActiveAccount,
-  setActiveAccountApplications,
   setActiveAccountToken,
   updateAccountProfile,
 } from './accounts'
+import { mergeImportedApplications } from './applicationImport'
 import { appState } from './state'
 import { createApplicationDialogState } from './state'
 import type {
@@ -45,6 +48,24 @@ export const setToken = (token: string) => {
 export type AddAccountInput = {
   label: string
   token: string
+}
+
+export class DifferentIdentityTokenError extends Error {
+  constructor({
+    currentAccount,
+    replacementIdentity,
+  }: {
+    currentAccount: AccountProfile
+    replacementIdentity: { id: string; login: string }
+  }) {
+    super(
+      `That token belongs to @${replacementIdentity.login}, not @${currentAccount.githubLogin ?? currentAccount.label}. Add it as a new account instead.`
+    )
+    this.name = 'DifferentIdentityTokenError'
+    this.replacementIdentity = replacementIdentity
+  }
+
+  replacementIdentity: { id: string; login: string }
 }
 
 export async function addAccountToState(
@@ -70,6 +91,18 @@ export async function addAccountToState(
     throw new Error(
       'Could not validate that personal access token. Check the token and try again.'
     )
+  }
+
+  const existingAccount = findAccountByGitHubUserId(state, identity.id)
+  if (existingAccount) {
+    updateAccountProfile(state, existingAccount.id, {
+      label: normalizedLabel,
+      token: normalizedToken,
+      githubLogin: identity.login,
+      githubUserId: identity.id,
+    })
+    setActiveAccount(state, existingAccount.id)
+    return existingAccount
   }
 
   return addAccountProfile(state, {
@@ -122,9 +155,10 @@ export async function editAccountInState(
   }
 
   if (account.githubUserId && identity.id !== account.githubUserId) {
-    throw new Error(
-      `That token belongs to @${identity.login}, not @${account.githubLogin ?? account.label}. Add it as a new account instead.`
-    )
+    throw new DifferentIdentityTokenError({
+      currentAccount: account,
+      replacementIdentity: identity,
+    })
   }
 
   return updateAccountProfile(state, accountId, {
@@ -141,6 +175,37 @@ export const editAccount = (input: EditAccountInput) =>
 export const selectAccount = (accountId: string) => {
   setActiveAccount(appState, accountId)
 }
+
+export async function removeAccountFromState(
+  state: AppState,
+  accountId: string,
+  confirm: (message: string) => Promise<boolean> = showConfirm
+) {
+  const account = state.accountsById[accountId]
+  if (!account) {
+    throw new Error('Account not found.')
+  }
+
+  const applicationCount = Object.keys(
+    account.workspace.applicationsById
+  ).length
+  const applicationNoun =
+    applicationCount === 1 ? 'application' : 'applications'
+  const accountName = account.githubLogin
+    ? `${account.label} (@${account.githubLogin})`
+    : account.label
+
+  const confirmed = await confirm(
+    `Remove ${accountName}? This will delete ${applicationCount} ${applicationNoun} saved in this account.`
+  )
+  if (!confirmed) return false
+
+  removeAccountProfile(state, accountId)
+  return true
+}
+
+export const removeAccount = (accountId: string) =>
+  removeAccountFromState(appState, accountId)
 
 export const showSettings = () => (appState.settingsDialog = {})
 
@@ -407,28 +472,47 @@ export const removeEnvironment = async (name: string) => {
   }
 }
 
-export const exportApplications = async () => {
-  await downloadJson(
-    snapshot(getActiveWorkspace(appState).applicationsById),
+export const exportApplicationsFromState = async (
+  state: AppState,
+  download: typeof downloadJson = downloadJson
+) => {
+  await download(
+    { ...getActiveWorkspace(state).applicationsById },
     'gdc-applications.json'
   )
 }
 
-export const importApplications = async () => {
-  const json = await uploadJson()
+export const exportApplications = async () => {
+  await exportApplicationsFromState(appState)
+}
+
+export const importApplicationsToState = async (
+  state: AppState,
+  upload: typeof uploadJson = uploadJson
+) => {
+  const json = await upload()
   if (json) {
-    const imported = JSON.parse(json)
-    let applications = {}
+    let applications: Record<string, ApplicationConfig> = {}
     try {
+      const imported = JSON.parse(json)
       applications = applicationsByIdSchema.parse(imported)
-    } catch (e) {
-      console.error(e)
+    } catch (error) {
+      console.error('Could not import applications JSON', error)
+      return
     }
-    setActiveAccountApplications(appState, {
-      ...snapshot(getActiveWorkspace(appState).applicationsById),
-      ...applications,
-    })
+    const workspace = getActiveWorkspace(state)
+    const merged = mergeImportedApplications(
+      { ...workspace.applicationsById },
+      workspace.selectedApplicationId,
+      applications
+    )
+    workspace.applicationsById = merged.applicationsById
+    workspace.selectedApplicationId = merged.selectedApplicationId
   }
+}
+
+export const importApplications = async () => {
+  await importApplicationsToState(appState)
 }
 
 export const actions = {
@@ -446,6 +530,7 @@ export const actions = {
   exportApplications,
   hideSettings,
   importApplications,
+  removeAccount,
   removeEnvironment,
   saveApplication,
   saveDeployment,
