@@ -3,7 +3,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import type { UseQueryResult } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { keyBy, orderBy } from 'lodash-es'
-import { useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 import { z } from 'zod'
 import { DeploymentState } from '../generated/graphql'
 import type { DeployFragment, RepoFragment } from '../generated/graphql'
@@ -228,14 +228,8 @@ export const useFetchRepos = ({
   autoFetchAll = false,
 }: { autoFetchAll?: boolean } = {}) => {
   const { activeAccountId, token } = useAppState()
-  const scope = useMemo(
-    () => getGitHubQueryScope({ activeAccountId, token }),
-    [activeAccountId, token]
-  )
-  const cachedPage = useMemo(
-    () => loadRepoCache(scope.repoCacheKey),
-    [scope.repoCacheKey]
-  )
+  const scope = getGitHubQueryScope({ activeAccountId, token })
+  const cachedPage = loadRepoCache(scope.repoCacheKey)
 
   const query = useInfiniteQuery({
     queryKey: githubQueryKeys.repos(scope),
@@ -281,10 +275,7 @@ export const useFetchRepos = ({
     saveRepoCache(scope.repoCacheKey, buildRepoCache(query.data.pages))
   }, [query.data, scope.repoCacheKey])
 
-  const repos = useMemo(
-    () => collectRepos(query.data?.pages ?? []),
-    [query.data?.pages]
-  )
+  const repos = collectRepos(query.data?.pages ?? [])
   const lastPage = query.data?.pages.at(-1)
   const totalCount = lastPage?.totalCount
 
