@@ -3,7 +3,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import type { UseQueryResult } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { keyBy, orderBy } from 'lodash-es'
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { z } from 'zod'
 import { DeploymentState } from '../generated/graphql'
 import type { DeployFragment, RepoFragment } from '../generated/graphql'
@@ -28,7 +28,6 @@ import type {
 
 const REPO_STALE_TIME_MS = 30 * 60 * 1000
 const REPO_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
-const REPO_CACHE_STORAGE_PREFIX = 'gdc.v2.repos.'
 
 type RepoPage = {
   repos: RepoModel[]
@@ -44,8 +43,6 @@ const repoCacheSchema = z.object({
   nextCursor: z.string().nullable(),
   totalCount: z.number(),
 })
-
-const repoCacheByKey = new Map<string, RepoCachePage | undefined>()
 
 export const useFetchReleases = () => {
   const { activeAccountId, selectedApplication, settings, token } = useAppState()
@@ -234,9 +231,10 @@ export const useFetchRepos = ({
 }: { autoFetchAll?: boolean } = {}) => {
   const { activeAccountId, token } = useAppState()
   const scope = getGitHubQueryScope({ activeAccountId, token })
-  const cachedPage = getRepoCache(scope.repoCacheKey)
-
-  useEffect(subscribeRepoCacheStorageChanges, [])
+  const cachedPage = useMemo(
+    () => loadRepoCache(scope.repoCacheKey),
+    [scope.repoCacheKey]
+  )
 
   const query = useInfiniteQuery({
     queryKey: githubQueryKeys.repos(scope),
@@ -353,50 +351,20 @@ function buildRepoCache(pages: RepoPage[]): RepoCachePage {
   }
 }
 
-function getRepoCache(cacheKey: string): RepoCachePage | undefined {
-  if (!cacheKey) return undefined
-
-  if (repoCacheByKey.has(cacheKey)) {
-    return getUsableRepoCache(cacheKey, repoCacheByKey.get(cacheKey))
-  }
-
-  const cache = loadRepoCache(cacheKey)
-  repoCacheByKey.set(cacheKey, cache)
-  return cache
-}
-
 function loadRepoCache(cacheKey: string): RepoCachePage | undefined {
   if (!cacheKey || typeof localStorage === 'undefined') return undefined
 
   const value = localStorage.getItem(getRepoCacheStorageKey(cacheKey))
-  return parseRepoCache(value)
-}
-
-function parseRepoCache(value: string | null): RepoCachePage | undefined {
   if (!value) return undefined
 
   try {
     const cache = repoCacheSchema.parse(JSON.parse(value))
-    if (isRepoCacheExpired(cache)) return undefined
+    if (Date.now() - cache.savedAt > REPO_CACHE_MAX_AGE_MS) return undefined
     return cache
   } catch (error) {
     console.error('Could not load repository cache', error)
     return undefined
   }
-}
-
-function getUsableRepoCache(
-  cacheKey: string,
-  cache: RepoCachePage | undefined
-) {
-  if (!cache || !isRepoCacheExpired(cache)) return cache
-
-  repoCacheByKey.set(cacheKey, undefined)
-  return undefined
-}
-
-function isRepoCacheExpired(cache: RepoCachePage) {
-  return Date.now() - cache.savedAt > REPO_CACHE_MAX_AGE_MS
 }
 
 function saveRepoCache(cacheKey: string, cache: RepoCachePage) {
@@ -407,41 +375,13 @@ function saveRepoCache(cacheKey: string, cache: RepoCachePage) {
       getRepoCacheStorageKey(cacheKey),
       JSON.stringify(cache)
     )
-    repoCacheByKey.set(cacheKey, cache)
   } catch (error) {
     console.error('Could not save repository cache', error)
   }
 }
 
 function getRepoCacheStorageKey(cacheKey: string) {
-  return `${REPO_CACHE_STORAGE_PREFIX}${cacheKey}`
-}
-
-function getRepoCacheKeyFromStorageKey(storageKey: string) {
-  return storageKey.startsWith(REPO_CACHE_STORAGE_PREFIX)
-    ? storageKey.slice(REPO_CACHE_STORAGE_PREFIX.length)
-    : undefined
-}
-
-function subscribeRepoCacheStorageChanges() {
-  if (typeof window === 'undefined') return
-
-  const onStorage = (event: StorageEvent) => {
-    if (event.storageArea && event.storageArea !== localStorage) return
-
-    if (event.key === null) {
-      repoCacheByKey.clear()
-      return
-    }
-
-    const cacheKey = getRepoCacheKeyFromStorageKey(event.key)
-    if (!cacheKey) return
-
-    repoCacheByKey.set(cacheKey, parseRepoCache(event.newValue))
-  }
-
-  window.addEventListener('storage', onStorage)
-  return () => window.removeEventListener('storage', onStorage)
+  return `gdc.v2.repos.${cacheKey}`
 }
 
 function tryParseWorkflowRunId(payload: string | null): number | undefined {
