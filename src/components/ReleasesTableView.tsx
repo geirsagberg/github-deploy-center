@@ -20,7 +20,11 @@ import { orderBy, values } from 'lodash-es'
 import type { CSSProperties } from 'react'
 import { useFetchReleases, useFetchWorkflowRuns } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
-import type { EnvironmentSettings, WorkflowRun } from '../state/schemas'
+import type {
+  EnvironmentSettings,
+  PendingDeployment,
+  WorkflowRun,
+} from '../state/schemas'
 import type { DeploymentModel, ReleaseModel } from '../store'
 import { getDeploymentId, useActions, useAppState } from '../store'
 import { CredentialErrorAlert } from './CredentialErrorAlert'
@@ -37,15 +41,67 @@ const DEPLOYMENT_BUTTON_STYLES: Partial<Record<DeploymentState, CSSProperties>> 
   [DeploymentState.InProgress]: { color: colors.yellow[400] },
 }
 
+const TRANSIENT_DEPLOYMENT_STATES = new Set<DeploymentState>([
+  DeploymentState.Pending,
+  DeploymentState.InProgress,
+  DeploymentState.Queued,
+  DeploymentState.Waiting,
+])
+
 const getButtonStyle = (state?: DeploymentState) => {
   if (!state) return EMPTY_DEPLOYMENT_BUTTON_STYLE
 
   return DEPLOYMENT_BUTTON_STYLES[state] ?? DEFAULT_DEPLOYMENT_BUTTON_STYLE
 }
 
+const isTransientDeploymentState = (state?: DeploymentState) =>
+  !!state && TRANSIENT_DEPLOYMENT_STATES.has(state)
+
+export function getVisibleDeployment(
+  deployments: DeploymentModel[],
+  environmentName: string,
+  pendingDeployment?: PendingDeployment,
+) {
+  return deployments.find(
+    (deployment) =>
+      deployment.environment === environmentName &&
+      (!!pendingDeployment || !isTransientDeploymentState(deployment.state)),
+  )
+}
+
+export function getDeploymentState({
+  deployment,
+  pendingDeployment,
+}: {
+  deployment?: DeploymentModel
+  pendingDeployment?: PendingDeployment
+}) {
+  const modifiedAt = deployment?.modifiedAt
+
+  if (
+    pendingDeployment &&
+    (!modifiedAt || dayjs(pendingDeployment.createdAt).isAfter(modifiedAt))
+  ) {
+    return DeploymentState.Pending
+  }
+
+  if (
+    !pendingDeployment &&
+    isTransientDeploymentState(deployment?.state)
+  ) {
+    return undefined
+  }
+
+  return deployment?.state
+}
+
 function getLatestReleaseByEnvironment(
   releases: ReleaseModel[],
   environments: EnvironmentSettings[],
+  getPendingDeployment: (
+    release: ReleaseModel,
+    environment: EnvironmentSettings,
+  ) => PendingDeployment | undefined,
 ) {
   const remainingEnvironmentNames = new Set(
     environments.map((environment) => environment.name),
@@ -55,11 +111,20 @@ function getLatestReleaseByEnvironment(
   for (const release of releases) {
     if (remainingEnvironmentNames.size === 0) break
 
-    for (const deployment of release.deployments) {
-      if (!remainingEnvironmentNames.has(deployment.environment)) continue
+    for (const environment of environments) {
+      if (!remainingEnvironmentNames.has(environment.name)) continue
 
-      latestReleaseByEnvironment[deployment.environment] = release
-      remainingEnvironmentNames.delete(deployment.environment)
+      const pendingDeployment = getPendingDeployment(release, environment)
+      const deployment = getVisibleDeployment(
+        release.deployments,
+        environment.name,
+        pendingDeployment,
+      )
+
+      if (!pendingDeployment && !deployment) continue
+
+      latestReleaseByEnvironment[environment.name] = release
+      remainingEnvironmentNames.delete(environment.name)
       if (remainingEnvironmentNames.size === 0) break
     }
   }
@@ -128,34 +193,41 @@ export const ReleasesTableView = () => {
     selectedApplication.environmentSettingsByName,
   )
 
-  const latestReleaseByEnvironment = getLatestReleaseByEnvironment(
-    releasesSorted,
-    selectedEnvironments,
-  )
-
-  const createButton = (
-    deployment: DeploymentModel | undefined,
+  const getPendingDeployment = (
     release: ReleaseModel,
     environment: EnvironmentSettings,
-    workflowRun?: WorkflowRun,
   ) => {
-    const latestRelease = latestReleaseByEnvironment[environment.name]
-    const isAfterLatest =
-      !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
-
     const deploymentId = getDeploymentId({
       release: release.tagName,
       environment: environment.name,
       repo: selectedApplication.repo.name,
       owner: selectedApplication.repo.owner,
     })
-    const pendingDeployment = pendingDeployments[deploymentId]
-    const modifiedAt = deployment?.modifiedAt
-    const deploymentState =
-      pendingDeployment &&
-      (!modifiedAt || dayjs(pendingDeployment.createdAt).isAfter(modifiedAt))
-        ? DeploymentState.Pending
-        : deployment?.state
+
+    return pendingDeployments[deploymentId]
+  }
+
+  const latestReleaseByEnvironment = getLatestReleaseByEnvironment(
+    releasesSorted,
+    selectedEnvironments,
+    getPendingDeployment,
+  )
+
+  const createButton = (
+    deployment: DeploymentModel | undefined,
+    release: ReleaseModel,
+    environment: EnvironmentSettings,
+    pendingDeployment?: PendingDeployment,
+    workflowRun?: WorkflowRun,
+  ) => {
+    const latestRelease = latestReleaseByEnvironment[environment.name]
+    const isAfterLatest =
+      !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
+
+    const deploymentState = getDeploymentState({
+      deployment,
+      pendingDeployment,
+    })
 
     const deployButtonVariant =
       (isAfterLatest && !deploymentState) ||
@@ -254,9 +326,14 @@ export const ReleasesTableView = () => {
                 </Link>
               </TableCell>
               {selectedEnvironments.map((environment) => {
-                // Deployments are ordered by created at in the GraphQL, so the first one is the latest
-                const latestDeployment = release.deployments.find(
-                  (d) => d.environment === environment.name,
+                const pendingDeployment = getPendingDeployment(
+                  release,
+                  environment,
+                )
+                const latestDeployment = getVisibleDeployment(
+                  release.deployments,
+                  environment.name,
+                  pendingDeployment,
                 )
                 const workflowRun = latestDeployment?.workflowRunId
                   ? workflowRuns[latestDeployment.workflowRunId]
@@ -267,6 +344,7 @@ export const ReleasesTableView = () => {
                       latestDeployment,
                       release,
                       environment,
+                      pendingDeployment,
                       workflowRun,
                     )}
                   </TableCell>
