@@ -1,10 +1,14 @@
-import react from '@vitejs/plugin-react'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { defineConfig } from 'vite'
 
+const reactCompiler = reactCompilerPreset()
+reactCompiler.rolldown.filter.id = { exclude: ['src/generated/**'] }
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), visualizer()],
+  plugins: [react(), babel({ presets: [reactCompiler] }), visualizer()],
   resolve: {
     alias: {
       'node-fetch': 'isomorphic-fetch',
