@@ -667,6 +667,41 @@ describe('application import and export', () => {
     ).toBe(personalApp.id)
   })
 
+  test('ignores malformed import JSON without changing the active workspace', async () => {
+    const state = createInitialAppState()
+    const existingApp = appConfig('existing-app')
+    state.accountsById.work = createAccountProfile({
+      id: 'work',
+      label: 'Work',
+      token: 'ghp_work',
+      workspace: {
+        applicationsById: { [existingApp.id]: existingApp },
+        selectedApplicationId: existingApp.id,
+      },
+    })
+    state.activeAccountId = 'work'
+    const errors: unknown[][] = []
+    const originalConsoleError = console.error
+    console.error = (...args: unknown[]) => {
+      errors.push(args)
+    }
+
+    try {
+      await importApplicationsToState(state, async () => '{invalid json')
+    } finally {
+      console.error = originalConsoleError
+    }
+
+    expect(state.accountsById.work.workspace.applicationsById).toEqual({
+      [existingApp.id]: existingApp,
+    })
+    expect(state.accountsById.work.workspace.selectedApplicationId).toBe(
+      existingApp.id
+    )
+    expect(errors[0]?.[0]).toBe('Could not import applications JSON')
+    expect(errors[0]?.[1]).toBeInstanceOf(SyntaxError)
+  })
+
   test('keeps existing applications and assigns fresh ids for import collisions', () => {
     const existing = appConfig('shared', 'Existing')
     const collidingImport = appConfig('shared', 'Imported')

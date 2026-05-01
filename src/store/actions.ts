@@ -492,12 +492,13 @@ export const importApplicationsToState = async (
 ) => {
   const json = await upload()
   if (json) {
-    const imported = JSON.parse(json)
     let applications: Record<string, ApplicationConfig> = {}
     try {
+      const imported = JSON.parse(json)
       applications = applicationsByIdSchema.parse(imported)
-    } catch (e) {
-      console.error(e)
+    } catch (error) {
+      console.error('Could not import applications JSON', error)
+      return
     }
     const workspace = getActiveWorkspace(state)
     const merged = mergeImportedApplications(

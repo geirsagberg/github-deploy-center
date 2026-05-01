@@ -23,8 +23,27 @@ describe('GitHub query keys', () => {
     expect(scope).toEqual({
       activeAccountId: 'work',
       tokenKey: hashString('ghp_secret'),
+      repoCacheKey: `work:${hashString('ghp_secret')}`,
     })
     expect(JSON.stringify(scope)).not.toContain('ghp_secret')
+  })
+
+  test('repository cache scope changes across accounts even for the same token', () => {
+    const workScope = getGitHubQueryScope({
+      activeAccountId: 'work',
+      token: 'ghp_shared',
+    })
+    const personalScope = getGitHubQueryScope({
+      activeAccountId: 'personal',
+      token: 'ghp_shared',
+    })
+
+    expect(workScope.tokenKey).toBe(personalScope.tokenKey)
+    expect(workScope.repoCacheKey).not.toBe(personalScope.repoCacheKey)
+    expect(workScope.repoCacheKey).toBe(`work:${workScope.tokenKey}`)
+    expect(personalScope.repoCacheKey).toBe(
+      `personal:${personalScope.tokenKey}`
+    )
   })
 
   test('all GitHub-backed query keys include the active account scope', () => {

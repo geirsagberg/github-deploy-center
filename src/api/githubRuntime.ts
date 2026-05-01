@@ -8,6 +8,7 @@ const GITHUB_GRAPHQL_API_URL = 'https://api.github.com/graphql'
 export type GitHubQueryScope = {
   activeAccountId: string
   tokenKey: string
+  repoCacheKey: string
 }
 
 export const getGitHubQueryScope = ({
@@ -18,8 +19,18 @@ export const getGitHubQueryScope = ({
   token: string
 }): GitHubQueryScope => ({
   activeAccountId,
-  tokenKey: token ? hashString(token) : '',
+  ...getGitHubTokenScope(activeAccountId, token),
 })
+
+function getGitHubTokenScope(activeAccountId: string, token: string) {
+  const tokenKey = token ? hashString(token) : ''
+
+  return {
+    tokenKey,
+    repoCacheKey:
+      activeAccountId && tokenKey ? `${activeAccountId}:${tokenKey}` : '',
+  }
+}
 
 export const githubQueryKeys = {
   releases: (

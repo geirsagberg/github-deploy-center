@@ -232,7 +232,10 @@ export const useFetchRepos = ({
     () => getGitHubQueryScope({ activeAccountId, token }),
     [activeAccountId, token]
   )
-  const cachedPage = useMemo(() => loadRepoCache(scope.tokenKey), [scope.tokenKey])
+  const cachedPage = useMemo(
+    () => loadRepoCache(scope.repoCacheKey),
+    [scope.repoCacheKey]
+  )
 
   const query = useInfiniteQuery({
     queryKey: githubQueryKeys.repos(scope),
@@ -273,10 +276,10 @@ export const useFetchRepos = ({
   ])
 
   useEffect(() => {
-    if (!scope.tokenKey || !query.data?.pages.length) return
+    if (!scope.repoCacheKey || !query.data?.pages.length) return
 
-    saveRepoCache(scope.tokenKey, buildRepoCache(query.data.pages))
-  }, [query.data, scope.tokenKey])
+    saveRepoCache(scope.repoCacheKey, buildRepoCache(query.data.pages))
+  }, [query.data, scope.repoCacheKey])
 
   const repos = useMemo(
     () => collectRepos(query.data?.pages ?? []),
@@ -353,11 +356,11 @@ function buildRepoCache(pages: RepoPage[]): RepoPage & { savedAt: number } {
 }
 
 function loadRepoCache(
-  tokenKey: string
+  cacheKey: string
 ): (RepoPage & { savedAt: number }) | undefined {
-  if (!tokenKey || typeof localStorage === 'undefined') return undefined
+  if (!cacheKey || typeof localStorage === 'undefined') return undefined
 
-  const value = localStorage.getItem(getRepoCacheStorageKey(tokenKey))
+  const value = localStorage.getItem(getRepoCacheStorageKey(cacheKey))
   if (!value) return undefined
 
   try {
@@ -371,14 +374,14 @@ function loadRepoCache(
 }
 
 function saveRepoCache(
-  tokenKey: string,
+  cacheKey: string,
   cache: RepoPage & { savedAt: number }
 ) {
   if (typeof localStorage === 'undefined') return
 
   try {
     localStorage.setItem(
-      getRepoCacheStorageKey(tokenKey),
+      getRepoCacheStorageKey(cacheKey),
       JSON.stringify(cache)
     )
   } catch (error) {
@@ -386,8 +389,8 @@ function saveRepoCache(
   }
 }
 
-function getRepoCacheStorageKey(tokenKey: string) {
-  return `gdc.v2.repos.${tokenKey}`
+function getRepoCacheStorageKey(cacheKey: string) {
+  return `gdc.v2.repos.${cacheKey}`
 }
 
 function tryParseWorkflowRunId(payload: string | null): number | undefined {
