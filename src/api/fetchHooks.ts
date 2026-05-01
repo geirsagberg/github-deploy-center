@@ -28,6 +28,7 @@ import type {
 
 const REPO_STALE_TIME_MS = 30 * 60 * 1000
 const REPO_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
+const REPO_CACHE_STORAGE_PREFIX = 'gdc.v2.repos.'
 
 type RepoPage = {
   repos: RepoModel[]
@@ -35,12 +36,16 @@ type RepoPage = {
   totalCount: number
 }
 
+type RepoCachePage = RepoPage & { savedAt: number }
+
 const repoCacheSchema = z.object({
   savedAt: z.number(),
   repos: z.array(repoSchema),
   nextCursor: z.string().nullable(),
   totalCount: z.number(),
 })
+
+const repoCacheByKey = new Map<string, RepoCachePage | undefined>()
 
 export const useFetchReleases = () => {
   const { activeAccountId, selectedApplication, settings, token } = useAppState()
@@ -229,7 +234,9 @@ export const useFetchRepos = ({
 }: { autoFetchAll?: boolean } = {}) => {
   const { activeAccountId, token } = useAppState()
   const scope = getGitHubQueryScope({ activeAccountId, token })
-  const cachedPage = loadRepoCache(scope.repoCacheKey)
+  const cachedPage = getRepoCache(scope.repoCacheKey)
+
+  useEffect(subscribeRepoCacheStorageChanges, [])
 
   const query = useInfiniteQuery({
     queryKey: githubQueryKeys.repos(scope),
@@ -335,7 +342,7 @@ function collectRepos(pages: RepoPage[]): RepoModel[] {
   return [...reposById.values()]
 }
 
-function buildRepoCache(pages: RepoPage[]): RepoPage & { savedAt: number } {
+function buildRepoCache(pages: RepoPage[]): RepoCachePage {
   const lastPage = pages.at(-1)
 
   return {
@@ -346,17 +353,31 @@ function buildRepoCache(pages: RepoPage[]): RepoPage & { savedAt: number } {
   }
 }
 
-function loadRepoCache(
-  cacheKey: string
-): (RepoPage & { savedAt: number }) | undefined {
+function getRepoCache(cacheKey: string): RepoCachePage | undefined {
+  if (!cacheKey) return undefined
+
+  if (repoCacheByKey.has(cacheKey)) {
+    return getUsableRepoCache(cacheKey, repoCacheByKey.get(cacheKey))
+  }
+
+  const cache = loadRepoCache(cacheKey)
+  repoCacheByKey.set(cacheKey, cache)
+  return cache
+}
+
+function loadRepoCache(cacheKey: string): RepoCachePage | undefined {
   if (!cacheKey || typeof localStorage === 'undefined') return undefined
 
   const value = localStorage.getItem(getRepoCacheStorageKey(cacheKey))
+  return parseRepoCache(value)
+}
+
+function parseRepoCache(value: string | null): RepoCachePage | undefined {
   if (!value) return undefined
 
   try {
     const cache = repoCacheSchema.parse(JSON.parse(value))
-    if (Date.now() - cache.savedAt > REPO_CACHE_MAX_AGE_MS) return undefined
+    if (isRepoCacheExpired(cache)) return undefined
     return cache
   } catch (error) {
     console.error('Could not load repository cache', error)
@@ -364,10 +385,21 @@ function loadRepoCache(
   }
 }
 
-function saveRepoCache(
+function getUsableRepoCache(
   cacheKey: string,
-  cache: RepoPage & { savedAt: number }
+  cache: RepoCachePage | undefined
 ) {
+  if (!cache || !isRepoCacheExpired(cache)) return cache
+
+  repoCacheByKey.set(cacheKey, undefined)
+  return undefined
+}
+
+function isRepoCacheExpired(cache: RepoCachePage) {
+  return Date.now() - cache.savedAt > REPO_CACHE_MAX_AGE_MS
+}
+
+function saveRepoCache(cacheKey: string, cache: RepoCachePage) {
   if (typeof localStorage === 'undefined') return
 
   try {
@@ -375,13 +407,41 @@ function saveRepoCache(
       getRepoCacheStorageKey(cacheKey),
       JSON.stringify(cache)
     )
+    repoCacheByKey.set(cacheKey, cache)
   } catch (error) {
     console.error('Could not save repository cache', error)
   }
 }
 
 function getRepoCacheStorageKey(cacheKey: string) {
-  return `gdc.v2.repos.${cacheKey}`
+  return `${REPO_CACHE_STORAGE_PREFIX}${cacheKey}`
+}
+
+function getRepoCacheKeyFromStorageKey(storageKey: string) {
+  return storageKey.startsWith(REPO_CACHE_STORAGE_PREFIX)
+    ? storageKey.slice(REPO_CACHE_STORAGE_PREFIX.length)
+    : undefined
+}
+
+function subscribeRepoCacheStorageChanges() {
+  if (typeof window === 'undefined') return
+
+  const onStorage = (event: StorageEvent) => {
+    if (event.storageArea && event.storageArea !== localStorage) return
+
+    if (event.key === null) {
+      repoCacheByKey.clear()
+      return
+    }
+
+    const cacheKey = getRepoCacheKeyFromStorageKey(event.key)
+    if (!cacheKey) return
+
+    repoCacheByKey.set(cacheKey, parseRepoCache(event.newValue))
+  }
+
+  window.addEventListener('storage', onStorage)
+  return () => window.removeEventListener('storage', onStorage)
 }
 
 function tryParseWorkflowRunId(payload: string | null): number | undefined {
