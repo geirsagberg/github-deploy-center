@@ -17,6 +17,7 @@ import {
 import { useMutation } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { orderBy, values } from 'lodash-es'
+import type { CSSProperties } from 'react'
 import { useFetchReleases, useFetchWorkflowRuns } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
 import type { EnvironmentSettings, WorkflowRun } from '../state/schemas'
@@ -24,21 +25,46 @@ import type { DeploymentModel, ReleaseModel } from '../store'
 import { getDeploymentId, useActions, useAppState } from '../store'
 import { CredentialErrorAlert } from './CredentialErrorAlert'
 
+const RELEASE_COLUMN_WIDTH = '12rem'
+const DEPLOYMENT_BUTTON_WIDTH = '8rem'
+
+const EMPTY_DEPLOYMENT_BUTTON_STYLE = {}
+const DEFAULT_DEPLOYMENT_BUTTON_STYLE = { color: colors.grey[50] }
+const DEPLOYMENT_BUTTON_STYLES: Partial<Record<DeploymentState, CSSProperties>> = {
+  [DeploymentState.Active]: { backgroundColor: colors.blue[400] },
+  [DeploymentState.Failure]: { color: colors.red[400] },
+  [DeploymentState.Pending]: { color: colors.orange[400] },
+  [DeploymentState.InProgress]: { color: colors.yellow[400] },
+}
+
 const getButtonStyle = (state?: DeploymentState) => {
-  switch (state) {
-    case DeploymentState.Active:
-      return { backgroundColor: colors.blue[400] }
-    case DeploymentState.Failure:
-      return { color: colors.red[400] }
-    case DeploymentState.Pending:
-      return { color: colors.orange[400] }
-    case DeploymentState.InProgress:
-      return { color: colors.yellow[400] }
-    case undefined:
-      return {}
-    default:
-      return { color: colors.grey[50] }
+  if (!state) return EMPTY_DEPLOYMENT_BUTTON_STYLE
+
+  return DEPLOYMENT_BUTTON_STYLES[state] ?? DEFAULT_DEPLOYMENT_BUTTON_STYLE
+}
+
+function getLatestReleaseByEnvironment(
+  releases: ReleaseModel[],
+  environments: EnvironmentSettings[],
+) {
+  const remainingEnvironmentNames = new Set(
+    environments.map((environment) => environment.name),
+  )
+  const latestReleaseByEnvironment: Record<string, ReleaseModel> = {}
+
+  for (const release of releases) {
+    if (remainingEnvironmentNames.size === 0) break
+
+    for (const deployment of release.deployments) {
+      if (!remainingEnvironmentNames.has(deployment.environment)) continue
+
+      latestReleaseByEnvironment[deployment.environment] = release
+      remainingEnvironmentNames.delete(deployment.environment)
+      if (remainingEnvironmentNames.size === 0) break
+    }
   }
+
+  return latestReleaseByEnvironment
 }
 
 export const ReleasesTableView = () => {
@@ -101,17 +127,11 @@ export const ReleasesTableView = () => {
   const selectedEnvironments = values(
     selectedApplication.environmentSettingsByName,
   )
-  const releaseColumnWidth = '12rem'
-  const deploymentButtonWidth = '8rem'
 
-  const releasesByEnvironment = selectedEnvironments.reduce<
-    Record<string, ReleaseModel[]>
-  >((record, environment) => {
-    record[environment.name] = releasesSorted.filter((r) =>
-      r.deployments.some((d) => d.environment === environment.name),
-    )
-    return record
-  }, {})
+  const latestReleaseByEnvironment = getLatestReleaseByEnvironment(
+    releasesSorted,
+    selectedEnvironments,
+  )
 
   const createButton = (
     deployment: DeploymentModel | undefined,
@@ -119,7 +139,7 @@ export const ReleasesTableView = () => {
     environment: EnvironmentSettings,
     workflowRun?: WorkflowRun,
   ) => {
-    const latestRelease = releasesByEnvironment[environment.name]?.[0]
+    const latestRelease = latestReleaseByEnvironment[environment.name]
     const isAfterLatest =
       !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
 
@@ -143,15 +163,13 @@ export const ReleasesTableView = () => {
         ? 'contained'
         : 'outlined'
 
-    deployment?.workflowRunId
-
     return (
       <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
         <Button
           disabled={isPending}
           variant={deployButtonVariant}
           color={!deploymentState && isAfterLatest ? 'primary' : 'inherit'}
-          sx={{ width: deploymentButtonWidth }}
+          sx={{ width: DEPLOYMENT_BUTTON_WIDTH }}
           style={getButtonStyle(deploymentState)}
           onClick={() =>
             deploy({
@@ -191,7 +209,7 @@ export const ReleasesTableView = () => {
       )}
       <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
         <colgroup>
-          <col style={{ width: releaseColumnWidth }} />
+          <col style={{ width: RELEASE_COLUMN_WIDTH }} />
           {selectedEnvironments.map((environment) => (
             <col key={environment.name} />
           ))}
