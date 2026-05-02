@@ -3,6 +3,7 @@ import { afterEach, describe, expect, test } from 'bun:test'
 import { cleanup, render } from '@testing-library/react'
 import App from '../src/App'
 import { appState } from '../src/store'
+import { createAccountProfile } from '../src/store/accounts'
 
 afterEach(() => {
   cleanup()
@@ -15,7 +16,7 @@ describe('App account setup state', () => {
     appState.accountsById = {}
     appState.activeAccountId = ''
 
-    const { getByLabelText, getByRole, getByText } = render(<App />)
+    const { getByLabelText, getByRole, getByText, queryByRole } = render(<App />)
     const tokenInput = getByLabelText(
       /personal access token/i
     ) as HTMLInputElement
@@ -23,8 +24,35 @@ describe('App account setup state', () => {
 
     expect(getByText('Add your GitHub account')).toBeTruthy()
     expect(tokenInput.type).toBe('password')
+    expect(
+      queryByRole('button', { name: /active account/i })
+    ).toBeNull()
     expect(githubLink.getAttribute('href')).toBe(
       'https://github.com/geirsagberg/github-deploy-center'
     )
+  })
+
+  test('shows compact account switcher before the GitHub link', () => {
+    appState.accountsById = {
+      work: createAccountProfile({
+        id: 'work',
+        githubLogin: 'work-octocat',
+        githubUserId: 'U_work',
+      }),
+    }
+    appState.activeAccountId = 'work'
+
+    const { getByRole } = render(<App />)
+    const accountTrigger = getByRole('button', {
+      name: /active account: @work-octocat/i,
+    })
+    const githubLink = getByRole('link', { name: /github repository/i })
+
+    expect(
+      !!(
+        accountTrigger.compareDocumentPosition(githubLink) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+      )
+    ).toBe(true)
   })
 })

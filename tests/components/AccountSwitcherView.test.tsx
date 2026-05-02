@@ -18,7 +18,7 @@ describe('AccountSwitcherView', () => {
     const selectedAccountIds: string[] = []
     const user = userEvent.setup()
 
-    const { getByLabelText } = render(
+    const { getByRole, getByText } = render(
       <AccountSwitcherView
         accountsById={{
           work: createAccountProfile({
@@ -42,10 +42,20 @@ describe('AccountSwitcherView', () => {
       />
     )
 
-    const accountSelect = getByLabelText(/active account/i) as HTMLSelectElement
-    expect(accountSelect.selectedOptions[0].textContent).toBe('@work-octocat')
+    const trigger = getByRole('button', {
+      name: /active account: @work-octocat/i,
+    })
+    expect(getByText('@work-octocat')).toBeTruthy()
 
-    await user.selectOptions(accountSelect, 'personal')
+    await user.click(trigger)
+    const menu = getByRole('menu')
+    const activeAccountItem = within(menu).getByRole('menuitem', {
+      name: /@work-octocat/i,
+    })
+    expect(activeAccountItem.getAttribute('aria-current')).toBe('true')
+    expect(activeAccountItem.getAttribute('aria-disabled')).toBe('true')
+
+    await user.click(within(menu).getByRole('menuitem', { name: /@octocat/i }))
 
     expect(selectedAccountIds).toEqual(['personal'])
   })
@@ -74,7 +84,10 @@ describe('AccountSwitcherView', () => {
       />
     )
 
-    await user.click(getByRole('button', { name: /add account/i }))
+    await user.click(
+      getByRole('button', { name: /active account: @work-octocat/i })
+    )
+    await user.click(getByRole('menuitem', { name: /add account/i }))
     const dialog = getByRole('dialog')
 
     await user.type(getByLabelText(/personal access token/i), 'ghp_client')
@@ -113,7 +126,10 @@ describe('AccountSwitcherView', () => {
       />
     )
 
-    await user.click(getByRole('button', { name: /edit account/i }))
+    await user.click(
+      getByRole('button', { name: /active account: @work-octocat/i })
+    )
+    await user.click(getByRole('menuitem', { name: /edit account/i }))
     const dialog = getByRole('dialog')
     const tokenInput = within(dialog).getByLabelText(
       /replace personal access token/i
@@ -167,7 +183,10 @@ describe('AccountSwitcherView', () => {
       />
     )
 
-    await user.click(getByRole('button', { name: /edit account/i }))
+    await user.click(
+      getByRole('button', { name: /active account: @work-octocat/i })
+    )
+    await user.click(getByRole('menuitem', { name: /edit account/i }))
     const dialog = getByRole('dialog')
     await user.type(
       within(dialog).getByLabelText(/replace personal access token/i),
@@ -212,7 +231,10 @@ describe('AccountSwitcherView', () => {
       />
     )
 
-    await user.click(getByRole('button', { name: /edit account/i }))
+    await user.click(
+      getByRole('button', { name: /active account: github account/i })
+    )
+    await user.click(getByRole('menuitem', { name: /edit account/i }))
     const dialog = getByRole('dialog')
     await user.click(
       within(dialog).getByRole('button', { name: /remove account/i })

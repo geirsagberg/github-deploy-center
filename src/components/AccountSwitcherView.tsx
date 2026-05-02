@@ -4,12 +4,15 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  FormControl,
+  Divider,
   Icon,
-  InputLabel,
-  Select,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
 } from '@mui/material'
 import { useState } from 'react'
+import type { MouseEvent } from 'react'
 import type { AccountProfile } from '../state/schemas'
 import { formatAccountName } from '../store/accounts'
 import type { AddAccountInput, EditAccountInput } from '../store/actions'
@@ -33,57 +36,115 @@ export function AccountSwitcherView({
   removeAccount,
   selectAccount,
 }: AccountSwitcherViewProps) {
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const accounts = Object.values(accountsById)
   const activeAccount = accountsById[activeAccountId]
+  const activeAccountName = activeAccount
+    ? formatAccountName(activeAccount)
+    : 'Account'
+  const menuOpen = !!menuAnchor
+
+  const handleMenuOpen = (event: MouseEvent<HTMLButtonElement>) => {
+    setMenuAnchor(event.currentTarget)
+  }
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null)
+  }
+
+  const handleAccountSelect = (accountId: string) => {
+    if (accountId !== activeAccountId) {
+      selectAccount(accountId)
+    }
+    handleMenuClose()
+  }
+
+  const handleAddAccount = () => {
+    handleMenuClose()
+    setAddDialogOpen(true)
+  }
+
+  const handleEditAccount = () => {
+    handleMenuClose()
+    setEditDialogOpen(true)
+  }
 
   return (
-    <Box sx={{ display: 'grid', gap: 1.5 }}>
-      <Box
+    <>
+      <Button
+        size="small"
+        color="inherit"
+        endIcon={<Icon>expand_more</Icon>}
+        aria-label={`Active account: ${activeAccountName}`}
+        aria-controls={menuOpen ? 'account-switcher-menu' : undefined}
+        aria-haspopup="menu"
+        aria-expanded={menuOpen ? 'true' : undefined}
+        onClick={handleMenuOpen}
         sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          gap: 1.5,
+          minWidth: 0,
+          maxWidth: { xs: '9rem', sm: '14rem' },
+          color: 'text.secondary',
+          fontWeight: 400,
+          textTransform: 'none',
+          '.MuiButton-endIcon': { ml: 0.25 },
         }}
       >
-        <FormControl size="small" sx={{ minWidth: '12rem' }}>
-          <InputLabel htmlFor="active-account-select">
-            Active account
-          </InputLabel>
-          <Select
-            native
-            label="Active account"
-            value={activeAccountId}
-            inputProps={{
-              id: 'active-account-select',
-            }}
-            onChange={(event) => selectAccount(String(event.target.value))}
-          >
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {formatAccountOption(account)}
-              </option>
-            ))}
-          </Select>
-        </FormControl>
-        <Button
-          variant="outlined"
-          startIcon={<Icon>person_add</Icon>}
-          onClick={() => setAddDialogOpen(true)}
+        <Box
+          component="span"
+          sx={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
         >
-          Add account
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<Icon>edit</Icon>}
-          onClick={() => setEditDialogOpen(true)}
-          disabled={!activeAccount}
-        >
-          Edit account
-        </Button>
-      </Box>
+          {activeAccountName}
+        </Box>
+      </Button>
+      <Menu
+        id="account-switcher-menu"
+        anchorEl={menuAnchor}
+        open={menuOpen}
+        onClose={handleMenuClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        {accounts.map((account) => {
+          const accountName = formatAccountOption(account)
+          const selected = account.id === activeAccountId
+
+          return (
+            <MenuItem
+              key={account.id}
+              selected={selected}
+              disabled={selected}
+              aria-current={selected ? 'true' : undefined}
+              onClick={() => handleAccountSelect(account.id)}
+            >
+              {selected ? (
+                <ListItemIcon>
+                  <Icon fontSize="small">check</Icon>
+                </ListItemIcon>
+              ) : null}
+              <ListItemText inset={!selected} primary={accountName} />
+            </MenuItem>
+          )
+        })}
+        <Divider />
+        <MenuItem onClick={handleEditAccount} disabled={!activeAccount}>
+          <ListItemIcon>
+            <Icon fontSize="small">edit</Icon>
+          </ListItemIcon>
+          <ListItemText primary="Edit account" />
+        </MenuItem>
+        <MenuItem onClick={handleAddAccount}>
+          <ListItemIcon>
+            <Icon fontSize="small">person_add</Icon>
+          </ListItemIcon>
+          <ListItemText primary="Add account" />
+        </MenuItem>
+      </Menu>
       <Dialog
         open={addDialogOpen}
         fullWidth
@@ -119,7 +180,7 @@ export function AccountSwitcherView({
           ) : null}
         </DialogContent>
       </Dialog>
-    </Box>
+    </>
   )
 }
 

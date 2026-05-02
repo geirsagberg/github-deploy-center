@@ -51,10 +51,22 @@ const App = () => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
+            gap: 1,
+            flexWrap: 'wrap',
           }}
         >
           <Typography variant="h1">GitHub Deploy Center</Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {hasAccounts ? (
+              <AccountSwitcherView
+                accountsById={accountsById}
+                activeAccountId={activeAccountId}
+                addAccount={addAccount}
+                editAccount={editAccount}
+                removeAccount={removeAccount}
+                selectAccount={selectAccount}
+              />
+            ) : null}
             <IconButton
               component="a"
               href="https://github.com/geirsagberg/github-deploy-center"
@@ -72,14 +84,6 @@ const App = () => {
         </Box>
         {hasAccounts ? (
           <>
-            <AccountSwitcherView
-              accountsById={accountsById}
-              activeAccountId={activeAccountId}
-              addAccount={addAccount}
-              editAccount={editAccount}
-              removeAccount={removeAccount}
-              selectAccount={selectAccount}
-            />
             {hasActiveAccountToken ? (
               <>
                 <RepoPreloader />
