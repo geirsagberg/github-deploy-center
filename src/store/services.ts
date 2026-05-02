@@ -1,8 +1,9 @@
 import { Octokit } from '@octokit/rest'
+import { createBearerOctokit } from '../api/octokit'
 
 class GitHubRestApi {
   setToken = (token: string) => {
-    this.#octokit = new Octokit({ auth: token })
+    this.#octokit = createBearerOctokit(token)
   }
 
   get octokit() {

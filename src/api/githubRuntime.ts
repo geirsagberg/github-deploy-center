@@ -1,7 +1,7 @@
-import { Octokit } from '@octokit/rest'
 import { GraphQLClient } from 'graphql-request'
 import { getSdk } from '../generated/graphql'
 import type { RepoModel } from '../state/schemas'
+import { createBearerOctokit } from './octokit'
 
 const GITHUB_GRAPHQL_API_URL = 'https://api.github.com/graphql'
 
@@ -96,7 +96,7 @@ export function createGraphQLApi(token: string) {
 }
 
 export function createOctokit(token: string) {
-  return new Octokit({ auth: token })
+  return createBearerOctokit(token)
 }
 
 export function hashString(value: string) {
