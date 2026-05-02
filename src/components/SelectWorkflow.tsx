@@ -1,4 +1,5 @@
 import {
+  Box,
   CircularProgress,
   FormControl,
   InputLabel,
@@ -20,14 +21,16 @@ enum WorkflowRelevance {
 
 export function SelectWorkflow({
   workflowId,
+  manualWorkflowHandling,
   onChange,
   FormControlProps = {},
 }: {
   workflowId: number
+  manualWorkflowHandling?: boolean
   onChange: (workflow: DispatchWorkflow | null) => void
   FormControlProps?: FormControlProps
 }) {
-  const workflows = useFetchWorkflows()
+  const workflows = useFetchWorkflows({ manualWorkflowHandling })
   const { selectedApplication } = useAppState()
 
   if (!selectedApplication) return null
@@ -58,35 +61,53 @@ export function SelectWorkflow({
   return (
     <FormControl variant="outlined" {...FormControlProps}>
       <InputLabel id="workflow-select-label">Workflow</InputLabel>
-      {workflows.isLoading ? (
-        <CircularProgress />
-      ) : workflows.data ? (
-        <Select
-          labelId="workflow-select-label"
-          id="workflow-select"
-          value={workflowId}
-          label="Workflow"
-          onChange={(e) => {
-            const workflowId =
-              typeof e.target.value === 'number'
-                ? (e.target.value as number)
-                : Number(e.target.value)
-            onChange(
-              workflowsSorted.find((workflow) => workflow.id === workflowId) ??
-                null
-            )
-          }}
-        >
-          <MenuItem value={0}>
-            <em>None</em>
+      <Select
+        labelId="workflow-select-label"
+        id="workflow-select"
+        value={workflowId}
+        label="Workflow"
+        disabled={workflows.isLoading}
+        displayEmpty
+        renderValue={(selectedWorkflowId) =>
+          workflows.isLoading ? (
+            <Box
+              component="span"
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 1,
+                color: 'text.secondary',
+              }}
+            >
+              <CircularProgress size={18} />
+              Loading workflows...
+            </Box>
+          ) : (
+            workflowsSorted.find(
+              (workflow) => workflow.id === selectedWorkflowId
+            )?.name ?? <em>None</em>
+          )
+        }
+        onChange={(e) => {
+          const workflowId =
+            typeof e.target.value === 'number'
+              ? (e.target.value as number)
+              : Number(e.target.value)
+          onChange(
+            workflowsSorted.find((workflow) => workflow.id === workflowId) ??
+              null
+          )
+        }}
+      >
+        <MenuItem value={0}>
+          <em>None</em>
+        </MenuItem>
+        {workflowsSorted.map((workflow) => (
+          <MenuItem key={workflow.id} value={workflow.id}>
+            {workflow.name}
           </MenuItem>
-          {workflowsSorted.map((workflow) => (
-            <MenuItem key={workflow.id} value={workflow.id}>
-              {workflow.name}
-            </MenuItem>
-          ))}
-        </Select>
-      ) : null}
+        ))}
+      </Select>
     </FormControl>
   )
 }

@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  inferDeployWorkflowInputs,
   inferEnvironmentInputName,
   inferReleaseInputName,
   parseWorkflowDispatch,
@@ -97,5 +98,29 @@ describe('workflow dispatch input inference', () => {
         env: {},
       })
     ).toBe('env')
+  })
+
+  test('infers deploy workflows only when both release and environment match', () => {
+    expect(
+      inferDeployWorkflowInputs({
+        release_version: {},
+        deploy_target: { type: 'environment' },
+      })
+    ).toEqual({
+      releaseKey: 'release_version',
+      environmentKey: 'deploy_target',
+    })
+
+    expect(
+      inferDeployWorkflowInputs({
+        release_version: {},
+      })
+    ).toBeUndefined()
+
+    expect(
+      inferDeployWorkflowInputs({
+        deploy_target: { type: 'environment' },
+      })
+    ).toBeUndefined()
   })
 })

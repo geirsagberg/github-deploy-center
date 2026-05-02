@@ -10,6 +10,11 @@ export type WorkflowDispatchConfig = {
   inputs: WorkflowDispatchInputs
 }
 
+export type DeployWorkflowInputs = {
+  releaseKey: string
+  environmentKey: string
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
 
@@ -73,6 +78,17 @@ export function inferEnvironmentInputName(
     findExactInput(inputNames, 'env') ??
     findInputStartingWith(inputNames, ['environment', 'env', 'target'])
   )
+}
+
+export function inferDeployWorkflowInputs(
+  inputs: WorkflowDispatchInputs
+): DeployWorkflowInputs | undefined {
+  const releaseKey = inferReleaseInputName(inputs)
+  const environmentKey = inferEnvironmentInputName(inputs)
+
+  return releaseKey && environmentKey
+    ? { releaseKey, environmentKey }
+    : undefined
 }
 
 function parseDispatchInputs(

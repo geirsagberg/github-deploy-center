@@ -40,6 +40,7 @@ const appConfig = (id: string, name = id): ApplicationConfig => ({
     workflowId: 1,
     ref: 'main',
     extraArgs: {},
+    manualWorkflowHandling: false,
   },
   environmentSettingsByName: {},
 })
@@ -152,6 +153,35 @@ describe('persisted account migration', () => {
       app.id
     )
     expect(migrated?.settings?.workflowRuns).toBe(50)
+  })
+
+  test('defaults manual workflow handling for older saved applications', () => {
+    const app = appConfig('app-1')
+    const { manualWorkflowHandling: _manualWorkflowHandling, ...deploySettings } =
+      app.deploySettings
+    const migrated = parsePersistedState({
+      accountsById: {
+        valid: {
+          token: 'ghp_valid',
+          workspace: {
+            applicationsById: {
+              [app.id]: {
+                ...app,
+                deploySettings,
+              },
+            },
+            selectedApplicationId: app.id,
+            pendingDeployments: {},
+          },
+        },
+      },
+      activeAccountId: 'valid',
+    })
+
+    expect(
+      migrated?.accountsById.valid.workspace.applicationsById[app.id]
+        .deploySettings.manualWorkflowHandling
+    ).toBe(false)
   })
 })
 

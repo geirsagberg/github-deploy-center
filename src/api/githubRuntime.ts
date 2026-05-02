@@ -47,7 +47,11 @@ export const githubQueryKeys = {
       repo?.name,
       prefix,
     ] as const,
-  workflows: (scope: GitHubQueryScope, repo: RepoModel | undefined) =>
+  workflows: (
+    scope: GitHubQueryScope,
+    repo: RepoModel | undefined,
+    manualWorkflowHandling?: boolean
+  ) =>
     [
       'github',
       'workflows',
@@ -56,6 +60,7 @@ export const githubQueryKeys = {
       repo?.owner,
       repo?.name,
       repo?.defaultBranch,
+      manualWorkflowHandling,
     ] as const,
   workflowRuns: (
     scope: GitHubQueryScope,

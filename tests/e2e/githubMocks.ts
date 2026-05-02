@@ -19,10 +19,15 @@ export const E2E_WORKFLOW = {
   name: 'Deploy fixture app',
   path: '.github/workflows/deploy.yml',
 }
-export const E2E_NON_DISPATCH_WORKFLOW = {
+export const E2E_NON_DEPLOY_WORKFLOW = {
   id: 43,
   name: 'Build fixture app',
   path: '.github/workflows/build.yml',
+}
+export const E2E_DYNAMIC_WORKFLOW = {
+  id: 44,
+  name: 'Dynamic dependabot updates',
+  path: 'dynamic/dependabot/dependabot-updates',
 }
 export const E2E_APPLICATION_ID = 'e2e-application'
 
@@ -37,9 +42,13 @@ on:
       deploy_target:
         type: environment
 `,
-  [E2E_NON_DISPATCH_WORKFLOW.path]: `
-name: ${E2E_NON_DISPATCH_WORKFLOW.name}
-on: push
+  [E2E_NON_DEPLOY_WORKFLOW.path]: `
+name: ${E2E_NON_DEPLOY_WORKFLOW.name}
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: Package to build
 `,
 }
 
@@ -55,6 +64,7 @@ type PersistedApplication = {
     workflowId: number
     ref: string
     extraArgs: Record<string, string>
+    manualWorkflowHandling: boolean
   }
   environmentSettingsByName: Record<
     string,
@@ -88,8 +98,18 @@ class GitHubMock {
   readonly graphqlRequests: GraphQLRequest[] = []
   readonly restRequests: string[] = []
   readonly unexpectedRequests: string[] = []
+  #includeDynamicWorkflow = false
+  #failedWorkflowFiles = new Set<string>()
 
   constructor(private readonly page: Page) {}
+
+  includeDynamicWorkflowFileFailure() {
+    this.#includeDynamicWorkflow = true
+  }
+
+  failWorkflowFile(path: string) {
+    this.#failedWorkflowFiles.add(path)
+  }
 
   async install() {
     await this.page.route('https://api.github.com/**', async (route) => {
@@ -161,11 +181,10 @@ class GitHubMock {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          total_count: 2,
-          workflows: [
-            toRestWorkflow(E2E_WORKFLOW, request.url()),
-            toRestWorkflow(E2E_NON_DISPATCH_WORKFLOW, request.url()),
-          ],
+          total_count: this.workflows.length,
+          workflows: this.workflows.map((workflow) =>
+            toRestWorkflow(workflow, request.url())
+          ),
         }),
       })
       return
@@ -173,6 +192,27 @@ class GitHubMock {
 
     if (request.method() === 'GET' && isContentPath(url.pathname)) {
       const workflowPath = getContentPath(url.pathname)
+
+      if (this.#failedWorkflowFiles.has(workflowPath)) {
+        this.restRequests.push(url.pathname)
+        await route.fulfill({
+          status: 404,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Not Found' }),
+        })
+        return
+      }
+
+      if (workflowPath === E2E_DYNAMIC_WORKFLOW.path) {
+        this.restRequests.push(url.pathname)
+        await route.fulfill({
+          status: 404,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Not Found' }),
+        })
+        return
+      }
+
       const workflowFile = E2E_WORKFLOW_FILES[workflowPath]
 
       if (!workflowFile) {
@@ -217,6 +257,12 @@ class GitHubMock {
     }
 
     throw new Error(`Unexpected GitHub request: ${request.method()} ${url}`)
+  }
+
+  get workflows() {
+    return this.#includeDynamicWorkflow
+      ? [E2E_WORKFLOW, E2E_NON_DEPLOY_WORKFLOW, E2E_DYNAMIC_WORKFLOW]
+      : [E2E_WORKFLOW, E2E_NON_DEPLOY_WORKFLOW]
   }
 
   private async handleGraphQLRequest(route: Route) {
@@ -323,6 +369,7 @@ export function createPersistedApplication(): PersistedApplication {
       workflowId: E2E_WORKFLOW.id,
       ref: 'main',
       extraArgs: {},
+      manualWorkflowHandling: false,
     },
     environmentSettingsByName: {
       dev: {
@@ -384,7 +431,10 @@ function toGraphQLRepo(repo: typeof E2E_REPO) {
 }
 
 function toRestWorkflow(
-  workflow: typeof E2E_WORKFLOW | typeof E2E_NON_DISPATCH_WORKFLOW,
+  workflow:
+    | typeof E2E_WORKFLOW
+    | typeof E2E_NON_DEPLOY_WORKFLOW
+    | typeof E2E_DYNAMIC_WORKFLOW,
   requestUrl: string
 ) {
   const workflowUrl = `https://github.com/${E2E_REPO.owner}/${E2E_REPO.name}/actions/workflows/${workflow.path}`

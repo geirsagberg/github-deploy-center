@@ -24,6 +24,7 @@ export const deploySettingsSchema = z.object({
   workflowId: z.number(),
   ref: z.string(),
   extraArgs: z.record(z.string(), z.string()),
+  manualWorkflowHandling: z.boolean().default(false),
 })
 export interface DeploySettings extends z.infer<typeof deploySettingsSchema> {}
 export const createDeploySettings = ({
@@ -39,6 +40,7 @@ export const createDeploySettings = ({
   workflowId,
   ref,
   extraArgs: {},
+  manualWorkflowHandling: false,
 })
 export const deploySettingsByRpoSchema = z.record(
   z.string(),

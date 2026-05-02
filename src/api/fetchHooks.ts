@@ -26,7 +26,9 @@ import type {
   WorkflowRun,
 } from '../state/schemas'
 import {
+  inferDeployWorkflowInputs,
   parseWorkflowDispatch,
+  type DeployWorkflowInputs,
   type WorkflowDispatchInputs,
 } from './workflowDispatch'
 
@@ -119,17 +121,30 @@ export const useFetchReleases = () => {
 
 type Workflow = components['schemas']['workflow']
 export type DispatchWorkflow = Workflow & {
-  dispatchInputs: WorkflowDispatchInputs
+  dispatchInputs?: WorkflowDispatchInputs
+  deployInputs?: DeployWorkflowInputs
 }
 
-export const useFetchWorkflows = () => {
+export const useFetchWorkflows = ({
+  manualWorkflowHandling,
+}: {
+  manualWorkflowHandling?: boolean
+} = {}) => {
   const { activeAccountId, token, selectedApplication } = useAppState()
   const scope = getGitHubQueryScope({ activeAccountId, token })
 
   const repo = selectedApplication?.repo
+  const useManualWorkflowHandling =
+    manualWorkflowHandling ??
+    selectedApplication?.deploySettings.manualWorkflowHandling ??
+    false
 
   const { data, isLoading, error } = useQuery({
-    queryKey: githubQueryKeys.workflows(scope, repo),
+    queryKey: githubQueryKeys.workflows(
+      scope,
+      repo,
+      useManualWorkflowHandling
+    ),
     enabled: !!token && !!repo,
     queryFn: async ({ signal }) => {
       if (!token || !repo) return []
@@ -147,9 +162,14 @@ export const useFetchWorkflows = () => {
         },
         (response) => response.data as Workflow[]
       )
+      const workflows = response.filter(isFileBackedWorkflow)
 
-      const dispatchWorkflows = await Promise.all(
-        response.map(async (workflow): Promise<DispatchWorkflow | null> => {
+      if (useManualWorkflowHandling) {
+        return orderBy(workflows, (w) => w.name)
+      }
+
+      return orderBy(
+        await filterDeployWorkflows(workflows, async (workflow) => {
           const workflowFile = await fetchWorkflowFile({
             octokit,
             owner,
@@ -158,23 +178,66 @@ export const useFetchWorkflows = () => {
             ref: repo.defaultBranch,
             signal,
           })
-          const dispatch = parseWorkflowDispatch(workflowFile)
 
-          return dispatch
-            ? { ...workflow, dispatchInputs: dispatch.inputs }
-            : null
-        })
-      )
-
-      return orderBy(
-        dispatchWorkflows.filter(
-          (workflow): workflow is DispatchWorkflow => !!workflow
-        ),
+          return parseWorkflowDispatch(workflowFile)
+        }),
         (w) => w.name
       )
     },
   })
   return { data, isLoading, error }
+}
+
+type WorkflowInspectionResult =
+  | { status: 'deploy'; workflow: DispatchWorkflow }
+  | { status: 'not-deploy' }
+  | { status: 'failed' }
+
+async function filterDeployWorkflows(
+  workflows: Workflow[],
+  inspectWorkflow: (
+    workflow: Workflow
+  ) => Promise<{ inputs: WorkflowDispatchInputs } | null>
+): Promise<DispatchWorkflow[]> {
+  const inspectedWorkflows = await Promise.all(
+    workflows.map(async (workflow): Promise<WorkflowInspectionResult> => {
+      try {
+        const dispatch = await inspectWorkflow(workflow)
+        const deployInputs = dispatch
+          ? inferDeployWorkflowInputs(dispatch.inputs)
+          : undefined
+
+        return deployInputs
+          ? {
+              status: 'deploy',
+              workflow: {
+                ...workflow,
+                dispatchInputs: dispatch!.inputs,
+                deployInputs,
+              },
+            }
+          : { status: 'not-deploy' }
+      } catch {
+        return { status: 'failed' }
+      }
+    })
+  )
+
+  const deployWorkflows = inspectedWorkflows.flatMap((workflow) =>
+    workflow.status === 'deploy' ? [workflow.workflow] : []
+  )
+
+  if (deployWorkflows.length > 0) return deployWorkflows
+
+  if (inspectedWorkflows.some((workflow) => workflow.status === 'failed')) {
+    return workflows
+  }
+
+  return []
+}
+
+function isFileBackedWorkflow(workflow: Workflow) {
+  return workflow.path.toLowerCase().startsWith('.github/workflows/')
 }
 
 async function fetchWorkflowFile({

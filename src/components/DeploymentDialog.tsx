@@ -1,17 +1,17 @@
 import {
   Autocomplete,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControlLabel,
   TextField,
+  Tooltip,
+  Typography,
 } from '@mui/material'
 import { fromPairs } from 'lodash-es'
-import {
-  inferEnvironmentInputName,
-  inferReleaseInputName,
-} from '../api/workflowDispatch'
 import type { DispatchWorkflow } from '../api/fetchHooks'
 import { useActions, useAppState } from '../store'
 import type { DeploymentDialogState } from '../store'
@@ -42,7 +42,49 @@ export const DeploymentDialog = () => {
             }
           }}
         >
-          <DialogTitle>Deploy workflow settings</DialogTitle>
+          <DialogTitle
+            component="div"
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+            }}
+          >
+            <Typography component="h2" variant="h6">
+              Deploy workflow settings
+            </Typography>
+            <Tooltip
+              arrow
+              describeChild
+              placement="left"
+              title="Show all workflows and enter input names manually."
+            >
+              <FormControlLabel
+                sx={{
+                  m: 0,
+                  color: 'text.secondary',
+                  '& .MuiFormControlLabel-label': { fontSize: '0.875rem' },
+                }}
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={deploymentDialog.manualWorkflowHandling}
+                    onChange={(event) =>
+                      updateDeployWorkflowDialog((state) =>
+                        updateManualWorkflowHandling(
+                          state,
+                          event.target.checked
+                        )
+                      )
+                    }
+                    sx={{ p: 0.5 }}
+                  />
+                }
+                label="Manual"
+              />
+            </Tooltip>
+          </DialogTitle>
           <DialogContent
             style={{
               display: 'flex',
@@ -53,6 +95,7 @@ export const DeploymentDialog = () => {
           >
             <SelectWorkflow
               workflowId={deploymentDialog.workflowId}
+              manualWorkflowHandling={deploymentDialog.manualWorkflowHandling}
               onChange={(workflow) =>
                 updateDeployWorkflowDialog((state) =>
                   selectWorkflow(state, workflow)
@@ -138,16 +181,28 @@ function selectWorkflow(
 
   if (!workflow) return
 
+  const deployInputs = state.manualWorkflowHandling
+    ? undefined
+    : workflow.deployInputs
+
   if (shouldReplaceWithInference(state.releaseKey, DEFAULT_RELEASE_KEY)) {
-    state.releaseKey = inferReleaseInputName(workflow.dispatchInputs) ?? ''
+    state.releaseKey = deployInputs?.releaseKey ?? DEFAULT_RELEASE_KEY
   }
 
   if (
     shouldReplaceWithInference(state.environmentKey, DEFAULT_ENVIRONMENT_KEY)
   ) {
     state.environmentKey =
-      inferEnvironmentInputName(workflow.dispatchInputs) ?? ''
+      deployInputs?.environmentKey ?? DEFAULT_ENVIRONMENT_KEY
   }
+}
+
+function updateManualWorkflowHandling(
+  state: DeploymentDialogState,
+  manualWorkflowHandling: boolean
+) {
+  state.manualWorkflowHandling = manualWorkflowHandling
+  state.workflowId = 0
 }
 
 function shouldReplaceWithInference(value: string, defaultValue: string) {

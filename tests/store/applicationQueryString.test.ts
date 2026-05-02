@@ -26,6 +26,7 @@ const appConfig = (id: string, name = id): ApplicationConfig => ({
     workflowId: 1,
     ref: 'main',
     extraArgs: {},
+    manualWorkflowHandling: false,
   },
   environmentSettingsByName: {},
 })
