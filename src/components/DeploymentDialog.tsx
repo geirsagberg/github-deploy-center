@@ -8,8 +8,17 @@ import {
   TextField,
 } from '@mui/material'
 import { fromPairs } from 'lodash-es'
+import {
+  inferEnvironmentInputName,
+  inferReleaseInputName,
+} from '../api/workflowDispatch'
+import type { DispatchWorkflow } from '../api/fetchHooks'
 import { useActions, useAppState } from '../store'
+import type { DeploymentDialogState } from '../store'
 import { SelectWorkflow } from './SelectWorkflow'
+
+const DEFAULT_RELEASE_KEY = 'ref'
+const DEFAULT_ENVIRONMENT_KEY = 'environment'
 
 export const DeploymentDialog = () => {
   const { deploymentDialog } = useAppState()
@@ -44,8 +53,10 @@ export const DeploymentDialog = () => {
           >
             <SelectWorkflow
               workflowId={deploymentDialog.workflowId}
-              onChange={(id) =>
-                updateDeployWorkflowDialog((state) => (state.workflowId = id))
+              onChange={(workflow) =>
+                updateDeployWorkflowDialog((state) =>
+                  selectWorkflow(state, workflow)
+                )
               }
             />
             <TextField
@@ -117,4 +128,28 @@ export const DeploymentDialog = () => {
       ) : null}
     </Dialog>
   )
+}
+
+function selectWorkflow(
+  state: DeploymentDialogState,
+  workflow: DispatchWorkflow | null
+) {
+  state.workflowId = workflow?.id ?? 0
+
+  if (!workflow) return
+
+  if (shouldReplaceWithInference(state.releaseKey, DEFAULT_RELEASE_KEY)) {
+    state.releaseKey = inferReleaseInputName(workflow.dispatchInputs) ?? ''
+  }
+
+  if (
+    shouldReplaceWithInference(state.environmentKey, DEFAULT_ENVIRONMENT_KEY)
+  ) {
+    state.environmentKey =
+      inferEnvironmentInputName(workflow.dispatchInputs) ?? ''
+  }
+}
+
+function shouldReplaceWithInference(value: string, defaultValue: string) {
+  return !value || value === defaultValue
 }

@@ -7,6 +7,7 @@ import {
 } from '@mui/material'
 import type { FormControlProps } from '@mui/material'
 import { useFetchWorkflows } from '../api/fetchHooks'
+import type { DispatchWorkflow } from '../api/fetchHooks'
 import { useAppState } from '../store'
 import { CredentialErrorAlert } from './CredentialErrorAlert'
 
@@ -23,7 +24,7 @@ export function SelectWorkflow({
   FormControlProps = {},
 }: {
   workflowId: number
-  onChange: (workflowId: number) => void
+  onChange: (workflow: DispatchWorkflow | null) => void
   FormControlProps?: FormControlProps
 }) {
   const workflows = useFetchWorkflows()
@@ -69,8 +70,11 @@ export function SelectWorkflow({
             const workflowId =
               typeof e.target.value === 'number'
                 ? (e.target.value as number)
-                : 0
-            onChange(workflowId)
+                : Number(e.target.value)
+            onChange(
+              workflowsSorted.find((workflow) => workflow.id === workflowId) ??
+                null
+            )
           }}
         >
           <MenuItem value={0}>

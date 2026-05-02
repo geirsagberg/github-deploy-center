@@ -19,7 +19,29 @@ export const E2E_WORKFLOW = {
   name: 'Deploy fixture app',
   path: '.github/workflows/deploy.yml',
 }
+export const E2E_NON_DISPATCH_WORKFLOW = {
+  id: 43,
+  name: 'Build fixture app',
+  path: '.github/workflows/build.yml',
+}
 export const E2E_APPLICATION_ID = 'e2e-application'
+
+const E2E_WORKFLOW_FILES: Record<string, string> = {
+  [E2E_WORKFLOW.path]: `
+name: ${E2E_WORKFLOW.name}
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: Release to deploy
+      deploy_target:
+        type: environment
+`,
+  [E2E_NON_DISPATCH_WORKFLOW.path]: `
+name: ${E2E_NON_DISPATCH_WORKFLOW.name}
+on: push
+`,
+}
 
 type PersistedApplication = {
   id: string
@@ -139,21 +161,29 @@ class GitHubMock {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          total_count: 1,
+          total_count: 2,
           workflows: [
-            {
-              id: E2E_WORKFLOW.id,
-              name: E2E_WORKFLOW.name,
-              path: E2E_WORKFLOW.path,
-              state: 'active',
-              html_url: `https://github.com/${E2E_REPO.owner}/${E2E_REPO.name}/actions/workflows/deploy.yml`,
-              badge_url: `https://github.com/${E2E_REPO.owner}/${E2E_REPO.name}/actions/workflows/deploy.yml/badge.svg`,
-              created_at: '2026-05-01T08:00:00Z',
-              updated_at: '2026-05-01T08:00:00Z',
-              url: request.url(),
-            },
+            toRestWorkflow(E2E_WORKFLOW, request.url()),
+            toRestWorkflow(E2E_NON_DISPATCH_WORKFLOW, request.url()),
           ],
         }),
+      })
+      return
+    }
+
+    if (request.method() === 'GET' && isContentPath(url.pathname)) {
+      const workflowPath = getContentPath(url.pathname)
+      const workflowFile = E2E_WORKFLOW_FILES[workflowPath]
+
+      if (!workflowFile) {
+        throw new Error(`Unexpected workflow file: ${workflowPath}`)
+      }
+
+      this.restRequests.push(url.pathname)
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/plain',
+        body: workflowFile,
       })
       return
     }
@@ -353,6 +383,25 @@ function toGraphQLRepo(repo: typeof E2E_REPO) {
   }
 }
 
+function toRestWorkflow(
+  workflow: typeof E2E_WORKFLOW | typeof E2E_NON_DISPATCH_WORKFLOW,
+  requestUrl: string
+) {
+  const workflowUrl = `https://github.com/${E2E_REPO.owner}/${E2E_REPO.name}/actions/workflows/${workflow.path}`
+
+  return {
+    id: workflow.id,
+    name: workflow.name,
+    path: workflow.path,
+    state: 'active',
+    html_url: workflowUrl,
+    badge_url: `${workflowUrl}/badge.svg`,
+    created_at: '2026-05-01T08:00:00Z',
+    updated_at: '2026-05-01T08:00:00Z',
+    url: requestUrl,
+  }
+}
+
 async function fulfillGraphQL(route: Route, data: unknown) {
   await route.fulfill({
     status: 200,
@@ -375,6 +424,17 @@ function isWorkflowDispatchPath(pathname: string) {
   return /^\/repos\/[^/]+\/[^/]+\/actions\/workflows\/[^/]+\/dispatches$/.test(
     pathname
   )
+}
+
+function isContentPath(pathname: string) {
+  return /^\/repos\/[^/]+\/[^/]+\/contents\/.+$/.test(pathname)
+}
+
+function getContentPath(pathname: string) {
+  const [, path] =
+    pathname.match(/^\/repos\/[^/]+\/[^/]+\/contents\/(.+)$/) ?? []
+
+  return decodeURIComponent(path ?? '')
 }
 
 function isEnvironmentsPath(pathname: string) {

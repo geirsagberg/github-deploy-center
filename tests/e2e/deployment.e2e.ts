@@ -19,6 +19,14 @@ test('dispatches a mocked workflow and shows a pending deployment', async ({
   })
 
   await page.goto('/')
+  await expect(
+    page.getByRole('link', {
+      name: `${E2E_WORKFLOW.name} to ${E2E_REPO.defaultBranch}`,
+    })
+  ).toBeVisible()
+  await expect
+    .poll(() => github.restRequests.some((path) => path.endsWith('/runs')))
+    .toBe(true)
 
   const releaseRow = page.getByRole('row', { name: /v1\.2\.3/ })
   await expect(releaseRow).toBeVisible()

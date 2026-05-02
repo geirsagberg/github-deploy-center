@@ -25,6 +25,10 @@ import type {
   RepoModel,
   WorkflowRun,
 } from '../state/schemas'
+import {
+  parseWorkflowDispatch,
+  type WorkflowDispatchInputs,
+} from './workflowDispatch'
 
 const REPO_STALE_TIME_MS = 30 * 60 * 1000
 const REPO_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
@@ -114,6 +118,9 @@ export const useFetchReleases = () => {
 }
 
 type Workflow = components['schemas']['workflow']
+export type DispatchWorkflow = Workflow & {
+  dispatchInputs: WorkflowDispatchInputs
+}
 
 export const useFetchWorkflows = () => {
   const { activeAccountId, token, selectedApplication } = useAppState()
@@ -141,11 +148,87 @@ export const useFetchWorkflows = () => {
         (response) => response.data as Workflow[]
       )
 
-      // TODO: Only return workflows with `workflow_dispatch` trigger
-      return orderBy(response, (w) => w.name)
+      const dispatchWorkflows = await Promise.all(
+        response.map(async (workflow): Promise<DispatchWorkflow | null> => {
+          const workflowFile = await fetchWorkflowFile({
+            octokit,
+            owner,
+            repo: name,
+            path: workflow.path,
+            ref: repo.defaultBranch,
+            signal,
+          })
+          const dispatch = parseWorkflowDispatch(workflowFile)
+
+          return dispatch
+            ? { ...workflow, dispatchInputs: dispatch.inputs }
+            : null
+        })
+      )
+
+      return orderBy(
+        dispatchWorkflows.filter(
+          (workflow): workflow is DispatchWorkflow => !!workflow
+        ),
+        (w) => w.name
+      )
     },
   })
   return { data, isLoading, error }
+}
+
+async function fetchWorkflowFile({
+  octokit,
+  owner,
+  repo,
+  path,
+  ref,
+  signal,
+}: {
+  octokit: ReturnType<typeof createOctokit>
+  owner: string
+  repo: string
+  path: string
+  ref: string
+  signal: AbortSignal
+}) {
+  const { data } = await octokit.repos.getContent({
+    owner,
+    repo,
+    path,
+    ref,
+    mediaType: { format: 'raw' },
+    request: { signal },
+  })
+
+  if (typeof data === 'string') return data
+
+  if (isFileContent(data) && data.encoding === 'base64') {
+    return decodeBase64(data.content)
+  }
+
+  throw new Error(`Could not load workflow file ${path}`)
+}
+
+function isFileContent(
+  data: unknown
+): data is { content: string; encoding: string } {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    !Array.isArray(data) &&
+    'content' in data &&
+    typeof data.content === 'string' &&
+    'encoding' in data &&
+    typeof data.encoding === 'string'
+  )
+}
+
+function decodeBase64(value: string) {
+  const binary = atob(value.replace(/\s/g, ''))
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0))
+
+  return new TextDecoder().decode(bytes)
 }
 
 export const useFetchWorkflowRuns = (): UseQueryResult<

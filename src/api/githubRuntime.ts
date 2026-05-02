@@ -55,6 +55,7 @@ export const githubQueryKeys = {
       scope.tokenKey,
       repo?.owner,
       repo?.name,
+      repo?.defaultBranch,
     ] as const,
   workflowRuns: (
     scope: GitHubQueryScope,
