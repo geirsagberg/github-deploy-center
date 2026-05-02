@@ -48,7 +48,7 @@ export function AccountSwitcherView({
           gap: 1.5,
         }}
       >
-        <FormControl size="small" sx={{ minWidth: 280 }}>
+        <FormControl size="small" sx={{ minWidth: '12rem' }}>
           <InputLabel htmlFor="active-account-select">
             Active account
           </InputLabel>

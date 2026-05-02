@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import { clone, some } from 'lodash-es'
+import { clone } from 'lodash-es'
 import {
   applicationsByIdSchema,
   createApplicationConfig,
@@ -37,6 +37,10 @@ import {
   updateAccountProfile,
 } from './accounts'
 import { mergeImportedApplications } from './applicationImport'
+import {
+  hasApplicationWithRepoAndName,
+  resolveApplicationName,
+} from './applicationIdentity'
 import { appState } from './state'
 import { createApplicationDialogState } from './state'
 import type {
@@ -295,16 +299,21 @@ export const createNewApplication = ({
 }) => {
   if (!appState.newApplicationDialog) return
   const workspace = getActiveWorkspace(appState)
-  if (
-    Object.values(workspace.applicationsById).some(
-      (app) => app.repo.id === repo.id && app.name === name
-    )
-  ) {
+  const applicationName = resolveApplicationName({ name, repo })
+  if (hasApplicationWithRepoAndName({
+    applicationsById: workspace.applicationsById,
+    name: applicationName,
+    repo,
+  })) {
     appState.newApplicationDialog.warning =
       'App with same name and repo already exists!'
     return
   }
-  const appConfig = createApplicationConfig(clone(repo), name, releaseFilter)
+  const appConfig = createApplicationConfig(
+    clone(repo),
+    applicationName,
+    releaseFilter
+  )
   workspace.applicationsById[appConfig.id] = appConfig
   workspace.selectedApplicationId = appConfig.id
   delete appState.newApplicationDialog
@@ -368,20 +377,21 @@ export const saveApplication = ({
   const id = workspace.selectedApplicationId
   const application = workspace.applicationsById[id]
   if (!application) return
+  const applicationName = resolveApplicationName({ name, repo })
 
-  if (
-    some(
-      workspace.applicationsById,
-      (app) => app.id !== id && app.repo.id === repo.id && app.name === name
-    )
-  ) {
+  if (hasApplicationWithRepoAndName({
+    applicationsById: workspace.applicationsById,
+    excludeApplicationId: id,
+    name: applicationName,
+    repo,
+  })) {
     appState.editApplicationDialog.warning =
       'App with same name and repo already exists!'
     return
   }
 
   application.repo = clone(repo)
-  application.name = name
+  application.name = applicationName
   application.releaseFilter = releaseFilter
   delete appState.editApplicationDialog
 }

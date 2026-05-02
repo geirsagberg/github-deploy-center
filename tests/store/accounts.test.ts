@@ -718,4 +718,34 @@ describe('application import and export', () => {
     expect(result.selectedApplicationId).toBe(existing.id)
     expect(result.importedApplicationIds).toEqual(['generated', 'fresh'])
   })
+
+  test('skips imported applications with the same repo and name as saved apps', () => {
+    const existing = appConfig('existing', 'Deploy Center')
+    const duplicateExisting = {
+      ...appConfig('duplicate-existing', ' deploy center '),
+      repo: { ...existing.repo },
+    }
+    const duplicateImport = appConfig('duplicate-import', 'Imported')
+    const duplicateImportCopy = {
+      ...appConfig('duplicate-import-copy', 'IMPORTED'),
+      repo: { ...duplicateImport.repo },
+    }
+
+    const result = mergeImportedApplications(
+      { [existing.id]: existing },
+      '',
+      {
+        [duplicateExisting.id]: duplicateExisting,
+        [duplicateImport.id]: duplicateImport,
+        [duplicateImportCopy.id]: duplicateImportCopy,
+      }
+    )
+
+    expect(Object.keys(result.applicationsById)).toEqual([
+      existing.id,
+      duplicateImport.id,
+    ])
+    expect(result.selectedApplicationId).toBe(duplicateImport.id)
+    expect(result.importedApplicationIds).toEqual([duplicateImport.id])
+  })
 })

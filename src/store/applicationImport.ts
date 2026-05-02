@@ -1,6 +1,10 @@
 import { v4 as uuid } from 'uuid'
 import type { ApplicationConfig } from '../state/schemas'
 import { normalizeSelectedApplicationId } from './accounts'
+import {
+  getApplicationIdentityKey,
+  resolveApplicationName,
+} from './applicationIdentity'
 
 type CreateId = () => string
 
@@ -18,10 +22,18 @@ export function mergeImportedApplications(
 ): ApplicationImportMergeResult {
   const applicationsById = { ...existingApplicationsById }
   const usedApplicationIds = new Set(Object.keys(applicationsById))
+  const usedApplicationKeys = new Set(
+    Object.values(applicationsById).map(getApplicationIdentityKey)
+  )
   const importedApplicationIds: string[] = []
 
   for (const importedApplication of Object.values(importedApplicationsById)) {
     const application = cloneApplicationConfig(importedApplication)
+    application.name = resolveApplicationName(application)
+    const applicationKey = getApplicationIdentityKey(application)
+
+    if (usedApplicationKeys.has(applicationKey)) continue
+
     const applicationId = usedApplicationIds.has(application.id)
       ? createUniqueApplicationId(usedApplicationIds, createId)
       : application.id
@@ -29,6 +41,7 @@ export function mergeImportedApplications(
     application.id = applicationId
     applicationsById[applicationId] = application
     usedApplicationIds.add(applicationId)
+    usedApplicationKeys.add(applicationKey)
     importedApplicationIds.push(applicationId)
   }
 

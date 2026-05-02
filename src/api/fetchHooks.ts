@@ -1,5 +1,5 @@
 import type { components } from '@octokit/openapi-types/types'
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQueries, useQuery } from '@tanstack/react-query'
 import type { UseQueryResult } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { keyBy, orderBy } from 'lodash-es'
@@ -21,6 +21,7 @@ import {
   workflowRunsSchema,
 } from '../state/schemas'
 import type {
+  ApplicationConfig,
   GitHubEnvironment,
   RepoModel,
   WorkflowRun,
@@ -64,59 +65,154 @@ export const useFetchReleases = () => {
     queryFn: async ({ signal }) => {
       if (!token || !repo) return []
 
-      const result = await createGraphQLApi(token).fetchReleases(
-        {
-          repoName: repo.name,
-          repoOwner: repo.owner,
-          prefix,
-        },
-        undefined,
-        signal
-      )
-      const fragments = result.repository?.refs?.nodes?.map((n) => n!) ?? []
-      const releases = fragments
-        .map(({ id, name, target }): ReleaseModel | null =>
-          target?.__typename === 'Commit'
-            ? {
-                id,
-                name,
-                tagName: name,
-                createdAt: dayjs(target.pushedDate ?? target.committedDate),
-                commit: target.oid,
-                deployments:
-                  target.deployments?.nodes
-                    ?.filter((node) => !!node)
-                    .map((n) => n! as DeployFragment)
-                    .map(
-                      ({
-                        id,
-                        createdAt,
-                        environment,
-                        state,
-                        latestStatus,
-                        payload,
-                        databaseId,
-                      }): DeploymentModel => ({
-                        id,
-                        databaseId: databaseId || undefined,
-                        createdAt: dayjs(createdAt),
-                        environment: environment || '',
-                        state: state || DeploymentState.Inactive,
-                        modifiedAt: dayjs(latestStatus?.createdAt),
-                        workflowRunId: tryParseWorkflowRunId(payload),
-                      })
-                    )
-                    .orderBy((n) => n.createdAt, 'desc') || [],
-              }
-            : null
-        )
-        .filter((n): n is ReleaseModel => !!n)
-      return releases
+      return fetchReleases({
+        prefix,
+        repo,
+        signal,
+        token,
+      })
     },
     refetchInterval: 1000 * refreshIntervalSecs,
   })
 
   return { data, isLoading, error }
+}
+
+export const useFetchApplicationReleases = (
+  applications: ApplicationConfig[]
+) => {
+  const { activeAccountId, settings, token } = useAppState()
+  const refreshIntervalSecs = settings.refreshIntervalSecs
+  const scope = getGitHubQueryScope({ activeAccountId, token })
+  const { queryKeyByApplicationId, uniqueQueries } =
+    getApplicationReleaseQueries(applications, scope)
+
+  const queryResults = useQueries({
+    queries: uniqueQueries.map(({ application, queryKey }) => ({
+      queryKey,
+      enabled: !!token && !!application.repo,
+      queryFn: async ({ signal }: { signal: AbortSignal }) => {
+        if (!token) return []
+
+        return fetchReleases({
+          prefix: application.releaseFilter,
+          repo: application.repo,
+          signal,
+          token,
+        })
+      },
+      refetchInterval: 1000 * refreshIntervalSecs,
+    })),
+  })
+
+  const queryResultsByKey = Object.fromEntries(
+    uniqueQueries.map(({ key }, index) => [key, queryResults[index]])
+  ) as Record<string, UseQueryResult<ReleaseModel[]> | undefined>
+
+  return Object.fromEntries(
+    applications.map((application) => [
+      application.id,
+      queryResultsByKey[queryKeyByApplicationId[application.id]],
+    ])
+  ) as Record<string, UseQueryResult<ReleaseModel[]> | undefined>
+}
+
+function getApplicationReleaseQueries(
+  applications: ApplicationConfig[],
+  scope: ReturnType<typeof getGitHubQueryScope>
+) {
+  const queryKeyByApplicationId: Record<string, string> = {}
+  const uniqueQueriesByKey = new Map<
+    string,
+    {
+      application: ApplicationConfig
+      key: string
+      queryKey: ReturnType<typeof githubQueryKeys.releases>
+    }
+  >()
+
+  for (const application of applications) {
+    const queryKey = githubQueryKeys.releases(
+      scope,
+      application.repo,
+      application.releaseFilter
+    )
+    const key = JSON.stringify(queryKey)
+
+    queryKeyByApplicationId[application.id] = key
+    if (!uniqueQueriesByKey.has(key)) {
+      uniqueQueriesByKey.set(key, {
+        application,
+        key,
+        queryKey,
+      })
+    }
+  }
+
+  return {
+    queryKeyByApplicationId,
+    uniqueQueries: Array.from(uniqueQueriesByKey.values()),
+  }
+}
+
+async function fetchReleases({
+  prefix,
+  repo,
+  signal,
+  token,
+}: {
+  prefix: string
+  repo: RepoModel
+  signal: AbortSignal
+  token: string
+}) {
+  const result = await createGraphQLApi(token).fetchReleases(
+    {
+      repoName: repo.name,
+      repoOwner: repo.owner,
+      prefix,
+    },
+    undefined,
+    signal
+  )
+  const fragments = result.repository?.refs?.nodes?.map((n) => n!) ?? []
+  return fragments
+    .map(({ id, name, target }): ReleaseModel | null =>
+      target?.__typename === 'Commit'
+        ? {
+            id,
+            name,
+            tagName: name,
+            createdAt: dayjs(target.pushedDate ?? target.committedDate),
+            commit: target.oid,
+            deployments:
+              target.deployments?.nodes
+                ?.filter((node) => !!node)
+                .map((n) => n! as DeployFragment)
+                .map(
+                  ({
+                    id,
+                    createdAt,
+                    environment,
+                    state,
+                    latestStatus,
+                    payload,
+                    databaseId,
+                  }): DeploymentModel => ({
+                    id,
+                    databaseId: databaseId || undefined,
+                    createdAt: dayjs(createdAt),
+                    environment: environment || '',
+                    state: state || DeploymentState.Inactive,
+                    modifiedAt: dayjs(latestStatus?.createdAt),
+                    workflowRunId: tryParseWorkflowRunId(payload),
+                  })
+                )
+                .orderBy((n) => n.createdAt, 'desc') || [],
+          }
+        : null
+    )
+    .filter((n): n is ReleaseModel => !!n)
 }
 
 type Workflow = components['schemas']['workflow']

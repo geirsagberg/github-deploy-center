@@ -12,6 +12,7 @@ import ModalContainer from 'react-modal-promise'
 import { useFetchRepos } from './api/fetchHooks'
 import { AccountSetupView } from './components/AccountSetupView'
 import { AccountSwitcherView } from './components/AccountSwitcherView'
+import { ApplicationWorkspace } from './components/ApplicationWorkspace'
 import {
   EditApplicationDialog,
   NewApplicationDialog,
@@ -20,7 +21,6 @@ import { DeploymentDialog } from './components/DeploymentDialog'
 import { EnvironmentsView } from './components/EnvironmentsView'
 import { ManageApplicationsView } from './components/ManageApplicationsView'
 import { ReleasesTableView } from './components/ReleasesTableView'
-import { SelectApplicationView } from './components/SelectApplicationView'
 import { SettingsDialog } from './components/SettingsDialog'
 import WorkflowInfoView from './components/WorkflowInfoView'
 import { useActions, useAppState } from './store'
@@ -84,10 +84,11 @@ const App = () => {
               <>
                 <RepoPreloader />
                 <ManageApplicationsView />
-                <SelectApplicationView />
-                <EnvironmentsView />
-                <WorkflowInfoView />
-                <ReleasesTableView />
+                <ApplicationWorkspace>
+                  <EnvironmentsView />
+                  <WorkflowInfoView />
+                  <ReleasesTableView />
+                </ApplicationWorkspace>
                 <NewApplicationDialog />
                 <EditApplicationDialog />
                 <DeploymentDialog />
