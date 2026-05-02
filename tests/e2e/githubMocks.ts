@@ -312,7 +312,6 @@ function buildPersistedState({
     accountsById: {
       [E2E_ACCOUNT_ID]: {
         id: E2E_ACCOUNT_ID,
-        label: 'E2E account',
         token: FAKE_TOKEN,
         githubLogin: E2E_USER.login,
         githubUserId: E2E_USER.id,

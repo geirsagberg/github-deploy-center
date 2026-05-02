@@ -1,7 +1,15 @@
-import { Alert, Box, Button, Icon, TextField, Typography } from '@mui/material'
+import {
+  Alert,
+  Box,
+  Button,
+  Icon,
+  TextField,
+  Typography,
+} from '@mui/material'
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { AccountProfile } from '../state/schemas'
+import { formatAccountName } from '../store/accounts'
 import {
   DifferentIdentityTokenError,
   type AddAccountInput,
@@ -23,7 +31,6 @@ export function AccountEditView({
   removeAccount,
   onSaved,
 }: AccountEditViewProps) {
-  const [label, setLabel] = useState(account.label)
   const [token, setToken] = useState('')
   const [error, setError] = useState<string>()
   const [differentIdentity, setDifferentIdentity] =
@@ -34,7 +41,7 @@ export function AccountEditView({
     useState(false)
 
   const canSave =
-    !!label.trim() && !isSaving && !isRemoving && !isAddingDifferentIdentity
+    !!token.trim() && !isSaving && !isRemoving && !isAddingDifferentIdentity
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -45,7 +52,6 @@ export function AccountEditView({
     try {
       await editAccount({
         accountId: account.id,
-        label,
         token,
       })
       onSaved?.()
@@ -70,7 +76,6 @@ export function AccountEditView({
     setIsAddingDifferentIdentity(true)
     try {
       await addAccount({
-        label: differentIdentity.replacementIdentity.login,
         token,
       })
       onSaved?.()
@@ -137,17 +142,11 @@ export function AccountEditView({
             </Button>
           }
         >
-          Keep this workspace on @{account.githubLogin ?? account.label}, or add
-          the new identity as a separate account.
+          Keep this workspace on {formatAccountName(account)}, or add the new
+          identity as a separate account.
         </Alert>
       ) : null}
-      <TextField
-        label="Account label"
-        value={label}
-        onChange={(event) => setLabel(event.target.value)}
-        autoComplete="off"
-        required
-      />
+      <Typography color="text.secondary">{formatAccountName(account)}</Typography>
       <TextField
         label="Replace personal access token"
         value={token}

@@ -119,7 +119,6 @@ export interface AccountWorkspace
 
 export const accountProfileSchema = z.object({
   id: z.string(),
-  label: z.string(),
   token: z.string(),
   githubLogin: z.string().optional(),
   githubUserId: z.string().optional(),

@@ -41,7 +41,6 @@ describe('application query string selection', () => {
     const state = createInitialAppState()
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_work',
       workspace: {
         applicationsById: {

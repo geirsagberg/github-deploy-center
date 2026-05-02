@@ -10,7 +10,7 @@ afterEach(() => {
 })
 
 describe('AccountSetupView', () => {
-  test('collects a label and password PAT before adding the account', async () => {
+  test('collects a password PAT before adding the account', async () => {
     const submitted: AddAccountInput[] = []
     const user = userEvent.setup()
 
@@ -28,14 +28,12 @@ describe('AccountSetupView', () => {
     expect(tokenInput.type).toBe('password')
     expect(getByText(/stored in your browser's local storage/i)).toBeTruthy()
 
-    await user.type(getByLabelText(/account label/i), 'Work')
     await user.type(tokenInput, 'ghp_valid')
     await user.click(getByRole('button', { name: /add account/i }))
 
     await waitFor(() => {
       expect(submitted).toEqual([
         {
-          label: 'Work',
           token: 'ghp_valid',
         },
       ])
@@ -58,7 +56,6 @@ describe('AccountSetupView', () => {
     const tokenInput = getByLabelText(
       /personal access token/i
     ) as HTMLInputElement
-    await user.type(getByLabelText(/account label/i), 'Work')
     await user.type(tokenInput, 'ghp_invalid')
     await user.click(getByRole('button', { name: /add account/i }))
 

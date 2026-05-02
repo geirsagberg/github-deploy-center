@@ -126,6 +126,7 @@ export const ApplicationDialog: FC<{
                     <Button
                       color="secondary"
                       variant="contained"
+                      disabled={!dialogState.name.trim()}
                       onClick={() =>
                         updateDialogState(
                           (state) =>

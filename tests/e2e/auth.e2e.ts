@@ -13,7 +13,6 @@ test('first-run setup validates a fake PAT through the mocked GitHub API', async
   const tokenInput = page.getByLabel('Personal access token')
   await expect(tokenInput).toHaveAttribute('type', 'password')
 
-  await page.getByLabel('Account label').fill('Work')
   await tokenInput.fill(FAKE_TOKEN)
   await page.getByRole('button', { name: 'Add account' }).click()
 

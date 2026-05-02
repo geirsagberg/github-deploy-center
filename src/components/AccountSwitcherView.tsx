@@ -8,10 +8,10 @@ import {
   Icon,
   InputLabel,
   Select,
-  Typography,
 } from '@mui/material'
 import { useState } from 'react'
 import type { AccountProfile } from '../state/schemas'
+import { formatAccountName } from '../store/accounts'
 import type { AddAccountInput, EditAccountInput } from '../store/actions'
 import { AccountEditView } from './AccountEditView'
 import { AccountSetupView } from './AccountSetupView'
@@ -84,11 +84,6 @@ export function AccountSwitcherView({
           Edit account
         </Button>
       </Box>
-      {activeAccount?.githubLogin ? (
-        <Typography color="text.secondary">
-          Signed in as @{activeAccount.githubLogin}
-        </Typography>
-      ) : null}
       <Dialog
         open={addDialogOpen}
         fullWidth
@@ -129,7 +124,5 @@ export function AccountSwitcherView({
 }
 
 function formatAccountOption(account: AccountProfile) {
-  return account.githubLogin
-    ? `${account.label} (@${account.githubLogin})`
-    : account.label
+  return formatAccountName(account)
 }

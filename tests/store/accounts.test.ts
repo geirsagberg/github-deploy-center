@@ -44,6 +44,11 @@ const appConfig = (id: string, name = id): ApplicationConfig => ({
   environmentSettingsByName: {},
 })
 
+const githubIdentity = (id: string, login: string) => ({
+  id,
+  login,
+})
+
 describe('persisted account migration', () => {
   test('migrates legacy state into exactly one active account', () => {
     const app = appConfig('app-1')
@@ -202,22 +207,17 @@ describe('add account action', () => {
     const account = await addAccountToState(
       state,
       {
-        label: ' Work ',
         token: ' ghp_valid ',
       },
       async (token) => {
         requestedTokens.push(token)
-        return {
-          id: 'U_123',
-          login: 'octocat',
-        }
+        return githubIdentity('U_123', 'octocat')
       }
     )
 
     expect(requestedTokens).toEqual(['ghp_valid'])
     expect(state.activeAccountId).toBe(account.id)
     expect(Object.keys(state.accountsById)).toEqual([account.id])
-    expect(account.label).toBe('Work')
     expect(account.token).toBe('ghp_valid')
     expect(account.githubLogin).toBe('octocat')
     expect(account.githubUserId).toBe('U_123')
@@ -231,7 +231,6 @@ describe('add account action', () => {
       await addAccountToState(
         state,
         {
-          label: 'Work',
           token: 'ghp_invalid',
         },
         async () => {
@@ -255,7 +254,6 @@ describe('add account action', () => {
     const workApp = appConfig('work-app')
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_work',
       workspace: {
         applicationsById: { [workApp.id]: workApp },
@@ -267,13 +265,9 @@ describe('add account action', () => {
     const account = await addAccountToState(
       state,
       {
-        label: 'Personal',
         token: 'ghp_personal',
       },
-      async () => ({
-        id: 'U_personal',
-        login: 'octocat',
-      })
+      async () => githubIdentity('U_personal', 'octocat')
     )
 
     expect(state.activeAccountId).toBe(account.id)
@@ -288,7 +282,6 @@ describe('add account action', () => {
     const workApp = appConfig('work-app')
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_old',
       githubLogin: 'work-octocat',
       githubUserId: 'U_work',
@@ -302,19 +295,14 @@ describe('add account action', () => {
     const account = await addAccountToState(
       state,
       {
-        label: 'Work rotated',
         token: 'ghp_new',
       },
-      async () => ({
-        id: 'U_work',
-        login: 'work-octocat',
-      })
+      async () => githubIdentity('U_work', 'work-octocat')
     )
 
     expect(account.id).toBe('work')
     expect(Object.keys(state.accountsById)).toEqual(['work'])
     expect(state.activeAccountId).toBe('work')
-    expect(state.accountsById.work.label).toBe('Work rotated')
     expect(state.accountsById.work.token).toBe('ghp_new')
     expect(state.accountsById.work.workspace.applicationsById).toEqual({
       [workApp.id]: workApp,
@@ -330,7 +318,6 @@ describe('account switching', () => {
 
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_work',
       workspace: {
         applicationsById: { [workApp.id]: workApp },
@@ -339,7 +326,6 @@ describe('account switching', () => {
     })
     state.accountsById.personal = createAccountProfile({
       id: 'personal',
-      label: 'Personal',
       token: 'ghp_personal',
       workspace: {
         applicationsById: { [personalApp.id]: personalApp },
@@ -368,7 +354,6 @@ describe('account switching', () => {
     const state = createInitialAppState()
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_work',
     })
     state.activeAccountId = 'work'
@@ -383,7 +368,6 @@ describe('account switching', () => {
     const personalApp = appConfig('personal-app')
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_work',
       workspace: {
         applicationsById: { [workApp.id]: workApp },
@@ -392,7 +376,6 @@ describe('account switching', () => {
     })
     state.accountsById.personal = createAccountProfile({
       id: 'personal',
-      label: 'Personal',
       token: 'ghp_personal',
     })
     state.activeAccountId = 'personal'
@@ -409,11 +392,10 @@ describe('account switching', () => {
 })
 
 describe('edit account action', () => {
-  test('edits the label without validating the PAT', async () => {
+  test('does not validate the PAT when no replacement is entered', async () => {
     const state = createInitialAppState()
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_work',
       githubLogin: 'work-octocat',
       githubUserId: 'U_work',
@@ -424,7 +406,6 @@ describe('edit account action', () => {
       state,
       {
         accountId: 'work',
-        label: ' Work deploys ',
         token: '',
       },
       async () => {
@@ -432,7 +413,6 @@ describe('edit account action', () => {
       }
     )
 
-    expect(state.accountsById.work.label).toBe('Work deploys')
     expect(state.accountsById.work.token).toBe('ghp_work')
     expect(state.accountsById.work.githubLogin).toBe('work-octocat')
   })
@@ -442,7 +422,6 @@ describe('edit account action', () => {
     const workApp = appConfig('work-app')
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_old',
       githubLogin: 'old-login',
       githubUserId: 'U_work',
@@ -460,13 +439,9 @@ describe('edit account action', () => {
       state,
       {
         accountId: 'work',
-        label: 'Work',
         token: ' ghp_new ',
       },
-      async () => ({
-        id: 'U_work',
-        login: 'work-octocat',
-      })
+      async () => githubIdentity('U_work', 'work-octocat')
     )
 
     expect(state.accountsById.work.token).toBe('ghp_new')
@@ -487,7 +462,6 @@ describe('edit account action', () => {
     const state = createInitialAppState()
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_work',
       githubLogin: 'work-octocat',
       githubUserId: 'U_work',
@@ -500,13 +474,9 @@ describe('edit account action', () => {
         state,
         {
           accountId: 'work',
-          label: 'Work',
           token: 'ghp_personal',
         },
-        async () => ({
-          id: 'U_personal',
-          login: 'octocat',
-        })
+        async () => githubIdentity('U_personal', 'octocat')
       )
     } catch (caught) {
       error = caught
@@ -525,7 +495,6 @@ describe('account removal', () => {
     const workApp = appConfig('work-app')
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_work',
       githubLogin: 'work-octocat',
       workspace: {
@@ -535,7 +504,6 @@ describe('account removal', () => {
     })
     state.accountsById.personal = createAccountProfile({
       id: 'personal',
-      label: 'Personal',
       token: 'ghp_personal',
     })
     state.activeAccountId = 'work'
@@ -552,7 +520,7 @@ describe('account removal', () => {
 
     expect(removed).toBe(true)
     expect(messages[0]).toContain('1 application')
-    expect(messages[0]).toContain('Work (@work-octocat)')
+    expect(messages[0]).toContain('@work-octocat')
     expect(state.accountsById.work).toBeUndefined()
     expect(state.activeAccountId).toBe('personal')
   })
@@ -561,7 +529,6 @@ describe('account removal', () => {
     const state = createInitialAppState()
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_work',
     })
     state.activeAccountId = 'work'
@@ -581,7 +548,6 @@ describe('account removal', () => {
     const state = createInitialAppState()
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_work',
     })
     state.activeAccountId = 'work'
@@ -600,7 +566,6 @@ describe('application import and export', () => {
     const personalApp = appConfig('personal-app')
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_work',
       workspace: {
         applicationsById: { [workApp.id]: workApp },
@@ -609,7 +574,6 @@ describe('application import and export', () => {
     })
     state.accountsById.personal = createAccountProfile({
       id: 'personal',
-      label: 'Personal',
       token: 'ghp_personal',
       workspace: {
         applicationsById: { [personalApp.id]: personalApp },
@@ -638,7 +602,6 @@ describe('application import and export', () => {
     const personalApp = appConfig('personal-app')
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_work',
       workspace: {
         applicationsById: { [workApp.id]: workApp },
@@ -647,7 +610,6 @@ describe('application import and export', () => {
     })
     state.accountsById.personal = createAccountProfile({
       id: 'personal',
-      label: 'Personal',
       token: 'ghp_personal',
     })
     state.activeAccountId = 'personal'
@@ -672,7 +634,6 @@ describe('application import and export', () => {
     const existingApp = appConfig('existing-app')
     state.accountsById.work = createAccountProfile({
       id: 'work',
-      label: 'Work',
       token: 'ghp_work',
       workspace: {
         applicationsById: { [existingApp.id]: existingApp },

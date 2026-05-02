@@ -30,7 +30,6 @@ const accountPersistedStateSchema = z.object({
 type AccountPersistedState = z.infer<typeof accountPersistedStateSchema>
 
 const partialAccountProfileSchema = z.object({
-  label: z.string().optional(),
   token: z.string().optional(),
   githubLogin: z.string().optional(),
   githubUserId: z.string().optional(),
@@ -82,7 +81,6 @@ function normalizeAccountProfile(id: string, data: unknown) {
 
   return createAccountProfile({
     id,
-    label: parsed.data.label,
     token: parsed.data.token,
     githubLogin: parsed.data.githubLogin,
     githubUserId: parsed.data.githubUserId,

@@ -26,12 +26,11 @@ export function AccountSetupView({
   submitLabel = 'Add account',
   onAdded,
 }: AccountSetupViewProps) {
-  const [label, setLabel] = useState('')
   const [token, setToken] = useState('')
   const [error, setError] = useState<string>()
   const [isAdding, setIsAdding] = useState(false)
 
-  const canAdd = !!label.trim() && !!token.trim() && !isAdding
+  const canAdd = !!token.trim() && !isAdding
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -39,7 +38,7 @@ export function AccountSetupView({
     setIsAdding(true)
 
     try {
-      await addAccount({ label, token })
+      await addAccount({ token })
       onAdded?.()
     } catch (error) {
       setError(
@@ -71,13 +70,6 @@ export function AccountSetupView({
         </Typography>
       </Box>
       {error ? <Alert severity="error">{error}</Alert> : null}
-      <TextField
-        label="Account label"
-        value={label}
-        onChange={(event) => setLabel(event.target.value)}
-        autoComplete="off"
-        required
-      />
       <TextField
         label="Personal access token"
         value={token}

@@ -21,6 +21,7 @@ import {
   addAccountProfile,
   deleteActiveApplication,
   findAccountByGitHubUserId,
+  formatAccountName,
   getActiveWorkspace,
   getSelectedApplication,
   removeAccountProfile,
@@ -46,7 +47,6 @@ export const setToken = (token: string) => {
 }
 
 export type AddAccountInput = {
-  label: string
   token: string
 }
 
@@ -59,7 +59,7 @@ export class DifferentIdentityTokenError extends Error {
     replacementIdentity: { id: string; login: string }
   }) {
     super(
-      `That token belongs to @${replacementIdentity.login}, not @${currentAccount.githubLogin ?? currentAccount.label}. Add it as a new account instead.`
+      `That token belongs to @${replacementIdentity.login}, not ${formatAccountName(currentAccount)}. Add it as a new account instead.`
     )
     this.name = 'DifferentIdentityTokenError'
     this.replacementIdentity = replacementIdentity
@@ -70,15 +70,10 @@ export class DifferentIdentityTokenError extends Error {
 
 export async function addAccountToState(
   state: AppState,
-  { label, token }: AddAccountInput,
+  { token }: AddAccountInput,
   resolveIdentity: GitHubIdentityResolver = resolveGitHubIdentity
 ) {
-  const normalizedLabel = label.trim()
   const normalizedToken = token.trim()
-
-  if (!normalizedLabel) {
-    throw new Error('Enter an account label.')
-  }
 
   if (!normalizedToken) {
     throw new Error('Enter a personal access token.')
@@ -96,7 +91,6 @@ export async function addAccountToState(
   const existingAccount = findAccountByGitHubUserId(state, identity.id)
   if (existingAccount) {
     updateAccountProfile(state, existingAccount.id, {
-      label: normalizedLabel,
       token: normalizedToken,
       githubLogin: identity.login,
       githubUserId: identity.id,
@@ -106,7 +100,6 @@ export async function addAccountToState(
   }
 
   return addAccountProfile(state, {
-    label: normalizedLabel,
     token: normalizedToken,
     githubLogin: identity.login,
     githubUserId: identity.id,
@@ -118,13 +111,12 @@ export const addAccount = (input: AddAccountInput) =>
 
 export type EditAccountInput = {
   accountId: string
-  label: string
   token?: string
 }
 
 export async function editAccountInState(
   state: AppState,
-  { accountId, label, token = '' }: EditAccountInput,
+  { accountId, token = '' }: EditAccountInput,
   resolveIdentity: GitHubIdentityResolver = resolveGitHubIdentity
 ) {
   const account = state.accountsById[accountId]
@@ -132,17 +124,10 @@ export async function editAccountInState(
     throw new Error('Account not found.')
   }
 
-  const normalizedLabel = label.trim()
   const normalizedToken = token.trim()
 
-  if (!normalizedLabel) {
-    throw new Error('Enter an account label.')
-  }
-
   if (!normalizedToken) {
-    return updateAccountProfile(state, accountId, {
-      label: normalizedLabel,
-    })
+    return account
   }
 
   let identity
@@ -162,7 +147,6 @@ export async function editAccountInState(
   }
 
   return updateAccountProfile(state, accountId, {
-    label: normalizedLabel,
     token: normalizedToken,
     githubLogin: identity.login,
     githubUserId: identity.id,
@@ -191,9 +175,7 @@ export async function removeAccountFromState(
   ).length
   const applicationNoun =
     applicationCount === 1 ? 'application' : 'applications'
-  const accountName = account.githubLogin
-    ? `${account.label} (@${account.githubLogin})`
-    : account.label
+  const accountName = formatAccountName(account)
 
   const confirmed = await confirm(
     `Remove ${accountName}? This will delete ${applicationCount} ${applicationNoun} saved in this account.`

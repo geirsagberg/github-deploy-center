@@ -7,7 +7,7 @@ import type {
 } from '../state/schemas'
 
 export const DEFAULT_ACCOUNT_ID = 'default-account'
-export const DEFAULT_ACCOUNT_LABEL = 'Default account'
+export const DEFAULT_ACCOUNT_NAME = 'GitHub account'
 
 type AccountContainerState = {
   accountsById: Record<string, AccountProfile>
@@ -31,14 +31,12 @@ export function createAccountWorkspace({
 
 export function createAccountProfile({
   id,
-  label = DEFAULT_ACCOUNT_LABEL,
   token = '',
   githubLogin,
   githubUserId,
   workspace,
 }: {
   id: string
-  label?: string
   token?: string
   githubLogin?: string
   githubUserId?: string
@@ -46,7 +44,6 @@ export function createAccountProfile({
 }): AccountProfile {
   return {
     id,
-    label: label || DEFAULT_ACCOUNT_LABEL,
     token,
     githubLogin,
     githubUserId,
@@ -69,7 +66,6 @@ export function createDefaultAccount({
 } = {}): AccountProfile {
   return createAccountProfile({
     id,
-    label: DEFAULT_ACCOUNT_LABEL,
     token,
     workspace: {
       applicationsById,
@@ -83,13 +79,11 @@ export function addAccountProfile(
   state: AccountContainerState,
   {
     id = uuid(),
-    label,
     token,
     githubLogin,
     githubUserId,
   }: {
     id?: string
-    label: string
     token: string
     githubLogin: string
     githubUserId: string
@@ -97,7 +91,6 @@ export function addAccountProfile(
 ) {
   const account = createAccountProfile({
     id,
-    label,
     token,
     githubLogin,
     githubUserId,
@@ -144,13 +137,13 @@ export function setActiveAccount(
 export function updateAccountProfile(
   state: AccountContainerState,
   accountId: string,
-  update: Pick<AccountProfile, 'label'> &
-    Partial<Pick<AccountProfile, 'token' | 'githubLogin' | 'githubUserId'>>
+  update: Partial<
+    Pick<AccountProfile, 'token' | 'githubLogin' | 'githubUserId'>
+  >
 ) {
   const account = state.accountsById[accountId]
   if (!account) return undefined
 
-  account.label = update.label
   if (update.token !== undefined) {
     account.token = update.token
   }
@@ -212,6 +205,10 @@ export function setActiveAccountToken(
   token: string
 ) {
   ensureActiveAccount(state).token = token
+}
+
+export function formatAccountName(account: AccountProfile | undefined) {
+  return account?.githubLogin ? `@${account.githubLogin}` : DEFAULT_ACCOUNT_NAME
 }
 
 export function setActiveAccountApplications(

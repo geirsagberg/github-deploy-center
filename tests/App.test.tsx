@@ -15,13 +15,16 @@ describe('App account setup state', () => {
     appState.accountsById = {}
     appState.activeAccountId = ''
 
-    const { getByLabelText, getByText } = render(<App />)
+    const { getByLabelText, getByRole, getByText } = render(<App />)
     const tokenInput = getByLabelText(
       /personal access token/i
     ) as HTMLInputElement
+    const githubLink = getByRole('link', { name: /github repository/i })
 
     expect(getByText('Add your GitHub account')).toBeTruthy()
-    expect(getByLabelText(/account label/i)).toBeTruthy()
     expect(tokenInput.type).toBe('password')
+    expect(githubLink.getAttribute('href')).toBe(
+      'https://github.com/geirsagberg/github-deploy-center'
+    )
   })
 })
