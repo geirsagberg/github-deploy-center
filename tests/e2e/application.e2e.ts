@@ -39,6 +39,11 @@ test('creates an application from mocked repositories and saves workflow setting
   await expect(page.getByLabel('Environment input name (optional)')).toHaveValue(
     'deploy_target'
   )
+  await expect
+    .poll(() =>
+      github.restRequests.some((request) => request.includes('/environments'))
+    )
+    .toBe(true)
   await page.getByRole('button', { name: 'Save' }).click()
 
   await expect(
@@ -59,6 +64,7 @@ test('creates an application from mocked repositories and saves workflow setting
           releaseKey: string
           workflowId: number
         }
+        environmentSettingsByName: Record<string, unknown>
       }
     >
   const savedApplication = Object.values(applications).find(
@@ -70,9 +76,45 @@ test('creates an application from mocked repositories and saves workflow setting
   expect(savedApplication?.deploySettings.releaseKey).toBe('release_version')
   expect(savedApplication?.deploySettings.environmentKey).toBe('deploy_target')
   expect(savedApplication?.deploySettings.manualWorkflowHandling).toBe(false)
+  expect(
+    Object.keys(savedApplication?.environmentSettingsByName ?? {})
+  ).toEqual(['dev', 'test', 'tst', 'qa', 'staging', 'sandbox', 'prod'])
   expect(github.restRequests.some((request) => request.includes('dynamic'))).toBe(
     false
   )
+
+  const environmentHeaders = page.locator('thead a')
+  await expect(environmentHeaders).toHaveText([
+    'dev',
+    'test',
+    'tst',
+    'qa',
+    'staging',
+    'sandbox',
+    'prod',
+  ])
+  await page
+    .getByLabel('Move prod')
+    .dragTo(page.locator('thead th').filter({ hasText: 'test' }))
+  await expect(environmentHeaders).toHaveText([
+    'dev',
+    'prod',
+    'test',
+    'tst',
+    'qa',
+    'staging',
+    'sandbox',
+  ])
+
+  const reordered = await github.readPersistedState()
+  const reorderedApplications = reordered.accountsById[E2E_ACCOUNT_ID].workspace
+    .applicationsById as typeof applications
+  const reorderedApplication = Object.values(reorderedApplications).find(
+    (application) => application.name === E2E_REPO.name
+  )
+  expect(
+    Object.keys(reorderedApplication?.environmentSettingsByName ?? {})
+  ).toEqual(['dev', 'prod', 'test', 'tst', 'qa', 'staging', 'sandbox'])
 })
 
 test('falls back to file-backed workflows when smart inspection cannot infer deploy workflows', async ({

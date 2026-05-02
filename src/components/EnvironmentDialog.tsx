@@ -12,11 +12,11 @@ import {
   DialogTitle,
   TextField,
 } from '@mui/material'
-import { orderBy } from 'lodash-es'
 import type { FC } from 'react'
 import { useFetchEnvironments } from '../api/fetchHooks'
 import { useAppState } from '../store'
 import type { EnvironmentDialogState } from '../store'
+import { isDeployEnvironmentName, sortEnvironments } from '../state/environments'
 import type { EnvironmentSettings } from '../state/schemas'
 
 type Option = {
@@ -35,17 +35,8 @@ export const EnvironmentDialog: FC<{
 }> = ({ dialogState, onSave, onCancel, title, updateDialogState }) => {
   const { data, isLoading, error } = useFetchEnvironments()
   const { selectedApplication } = useAppState()
-  const filteredEnvironments = orderBy(
-    (data || []).filter((d) => d.name !== 'github-pages'),
-    [
-      (e) =>
-        e.name
-          .toLowerCase()
-          .includes(selectedApplication?.name.split(' ')[0].toLowerCase() || '')
-          ? 1
-          : 2,
-      (e) => e.name,
-    ]
+  const filteredEnvironments = sortEnvironments(
+    (data || []).filter((d) => isDeployEnvironmentName(d.name)),
   )
   return (
     <Dialog open={!!dialogState} fullWidth onClose={onCancel}>

@@ -234,8 +234,17 @@ class GitHubMock {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          total_count: 2,
-          environments: [{ name: 'dev' }, { name: 'prod' }],
+          total_count: 8,
+          environments: [
+            { name: 'prod' },
+            { name: 'sandbox' },
+            { name: 'staging' },
+            { name: 'qa' },
+            { name: 'tst' },
+            { name: 'test' },
+            { name: 'dev' },
+            { name: 'github-pages' },
+          ],
         }),
       })
       return

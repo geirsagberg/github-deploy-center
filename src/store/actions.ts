@@ -4,12 +4,18 @@ import {
   applicationsByIdSchema,
   createApplicationConfig,
 } from '../state/schemas'
+import {
+  addEnvironmentSettings,
+  mergeGitHubEnvironments,
+  reorderEnvironmentSettings,
+} from '../state/environments'
 import type {
   AccountProfile,
   AppSettings,
   ApplicationConfig,
   DeploySettings,
   EnvironmentSettings,
+  GitHubEnvironment,
   RepoModel,
 } from '../state/schemas'
 import {
@@ -328,9 +334,14 @@ export const editDeployment = () => {
   appState.deploymentDialog = clone(deploySettings)
 }
 
-export const saveDeployment = () => {
+export const saveDeployment = (githubEnvironments: GitHubEnvironment[] = []) => {
   if (appState.selectedApplication && appState.deploymentDialog) {
     appState.selectedApplication.deploySettings = clone(appState.deploymentDialog)
+    appState.selectedApplication.environmentSettingsByName =
+      mergeGitHubEnvironments(
+        appState.selectedApplication.environmentSettingsByName,
+        githubEnvironments,
+      )
   }
   delete appState.deploymentDialog
 }
@@ -436,11 +447,30 @@ export const addEnvironment = (settings: EnvironmentSettings) => {
     appState.selectedApplication &&
     appState.addEnvironmentDialog?.environmentName
   ) {
-    appState.selectedApplication.environmentSettingsByName[
-      appState.addEnvironmentDialog.environmentName
-    ] = settings
+    appState.selectedApplication.environmentSettingsByName =
+      addEnvironmentSettings(
+        appState.selectedApplication.environmentSettingsByName,
+        settings,
+      )
   }
   delete appState.addEnvironmentDialog
+}
+
+export const reorderEnvironment = ({
+  draggedName,
+  targetName,
+}: {
+  draggedName: string
+  targetName: string
+}) => {
+  if (!appState.selectedApplication) return
+
+  appState.selectedApplication.environmentSettingsByName =
+    reorderEnvironmentSettings(
+      appState.selectedApplication.environmentSettingsByName,
+      draggedName,
+      targetName,
+    )
 }
 
 export const removeEnvironment = async (name: string) => {
@@ -512,6 +542,7 @@ export const actions = {
   exportApplications,
   hideSettings,
   importApplications,
+  reorderEnvironment,
   removeAccount,
   removeEnvironment,
   saveApplication,

@@ -12,7 +12,7 @@ import {
   Typography,
 } from '@mui/material'
 import { fromPairs } from 'lodash-es'
-import type { DispatchWorkflow } from '../api/fetchHooks'
+import { useFetchEnvironments, type DispatchWorkflow } from '../api/fetchHooks'
 import { useActions, useAppState } from '../store'
 import type { DeploymentDialogState } from '../store'
 import { SelectWorkflow } from './SelectWorkflow'
@@ -24,6 +24,7 @@ export const DeploymentDialog = () => {
   const { deploymentDialog } = useAppState()
   const { updateDeployWorkflowDialog, cancelEditDeployment, saveDeployment } =
     useActions()
+  const environments = useFetchEnvironments()
 
   const valid = Boolean(
     deploymentDialog &&
@@ -38,7 +39,7 @@ export const DeploymentDialog = () => {
           onSubmit={(event) => {
             event.preventDefault()
             if (valid) {
-              saveDeployment()
+              saveDeployment(environments.data ?? [])
             }
           }}
         >

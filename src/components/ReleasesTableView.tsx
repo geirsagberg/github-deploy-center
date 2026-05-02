@@ -17,7 +17,7 @@ import {
 import { useMutation } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { orderBy, values } from 'lodash-es'
-import type { CSSProperties } from 'react'
+import { useState, type CSSProperties, type DragEvent } from 'react'
 import { useFetchReleases, useFetchWorkflowRuns } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
 import type {
@@ -135,9 +135,13 @@ function getLatestReleaseByEnvironment(
 export const ReleasesTableView = () => {
   const { selectedApplication, pendingDeployments } = useAppState()
   const repo = selectedApplication?.repo
-  const { triggerDeployment, removeEnvironment } = useActions()
+  const { triggerDeployment, removeEnvironment, reorderEnvironment } =
+    useActions()
   const allReleaseResultsForTag = useFetchReleases()
   const workflowRunsQuery = useFetchWorkflowRuns()
+  const [draggedEnvironmentName, setDraggedEnvironmentName] = useState<
+    string | null
+  >(null)
   const { data: workflowRuns = [] } = workflowRunsQuery
 
   const releases = allReleaseResultsForTag.data || []
@@ -192,6 +196,25 @@ export const ReleasesTableView = () => {
   const selectedEnvironments = values(
     selectedApplication.environmentSettingsByName,
   )
+
+  const dropEnvironment = (
+    event: DragEvent,
+    targetEnvironmentName: string,
+  ) => {
+    event.preventDefault()
+
+    if (
+      draggedEnvironmentName &&
+      draggedEnvironmentName !== targetEnvironmentName
+    ) {
+      reorderEnvironment({
+        draggedName: draggedEnvironmentName,
+        targetName: targetEnvironmentName,
+      })
+    }
+
+    setDraggedEnvironmentName(null)
+  }
 
   const getPendingDeployment = (
     release: ReleaseModel,
@@ -290,8 +313,44 @@ export const ReleasesTableView = () => {
           <TableRow>
             <TableCell>Release name</TableCell>
             {selectedEnvironments.map((environment) => (
-              <TableCell key={environment.name}>
+              <TableCell
+                key={environment.name}
+                onDragOver={(event) => {
+                  if (
+                    draggedEnvironmentName &&
+                    draggedEnvironmentName !== environment.name
+                  ) {
+                    event.preventDefault()
+                  }
+                }}
+                onDrop={(event) => dropEnvironment(event, environment.name)}
+                sx={{
+                  '& .environment-drag-handle': {
+                    opacity: draggedEnvironmentName ? 1 : 0,
+                    transition: 'opacity 120ms ease',
+                  },
+                  '&:hover .environment-drag-handle, &:focus-within .environment-drag-handle':
+                    {
+                      opacity: 1,
+                    },
+                }}
+              >
                 <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
+                  <IconButton
+                    aria-label={`Move ${environment.name}`}
+                    className="environment-drag-handle"
+                    draggable
+                    size="small"
+                    sx={{ cursor: 'grab' }}
+                    onDragStart={(event) => {
+                      setDraggedEnvironmentName(environment.name)
+                      event.dataTransfer.effectAllowed = 'move'
+                      event.dataTransfer.setData('text/plain', environment.name)
+                    }}
+                    onDragEnd={() => setDraggedEnvironmentName(null)}
+                  >
+                    <Icon fontSize="small">drag_indicator</Icon>
+                  </IconButton>
                   <Link
                     href={`https://github.com/${repo?.owner}/${
                       repo?.name
