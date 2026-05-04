@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  Stack,
   TextField,
   Tooltip,
   Typography,
@@ -15,10 +16,133 @@ import { fromPairs } from 'lodash-es'
 import { useFetchEnvironments, type DispatchWorkflow } from '../api/fetchHooks'
 import { useActions, useAppState } from '../store'
 import type { DeploymentDialogState } from '../store'
+import type { RepoModel } from '../state/schemas'
 import { SelectWorkflow } from './SelectWorkflow'
 
 const DEFAULT_RELEASE_KEY = 'ref'
 const DEFAULT_ENVIRONMENT_KEY = 'environment'
+
+export function DeploymentSettingsFields({
+  applicationName,
+  deploymentDialog,
+  disabled = false,
+  repo,
+  updateDialogState,
+}: {
+  applicationName?: string
+  deploymentDialog: DeploymentDialogState
+  disabled?: boolean
+  repo?: RepoModel | null
+  updateDialogState: (update: (state: DeploymentDialogState) => void) => void
+}) {
+  return (
+    <Stack sx={{ gap: 2 }}>
+      <Stack
+        sx={{
+          alignItems: 'center',
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          gap: 2,
+        }}
+      >
+        <Typography component="h3" variant="subtitle1">
+          Deploy workflow settings
+        </Typography>
+        <Tooltip
+          arrow
+          describeChild
+          placement="left"
+          title="Show all workflows and enter input names manually."
+        >
+          <FormControlLabel
+            sx={{
+              m: 0,
+              color: 'text.secondary',
+              '& .MuiFormControlLabel-label': { fontSize: '0.875rem' },
+            }}
+            control={
+              <Checkbox
+                disabled={disabled}
+                size="small"
+                checked={deploymentDialog.manualWorkflowHandling}
+                onChange={(event) =>
+                  updateDialogState((state) =>
+                    updateManualWorkflowHandling(state, event.target.checked)
+                  )
+                }
+                sx={{ p: 0.5 }}
+              />
+            }
+            label="Manual"
+          />
+        </Tooltip>
+      </Stack>
+      <SelectWorkflow
+        applicationName={applicationName}
+        disabled={disabled}
+        workflowId={deploymentDialog.workflowId}
+        manualWorkflowHandling={deploymentDialog.manualWorkflowHandling}
+        repo={repo}
+        onChange={(workflow) =>
+          updateDialogState((state) => selectWorkflow(state, workflow))
+        }
+      />
+      <TextField
+        disabled={disabled}
+        label="Release input name"
+        value={deploymentDialog.releaseKey}
+        onChange={(e) =>
+          updateDialogState(
+            (settings) => (settings.releaseKey = e.target.value)
+          )
+        }
+      />
+      <TextField
+        disabled={disabled}
+        label="Environment input name (optional)"
+        value={deploymentDialog.environmentKey}
+        onChange={(e) =>
+          updateDialogState(
+            (settings) => (settings.environmentKey = e.target.value)
+          )
+        }
+      />
+      <TextField
+        disabled={disabled}
+        label="Run workflow from branch"
+        value={deploymentDialog.ref}
+        onChange={(e) =>
+          updateDialogState((settings) => (settings.ref = e.target.value))
+        }
+      />
+      <Autocomplete
+        disabled={disabled}
+        style={{ gridColumn: '1 / span 5' }}
+        multiple
+        options={[]}
+        freeSolo
+        value={Object.entries(deploymentDialog.extraArgs).map(
+          ([key, value]) => `${key}=${value}`
+        )}
+        renderInput={(params) => (
+          <TextField
+            label="Extra workflow args (press Enter to add)"
+            placeholder="key=value"
+            {...params}
+          />
+        )}
+        onChange={(_, newValue) => {
+          const pairs = newValue
+            .filter((x): x is string => typeof x === 'string')
+            .map((x) => x.split('='))
+            .filter(([key, value]) => key && value)
+          const newArgs = fromPairs(pairs)
+          updateDialogState((settings) => (settings.extraArgs = newArgs))
+        }}
+      />
+    </Stack>
+  )
+}
 
 export const DeploymentDialog = () => {
   const { deploymentDialog } = useAppState()
@@ -43,49 +167,7 @@ export const DeploymentDialog = () => {
             }
           }}
         >
-          <DialogTitle
-            component="div"
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 2,
-            }}
-          >
-            <Typography component="h2" variant="h6">
-              Deploy workflow settings
-            </Typography>
-            <Tooltip
-              arrow
-              describeChild
-              placement="left"
-              title="Show all workflows and enter input names manually."
-            >
-              <FormControlLabel
-                sx={{
-                  m: 0,
-                  color: 'text.secondary',
-                  '& .MuiFormControlLabel-label': { fontSize: '0.875rem' },
-                }}
-                control={
-                  <Checkbox
-                    size="small"
-                    checked={deploymentDialog.manualWorkflowHandling}
-                    onChange={(event) =>
-                      updateDeployWorkflowDialog((state) =>
-                        updateManualWorkflowHandling(
-                          state,
-                          event.target.checked
-                        )
-                      )
-                    }
-                    sx={{ p: 0.5 }}
-                  />
-                }
-                label="Manual"
-              />
-            </Tooltip>
-          </DialogTitle>
+          <DialogTitle>Deploy workflow settings</DialogTitle>
           <DialogContent
             style={{
               display: 'flex',
@@ -94,67 +176,9 @@ export const DeploymentDialog = () => {
               overflow: 'visible',
             }}
           >
-            <SelectWorkflow
-              workflowId={deploymentDialog.workflowId}
-              manualWorkflowHandling={deploymentDialog.manualWorkflowHandling}
-              onChange={(workflow) =>
-                updateDeployWorkflowDialog((state) =>
-                  selectWorkflow(state, workflow)
-                )
-              }
-            />
-            <TextField
-              label="Release input name"
-              value={deploymentDialog.releaseKey}
-              onChange={(e) =>
-                updateDeployWorkflowDialog(
-                  (settings) => (settings.releaseKey = e.target.value)
-                )
-              }
-            />
-            <TextField
-              label="Environment input name (optional)"
-              value={deploymentDialog.environmentKey}
-              onChange={(e) =>
-                updateDeployWorkflowDialog(
-                  (settings) => (settings.environmentKey = e.target.value)
-                )
-              }
-            />
-            <TextField
-              label="Run workflow from branch"
-              value={deploymentDialog.ref}
-              onChange={(e) =>
-                updateDeployWorkflowDialog(
-                  (settings) => (settings.ref = e.target.value)
-                )
-              }
-            />
-            <Autocomplete
-              style={{ gridColumn: '1 / span 5' }}
-              multiple
-              options={[]}
-              freeSolo
-              value={Object.entries(deploymentDialog.extraArgs).map(
-                ([key, value]) => `${key}=${value}`
-              )}
-              renderInput={(params) => (
-                <TextField
-                  label="Extra workflow args (press Enter to add)"
-                  placeholder="key=value"
-                  {...params}
-                />
-              )}
-              onChange={(_, newValue) => {
-                const pairs = newValue
-                  .filter((x): x is string => typeof x === 'string')
-                  .map((x) => x.split('='))
-                  .filter(([key, value]) => key && value)
-                const newArgs = fromPairs(pairs)
-                updateDeployWorkflowDialog(
-                  (settings) => (settings.extraArgs = newArgs)
-                )
-              }}
+            <DeploymentSettingsFields
+              deploymentDialog={deploymentDialog}
+              updateDialogState={updateDeployWorkflowDialog}
             />
           </DialogContent>
           <DialogActions style={{ padding: '2rem' }}>

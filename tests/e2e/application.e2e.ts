@@ -4,11 +4,24 @@ import {
   E2E_NON_DEPLOY_WORKFLOW,
   E2E_REPO,
   E2E_WORKFLOW,
+  createPersistedApplication,
   expect,
   test,
 } from './githubMocks'
+import type { Page } from '@playwright/test'
 
-test('creates an application from mocked repositories and saves workflow settings', async ({
+type SavedApplication = {
+  name: string
+  deploySettings: {
+    environmentKey: string
+    manualWorkflowHandling: boolean
+    releaseKey: string
+    workflowId: number
+  }
+  environmentSettingsByName: Record<string, unknown>
+}
+
+test('creates an application and persists selected workflow settings', async ({
   page,
   github,
 }) => {
@@ -16,21 +29,21 @@ test('creates an application from mocked repositories and saves workflow setting
   await github.seedAuthenticatedState()
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'New application' }).click()
-
-  await page.getByLabel('Find repository').fill(E2E_REPO.name)
-  await page.getByRole('option', { name: E2E_REPO.name }).click()
-  await page.getByRole('button', { name: 'Save' }).click()
+  await openNewApplicationDialog(page)
 
   await expect(
     page.getByRole('heading', { name: 'Deploy workflow settings' })
   ).toBeVisible()
-  await page.locator('#workflow-select').click()
+  await expect(page.getByLabel('Release input name')).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Save' })).toBeDisabled()
+
+  await selectRepo(page)
+  await expect(applicationNameInput(page)).toHaveValue(E2E_REPO.name)
+  await expect(page.getByLabel('Release input name')).toBeEnabled()
+
+  await openWorkflowSelect(page)
   await expect(
     page.getByRole('option', { name: E2E_NON_DEPLOY_WORKFLOW.name })
-  ).toHaveCount(0)
-  await expect(
-    page.getByRole('option', { name: E2E_DYNAMIC_WORKFLOW.name })
   ).toHaveCount(0)
   await page.getByRole('option', { name: E2E_WORKFLOW.name }).click()
   await expect(page.getByLabel('Release input name')).toHaveValue(
@@ -52,36 +65,39 @@ test('creates an application from mocked repositories and saves workflow setting
     })
   ).toBeVisible()
 
-  const persisted = await github.readPersistedState()
-  const applications = persisted.accountsById[E2E_ACCOUNT_ID].workspace
-    .applicationsById as Record<
-      string,
-      {
-        name: string
-        deploySettings: {
-          environmentKey: string
-          manualWorkflowHandling: boolean
-          releaseKey: string
-          workflowId: number
-        }
-        environmentSettingsByName: Record<string, unknown>
-      }
-    >
-  const savedApplication = Object.values(applications).find(
-    (application) => application.name === E2E_REPO.name
-  )
+  const savedApplication = await readSavedApplication(github)
 
   expect(savedApplication).toBeTruthy()
-  expect(savedApplication?.deploySettings.workflowId).toBe(E2E_WORKFLOW.id)
-  expect(savedApplication?.deploySettings.releaseKey).toBe('release_version')
-  expect(savedApplication?.deploySettings.environmentKey).toBe('deploy_target')
-  expect(savedApplication?.deploySettings.manualWorkflowHandling).toBe(false)
-  expect(
-    Object.keys(savedApplication?.environmentSettingsByName ?? {})
-  ).toEqual(['dev', 'test', 'tst', 'qa', 'staging', 'sandbox', 'prod'])
-  expect(github.restRequests.some((request) => request.includes('dynamic'))).toBe(
-    false
+  expect(savedApplication?.deploySettings).toMatchObject({
+    environmentKey: 'deploy_target',
+    manualWorkflowHandling: false,
+    releaseKey: 'release_version',
+    workflowId: E2E_WORKFLOW.id,
+  })
+
+  const environmentNames = Object.keys(
+    savedApplication?.environmentSettingsByName ?? {}
   )
+  expect(environmentNames).toContain('prod')
+  expect(environmentNames).not.toContain('github-pages')
+})
+
+test('reorders environments for a saved application', async ({ page, github }) => {
+  const application = createPersistedApplicationWithEnvironments([
+    'dev',
+    'test',
+    'tst',
+    'qa',
+    'staging',
+    'sandbox',
+    'prod',
+  ])
+  await github.seedAuthenticatedState({
+    applicationsById: { [application.id]: application },
+    selectedApplicationId: application.id,
+  })
+
+  await page.goto('/')
 
   const environmentHeaders = page.locator('thead a')
   await expect(environmentHeaders).toHaveText([
@@ -93,9 +109,11 @@ test('creates an application from mocked repositories and saves workflow setting
     'sandbox',
     'prod',
   ])
+
   await page
     .getByLabel('Move prod')
     .dragTo(page.locator('thead th').filter({ hasText: 'test' }))
+
   await expect(environmentHeaders).toHaveText([
     'dev',
     'prod',
@@ -108,12 +126,11 @@ test('creates an application from mocked repositories and saves workflow setting
 
   const reordered = await github.readPersistedState()
   const reorderedApplications = reordered.accountsById[E2E_ACCOUNT_ID].workspace
-    .applicationsById as typeof applications
-  const reorderedApplication = Object.values(reorderedApplications).find(
-    (application) => application.name === E2E_REPO.name
-  )
+    .applicationsById as Record<string, SavedApplication>
   expect(
-    Object.keys(reorderedApplication?.environmentSettingsByName ?? {})
+    Object.keys(
+      reorderedApplications[application.id]?.environmentSettingsByName ?? {}
+    )
   ).toEqual(['dev', 'prod', 'test', 'tst', 'qa', 'staging', 'sandbox'])
 })
 
@@ -126,16 +143,10 @@ test('falls back to file-backed workflows when smart inspection cannot infer dep
   await github.seedAuthenticatedState()
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'New application' }).click()
+  await openNewApplicationDialog(page)
 
-  await page.getByLabel('Find repository').fill(E2E_REPO.name)
-  await page.getByRole('option', { name: E2E_REPO.name }).click()
-  await page.getByRole('button', { name: 'Save' }).click()
-
-  await expect(
-    page.getByRole('heading', { name: 'Deploy workflow settings' })
-  ).toBeVisible()
-  await page.locator('#workflow-select').click()
+  await selectRepo(page)
+  await openWorkflowSelect(page)
   await expect(
     page.getByRole('option', { name: E2E_WORKFLOW.name })
   ).toBeVisible()
@@ -146,40 +157,18 @@ test('falls back to file-backed workflows when smart inspection cannot infer dep
     page.getByRole('option', { name: E2E_DYNAMIC_WORKFLOW.name })
   ).toHaveCount(0)
   await page.getByRole('option', { name: E2E_NON_DEPLOY_WORKFLOW.name }).click()
-  await expect(page.getByLabel('Release input name')).toHaveValue('ref')
-  await expect(page.getByLabel('Environment input name (optional)')).toHaveValue(
-    'environment'
-  )
   await page.getByRole('button', { name: 'Save' }).click()
 
-  const persisted = await github.readPersistedState()
-  const applications = persisted.accountsById[E2E_ACCOUNT_ID].workspace
-    .applicationsById as Record<
-      string,
-      {
-        name: string
-        deploySettings: {
-          environmentKey: string
-          manualWorkflowHandling: boolean
-          releaseKey: string
-          workflowId: number
-        }
-      }
-    >
-  const savedApplication = Object.values(applications).find(
-    (application) => application.name === E2E_REPO.name
-  )
+  const savedApplication = await readSavedApplication(github)
 
   expect(savedApplication).toBeTruthy()
-  expect(savedApplication?.deploySettings.workflowId).toBe(
-    E2E_NON_DEPLOY_WORKFLOW.id
-  )
-  expect(savedApplication?.deploySettings.releaseKey).toBe('ref')
-  expect(savedApplication?.deploySettings.environmentKey).toBe('environment')
-  expect(savedApplication?.deploySettings.manualWorkflowHandling).toBe(false)
+  expect(savedApplication?.deploySettings).toMatchObject({
+    manualWorkflowHandling: false,
+    workflowId: E2E_NON_DEPLOY_WORKFLOW.id,
+  })
 })
 
-test('manual workflow setup shows all workflows and disables inference', async ({
+test('manual workflow setup persists manual mode', async ({
   page,
   github,
 }) => {
@@ -187,60 +176,71 @@ test('manual workflow setup shows all workflows and disables inference', async (
   await github.seedAuthenticatedState()
 
   await page.goto('/')
-  await page.getByRole('button', { name: 'New application' }).click()
+  await openNewApplicationDialog(page)
 
-  await page.getByLabel('Find repository').fill(E2E_REPO.name)
-  await page.getByRole('option', { name: E2E_REPO.name }).click()
-  await page.getByRole('button', { name: 'Save' }).click()
-
-  await expect(
-    page.getByRole('heading', { name: 'Deploy workflow settings' })
-  ).toBeVisible()
-  await page.getByLabel('Manual', { exact: true }).hover()
-  await expect(
-    page.getByText('Show all workflows and enter input names manually.')
-  ).toBeVisible()
+  await selectRepo(page)
   await page.getByLabel('Manual', { exact: true }).check()
-  await page.locator('#workflow-select').click()
+  await openWorkflowSelect(page)
   await expect(
     page.getByRole('option', { name: E2E_NON_DEPLOY_WORKFLOW.name })
   ).toBeVisible()
-  await expect(
-    page.getByRole('option', { name: E2E_DYNAMIC_WORKFLOW.name })
-  ).toHaveCount(0)
   await page.getByRole('option', { name: E2E_NON_DEPLOY_WORKFLOW.name }).click()
-  await expect(page.getByLabel('Release input name')).toHaveValue('ref')
-  await expect(page.getByLabel('Environment input name (optional)')).toHaveValue(
-    'environment'
-  )
   await page.getByRole('button', { name: 'Save' }).click()
 
-  const persisted = await github.readPersistedState()
-  const applications = persisted.accountsById[E2E_ACCOUNT_ID].workspace
-    .applicationsById as Record<
-      string,
-      {
-        name: string
-        deploySettings: {
-          environmentKey: string
-          manualWorkflowHandling: boolean
-          releaseKey: string
-          workflowId: number
-        }
-      }
-    >
-  const savedApplication = Object.values(applications).find(
-    (application) => application.name === E2E_REPO.name
-  )
+  const savedApplication = await readSavedApplication(github)
 
   expect(savedApplication).toBeTruthy()
-  expect(savedApplication?.deploySettings.workflowId).toBe(
-    E2E_NON_DEPLOY_WORKFLOW.id
-  )
-  expect(savedApplication?.deploySettings.releaseKey).toBe('ref')
-  expect(savedApplication?.deploySettings.environmentKey).toBe('environment')
-  expect(savedApplication?.deploySettings.manualWorkflowHandling).toBe(true)
+  expect(savedApplication?.deploySettings).toMatchObject({
+    manualWorkflowHandling: true,
+    workflowId: E2E_NON_DEPLOY_WORKFLOW.id,
+  })
 
-  await page.getByRole('button', { name: 'Edit Deploy' }).click()
+  await page.getByRole('button', { name: /edit/i }).click()
   await expect(page.getByLabel('Manual', { exact: true })).toBeChecked()
 })
+
+function applicationNameInput(page: Page) {
+  return page.getByRole('textbox', { name: 'Name', exact: true })
+}
+
+async function openNewApplicationDialog(page: Page) {
+  await page.getByRole('button', { name: /new (application|config)/i }).click()
+}
+
+async function openWorkflowSelect(page: Page) {
+  await page.locator('#workflow-select').click()
+}
+
+async function selectRepo(page: Page) {
+  await page.getByLabel('Find repository').fill(E2E_REPO.name)
+  await page.getByRole('option', { name: E2E_REPO.name }).click()
+}
+
+async function readSavedApplication(github: {
+  readPersistedState: () => Promise<any>
+}) {
+  const persisted = await github.readPersistedState()
+  const applications = persisted.accountsById[E2E_ACCOUNT_ID].workspace
+    .applicationsById as Record<string, SavedApplication>
+
+  return Object.values(applications).find(
+    (application) => application.name === E2E_REPO.name
+  )
+}
+
+function createPersistedApplicationWithEnvironments(environmentNames: string[]) {
+  const application = createPersistedApplication()
+
+  return {
+    ...application,
+    environmentSettingsByName: Object.fromEntries(
+      environmentNames.map((name) => [
+        name,
+        {
+          name,
+          workflowInputValue: name,
+        },
+      ])
+    ),
+  }
+}

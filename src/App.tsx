@@ -17,9 +17,7 @@ import {
   EditApplicationDialog,
   NewApplicationDialog,
 } from './components/ApplicationDialog'
-import { DeploymentDialog } from './components/DeploymentDialog'
 import { EnvironmentsView } from './components/EnvironmentsView'
-import { ManageApplicationsView } from './components/ManageApplicationsView'
 import { ReleasesTableView } from './components/ReleasesTableView'
 import { SettingsDialog } from './components/SettingsDialog'
 import WorkflowInfoView from './components/WorkflowInfoView'
@@ -87,7 +85,6 @@ const App = () => {
             {hasActiveAccountToken ? (
               <>
                 <RepoPreloader />
-                <ManageApplicationsView />
                 <ApplicationWorkspace>
                   <EnvironmentsView />
                   <WorkflowInfoView />
@@ -95,7 +92,6 @@ const App = () => {
                 </ApplicationWorkspace>
                 <NewApplicationDialog />
                 <EditApplicationDialog />
-                <DeploymentDialog />
               </>
             ) : (
               <Typography color="text.secondary">

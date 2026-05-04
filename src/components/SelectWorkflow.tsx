@@ -10,6 +10,7 @@ import type { FormControlProps } from '@mui/material'
 import { useFetchWorkflows } from '../api/fetchHooks'
 import type { DispatchWorkflow } from '../api/fetchHooks'
 import { useAppState } from '../store'
+import type { RepoModel } from '../state/schemas'
 import { CredentialErrorAlert } from './CredentialErrorAlert'
 
 enum WorkflowRelevance {
@@ -20,31 +21,38 @@ enum WorkflowRelevance {
 }
 
 export function SelectWorkflow({
+  applicationName,
+  disabled,
   workflowId,
   manualWorkflowHandling,
   onChange,
+  repo,
   FormControlProps = {},
 }: {
+  applicationName?: string
+  disabled?: boolean
   workflowId: number
   manualWorkflowHandling?: boolean
   onChange: (workflow: DispatchWorkflow | null) => void
+  repo?: RepoModel | null
   FormControlProps?: FormControlProps
 }) {
-  const workflows = useFetchWorkflows({ manualWorkflowHandling })
+  const workflows = useFetchWorkflows({ manualWorkflowHandling, repo })
   const { selectedApplication } = useAppState()
-
-  if (!selectedApplication) return null
 
   if (workflows.error) {
     return <CredentialErrorAlert title="Could not load workflows" />
   }
 
+  const workflowApplicationName = applicationName ?? selectedApplication?.name
   const workflowsSorted = (workflows.data ?? []).orderBy(
     [
       (workflow) => {
+        if (!workflowApplicationName) return WorkflowRelevance.None
+
         const containsName = workflow.name
           .toLowerCase()
-          .includes(selectedApplication.name.toLowerCase().split(' ')[0])
+          .includes(workflowApplicationName.toLowerCase().split(' ')[0])
         const containsDeploy = workflow.name.toLowerCase().includes('deploy')
         return containsDeploy && containsName
           ? WorkflowRelevance.NameAndDeploy
@@ -59,14 +67,14 @@ export function SelectWorkflow({
     ['desc', 'asc']
   )
   return (
-    <FormControl variant="outlined" {...FormControlProps}>
+    <FormControl variant="outlined" disabled={disabled} {...FormControlProps}>
       <InputLabel id="workflow-select-label">Workflow</InputLabel>
       <Select
         labelId="workflow-select-label"
         id="workflow-select"
         value={workflowId}
         label="Workflow"
-        disabled={workflows.isLoading}
+        disabled={disabled || workflows.isLoading}
         displayEmpty
         renderValue={(selectedWorkflowId) =>
           workflows.isLoading ? (

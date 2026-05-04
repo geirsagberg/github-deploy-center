@@ -11,6 +11,7 @@ import type {
   PendingDeployment,
   RepoModel,
 } from '../state/schemas'
+import { createDeploySettings } from '../state/schemas'
 
 export interface ReleaseModel {
   id: string
@@ -35,13 +36,18 @@ export type ApplicationDialogState = {
   repo: RepoModel | null
   name: string
   releaseFilter: string
+  deploySettings: DeploySettings
   warning?: string
 }
 
-export const createApplicationDialogState = (): ApplicationDialogState => ({
-  name: '',
+export const createApplicationDialogState = (
+  repo: RepoModel | null = null,
+  deploySettings = createDeploySettings({ ref: repo?.defaultBranch ?? '' })
+): ApplicationDialogState => ({
+  name: repo?.name ?? '',
   releaseFilter: '',
-  repo: null,
+  repo,
+  deploySettings,
 })
 
 export type EnvironmentDialogState = {

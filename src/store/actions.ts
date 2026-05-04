@@ -211,12 +211,10 @@ export const setAppSetting = <Key extends keyof AppSettings>(
 }
 
 export const showNewApplicationModal = () => {
-  appState.newApplicationDialog = createApplicationDialogState()
-
   const selectedApplication = getSelectedApplication(appState)
-  if (selectedApplication) {
-    appState.newApplicationDialog.repo = clone(selectedApplication.repo)
-  }
+  appState.newApplicationDialog = createApplicationDialogState(
+    selectedApplication ? clone(selectedApplication.repo) : null
+  )
 }
 
 export const updateDeployWorkflowDialog = (
@@ -289,10 +287,14 @@ export const triggerDeployment = async ({
 }
 
 export const createNewApplication = ({
+  deploySettings,
+  githubEnvironments,
   repo,
   name,
   releaseFilter,
 }: {
+  deploySettings: DeploySettings
+  githubEnvironments: GitHubEnvironment[]
   repo: RepoModel
   name: string
   releaseFilter: string
@@ -314,10 +316,14 @@ export const createNewApplication = ({
     applicationName,
     releaseFilter
   )
+  appConfig.deploySettings = clone(deploySettings)
+  appConfig.environmentSettingsByName = mergeGitHubEnvironments(
+    appConfig.environmentSettingsByName,
+    githubEnvironments
+  )
   workspace.applicationsById[appConfig.id] = appConfig
   workspace.selectedApplicationId = appConfig.id
   delete appState.newApplicationDialog
-  actions.editDeployment()
 }
 
 export const cancelNewApplication = () => {
@@ -329,18 +335,21 @@ export const selectApplication = (id: string) => {
 }
 
 export const editApplication = () => {
-  appState.editApplicationDialog = createApplicationDialogState()
   if (appState.selectedApplication) {
-    appState.editApplicationDialog.repo = clone(appState.selectedApplication.repo)
+    appState.editApplicationDialog = createApplicationDialogState(
+      clone(appState.selectedApplication.repo),
+      clone(appState.selectedApplication.deploySettings)
+    )
     appState.editApplicationDialog.name = appState.selectedApplication.name
     appState.editApplicationDialog.releaseFilter =
       appState.selectedApplication.releaseFilter
+  } else {
+    appState.editApplicationDialog = createApplicationDialogState()
   }
 }
 
 export const editDeployment = () => {
-  const deploySettings = appState.selectedApplication?.deploySettings
-  appState.deploymentDialog = clone(deploySettings)
+  editApplication()
 }
 
 export const saveDeployment = (githubEnvironments: GitHubEnvironment[] = []) => {
@@ -364,10 +373,14 @@ export const cancelEditApplication = () => {
 }
 
 export const saveApplication = ({
+  deploySettings,
+  githubEnvironments,
   repo,
   name,
   releaseFilter,
 }: {
+  deploySettings: DeploySettings
+  githubEnvironments: GitHubEnvironment[]
   repo: RepoModel
   name: string
   releaseFilter: string
@@ -392,6 +405,11 @@ export const saveApplication = ({
 
   application.repo = clone(repo)
   application.name = applicationName
+  application.deploySettings = clone(deploySettings)
+  application.environmentSettingsByName = mergeGitHubEnvironments(
+    application.environmentSettingsByName,
+    githubEnvironments
+  )
   application.releaseFilter = releaseFilter
   delete appState.editApplicationDialog
 }

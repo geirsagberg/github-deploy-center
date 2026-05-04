@@ -1,20 +1,25 @@
 import {
   Box,
+  Button,
   ButtonBase,
   Icon,
   IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Tooltip,
   Typography,
 } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { orderBy } from 'lodash-es'
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
+import { useState } from 'react'
 import { useFetchApplicationReleases } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
-import type { ApplicationConfig } from '../state/schemas'
-import type { PendingDeployment } from '../state/schemas'
-import { getDeploymentId, useActions, useAppState } from '../store'
+import type { ApplicationConfig, PendingDeployment } from '../state/schemas'
 import type { ReleaseModel } from '../store'
+import { getDeploymentId, useActions, useAppState } from '../store'
 import { getDeploymentState, getVisibleDeployment } from './ReleasesTableView'
 
 type ApplicationWorkspaceProps = {
@@ -24,9 +29,11 @@ type ApplicationWorkspaceProps = {
 type ApplicationWorkspaceViewProps = ApplicationWorkspaceProps & {
   applicationsById: Record<string, ApplicationConfig>
   selectedApplicationId: string
+  showNewApplicationModal: () => void
   selectApplication: (applicationId: string) => void
   editApplication: () => void
-  editDeployment: () => void
+  exportApplications: () => void | Promise<unknown>
+  importApplications: () => void | Promise<unknown>
   environmentStatusesByApplicationId?: EnvironmentStatusesByApplicationId
 }
 
@@ -74,15 +81,21 @@ const upToDateDeploymentStates = new Set<DeploymentState>([
   DeploymentState.Success,
 ])
 
-export const ApplicationWorkspace = ({ children }: ApplicationWorkspaceProps) => {
+export const ApplicationWorkspace = ({
+  children,
+}: ApplicationWorkspaceProps) => {
+  const { applicationsById, pendingDeployments, selectedApplicationId } =
+    useAppState()
   const {
-    applicationsById,
-    pendingDeployments,
-    selectedApplicationId,
-  } = useAppState()
-  const { selectApplication, editApplication, editDeployment } = useActions()
+    editApplication,
+    exportApplications,
+    importApplications,
+    selectApplication,
+    showNewApplicationModal,
+  } = useActions()
   const applications = getSortedApplications(applicationsById)
-  const releaseQueriesByApplicationId = useFetchApplicationReleases(applications)
+  const releaseQueriesByApplicationId =
+    useFetchApplicationReleases(applications)
   const environmentStatusesByApplicationId = Object.fromEntries(
     applications.map((application) => [
       application.id,
@@ -91,17 +104,19 @@ export const ApplicationWorkspace = ({ children }: ApplicationWorkspaceProps) =>
         pendingDeployments,
         releases: releaseQueriesByApplicationId[application.id]?.data ?? [],
       }),
-    ])
+    ]),
   )
 
   return (
     <ApplicationWorkspaceView
       applicationsById={applicationsById}
       environmentStatusesByApplicationId={environmentStatusesByApplicationId}
+      exportApplications={exportApplications}
+      importApplications={importApplications}
       selectedApplicationId={selectedApplicationId}
+      showNewApplicationModal={showNewApplicationModal}
       selectApplication={selectApplication}
       editApplication={editApplication}
-      editDeployment={editDeployment}
     >
       {children}
     </ApplicationWorkspaceView>
@@ -111,18 +126,18 @@ export const ApplicationWorkspace = ({ children }: ApplicationWorkspaceProps) =>
 export function ApplicationWorkspaceView({
   applicationsById,
   children,
+  exportApplications,
+  importApplications,
   selectedApplicationId,
+  showNewApplicationModal,
   selectApplication,
   editApplication,
-  editDeployment,
   environmentStatusesByApplicationId = {},
 }: ApplicationWorkspaceViewProps) {
   const theme = useTheme()
   const applications = getSortedApplications(applicationsById)
   const selectedApplication =
     applicationsById[selectedApplicationId] ?? applications[0]
-
-  if (!applications.length) return children
 
   return (
     <Box
@@ -146,6 +161,11 @@ export function ApplicationWorkspaceView({
           },
         }}
       >
+        <ApplicationManagementActions
+          exportApplications={exportApplications}
+          importApplications={importApplications}
+          showNewApplicationModal={showNewApplicationModal}
+        />
         {applications.map((application, index) => (
           <ApplicationNavigationButton
             application={application}
@@ -178,58 +198,98 @@ export function ApplicationWorkspaceView({
                 {formatRepo(selectedApplication)} on{' '}
                 {selectedApplication.deploySettings.ref}
               </Typography>
-              <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
-                {getEnvironmentNames(selectedApplication).map(
-                  (environmentName) => (
-                    <Box
-                      key={environmentName}
-                      sx={{
-                        px: 1,
-                        py: 0.35,
-                        borderRadius: 1,
-                        color: '#d9f8ff',
-                        border: `1px solid ${alpha('#73c9f5', 0.35)}`,
-                        background: alpha('#73c9f5', 0.1),
-                        fontSize: '0.8rem',
-                      }}
-                    >
-                      {environmentName}
-                    </Box>
-                  )
-                )}
-              </Box>
             </Box>
-            <Box sx={{ display: 'flex', gap: 0.5 }}>
-              <Tooltip title="Edit app settings">
-                <span>
-                  <IconButton
-                    aria-label="Edit App"
-                    color="secondary"
-                    onClick={editApplication}
-                    disabled={!selectedApplication}
-                  >
-                    <Icon>tune</Icon>
-                  </IconButton>
-                </span>
-              </Tooltip>
-              <Tooltip title="Edit deploy settings">
-                <span>
-                  <IconButton
-                    aria-label="Edit Deploy"
-                    color="secondary"
-                    onClick={editDeployment}
-                    disabled={!selectedApplication}
-                  >
-                    <Icon>rocket_launch</Icon>
-                  </IconButton>
-                </span>
-              </Tooltip>
-            </Box>
+            <Button
+              variant="outlined"
+              startIcon={<Icon>edit</Icon>}
+              onClick={editApplication}
+              disabled={!selectedApplication}
+            >
+              Edit
+            </Button>
           </Box>
         ) : null}
 
         {children}
       </Box>
+    </Box>
+  )
+}
+
+function ApplicationManagementActions({
+  exportApplications,
+  importApplications,
+  showNewApplicationModal,
+}: {
+  exportApplications: () => void | Promise<unknown>
+  importApplications: () => void | Promise<unknown>
+  showNewApplicationModal: () => void
+}) {
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
+  const menuOpen = !!menuAnchor
+
+  const handleMenuOpen = (event: MouseEvent<HTMLButtonElement>) => {
+    setMenuAnchor(event.currentTarget)
+  }
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null)
+  }
+
+  const handleExport = () => {
+    handleMenuClose()
+    void exportApplications()
+  }
+
+  const handleImport = () => {
+    handleMenuClose()
+    void importApplications()
+  }
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
+      <Button
+        fullWidth
+        variant="contained"
+        color="primary"
+        startIcon={<Icon>add</Icon>}
+        onClick={showNewApplicationModal}
+        sx={{ justifyContent: 'flex-start' }}
+      >
+        New Config
+      </Button>
+      <Tooltip title="Application actions">
+        <IconButton
+          aria-label="Application actions"
+          aria-controls={menuOpen ? 'application-actions-menu' : undefined}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen ? 'true' : undefined}
+          onClick={handleMenuOpen}
+        >
+          <Icon>more_vert</Icon>
+        </IconButton>
+      </Tooltip>
+      <Menu
+        id="application-actions-menu"
+        anchorEl={menuAnchor}
+        open={menuOpen}
+        onClose={handleMenuClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <MenuItem onClick={handleExport}>
+          <ListItemIcon>
+            <Icon fontSize="small">download</Icon>
+          </ListItemIcon>
+          <ListItemText primary="Export" />
+        </MenuItem>
+        <MenuItem onClick={handleImport}>
+          <ListItemIcon>
+            <Icon fontSize="small">upload</Icon>
+          </ListItemIcon>
+          <ListItemText primary="Import" />
+        </MenuItem>
+      </Menu>
     </Box>
   )
 }
@@ -377,7 +437,7 @@ export function getApplicationEnvironmentStatuses({
       }
 
       return [environmentName, 'outdated']
-    })
+    }),
   ) as Record<string, EnvironmentDeployStatus>
 }
 
@@ -393,18 +453,19 @@ function getLatestDeploymentForEnvironment({
   releases: ReleaseModel[]
 }) {
   for (const release of releases) {
-    const pendingDeployment = pendingDeployments[
-      getDeploymentId({
-        environment: environmentName,
-        owner: application.repo.owner,
-        release: release.tagName,
-        repo: application.repo.name,
-      })
-    ]
+    const pendingDeployment =
+      pendingDeployments[
+        getDeploymentId({
+          environment: environmentName,
+          owner: application.repo.owner,
+          release: release.tagName,
+          repo: application.repo.name,
+        })
+      ]
     const deployment = getVisibleDeployment(
       release.deployments,
       environmentName,
-      pendingDeployment
+      pendingDeployment,
     )
     const deploymentState = getDeploymentState({
       deployment,
@@ -427,30 +488,30 @@ function formatRepo(application: ApplicationConfig) {
 }
 
 function getSortedApplications(
-  applicationsById: Record<string, ApplicationConfig>
+  applicationsById: Record<string, ApplicationConfig>,
 ) {
   return Object.values(applicationsById).sort((left, right) =>
-    left.name.localeCompare(right.name)
+    left.name.localeCompare(right.name),
   )
 }
 
 function getSortedReleases(
   application: ApplicationConfig,
-  releases: ReleaseModel[]
+  releases: ReleaseModel[],
 ) {
   return orderBy(
     releases
       .slice()
       .sort((a, b) =>
-        b.tagName.localeCompare(a.tagName, undefined, { numeric: true })
+        b.tagName.localeCompare(a.tagName, undefined, { numeric: true }),
       )
       .filter((release) =>
         release.name
           .toLowerCase()
-          .startsWith(application.releaseFilter.toLowerCase())
+          .startsWith(application.releaseFilter.toLowerCase()),
       ),
     (release) => release.createdAt,
-    'desc'
+    'desc',
   )
 }
 

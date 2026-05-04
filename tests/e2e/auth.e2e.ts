@@ -17,7 +17,7 @@ test('first-run setup validates a fake PAT through the mocked GitHub API', async
   await page.getByRole('button', { name: 'Add account' }).click()
 
   await expect(
-    page.getByRole('button', { name: 'New application' })
+    page.getByRole('button', { name: /new (application|config)/i })
   ).toBeVisible()
   expect(github.operationCount('githubIdentity')).toBe(1)
   await expect
@@ -37,7 +37,7 @@ test('authenticated state skips setup and preloads repositories', async ({
     page.getByRole('heading', { name: 'Add your GitHub account' })
   ).toBeHidden()
   await expect(
-    page.getByRole('button', { name: 'New application' })
+    page.getByRole('button', { name: /new (application|config)/i })
   ).toBeVisible()
   await expect
     .poll(() => github.operationCount('fetchReposWithWriteAccess'))

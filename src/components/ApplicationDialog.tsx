@@ -6,17 +6,24 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   Stack,
   TextField,
 } from '@mui/material'
 import { orderBy } from 'lodash-es'
 import type { FC } from 'react'
-import { useFetchRepos } from '../api/fetchHooks'
+import { useFetchEnvironments, useFetchRepos } from '../api/fetchHooks'
 import { useActions, useAppState } from '../store'
 import type { ApplicationDialogState } from '../store'
-import type { RepoModel } from '../state/schemas'
+import { createDeploySettings } from '../state/schemas'
+import type {
+  DeploySettings,
+  GitHubEnvironment,
+  RepoModel,
+} from '../state/schemas'
 import { theme } from '../theme'
 import { CredentialErrorAlert } from './CredentialErrorAlert'
+import { DeploymentSettingsFields } from './DeploymentDialog'
 import Expander from './Expander'
 import { RepoSearchBox } from './RepoSearchView'
 
@@ -27,31 +34,44 @@ export const ApplicationDialog: FC<{
   onSave: ({
     repo,
     name,
+    deploySettings,
+    githubEnvironments,
     releaseFilter,
   }: {
     repo: RepoModel
     name: string
+    deploySettings: DeploySettings
+    githubEnvironments: GitHubEnvironment[]
     releaseFilter: string
   }) => void
   onCancel: () => void
 }> = ({ dialogState, newOrEdit, title, onSave, onCancel }) => {
   const repoQuery = useFetchRepos()
+  const environments = useFetchEnvironments(dialogState?.repo ?? null)
   const { data, error } = repoQuery
   const { updateApplicationDialog, deleteApplication } = useActions()
   const updateDialogState = (update: (state: ApplicationDialogState) => void) =>
     updateApplicationDialog({ newOrEdit, update })
   const options = orderBy(data ?? [], (d) => d.owner.toLowerCase())
   const repoStatusText = getRepoStatusText(repoQuery)
+  const canSave =
+    !!dialogState?.repo &&
+    isDeploySettingsValid(dialogState.deploySettings) &&
+    !dialogState.warning
+
   return (
     <Dialog open={!!dialogState} fullWidth onClose={onCancel}>
       {dialogState ? (
         <form
           onSubmit={(event) => {
             event.preventDefault()
-            dialogState.repo &&
+            canSave &&
+              dialogState.repo &&
               onSave({
                 repo: dialogState.repo,
                 name: dialogState.name,
+                deploySettings: dialogState.deploySettings,
+                githubEnvironments: environments.data ?? [],
                 releaseFilter: dialogState.releaseFilter,
               })
           }}
@@ -81,7 +101,7 @@ export const ApplicationDialog: FC<{
                     options={options}
                     selectedRepo={dialogState.repo}
                     setSelectedRepo={(repo) =>
-                      updateDialogState((state) => (state.repo = repo))
+                      updateDialogState((state) => selectRepo(state, repo))
                     }
                   />
                   <TextField
@@ -141,6 +161,28 @@ export const ApplicationDialog: FC<{
                   </Box>
                 </Stack>
 
+                <Divider sx={{ my: 1 }} />
+
+                <Box
+                  aria-disabled={!dialogState.repo}
+                  sx={{
+                    opacity: dialogState.repo ? 1 : 0.56,
+                    pointerEvents: dialogState.repo ? 'auto' : 'none',
+                  }}
+                >
+                  <DeploymentSettingsFields
+                    applicationName={dialogState.name}
+                    deploymentDialog={dialogState.deploySettings}
+                    disabled={!dialogState.repo}
+                    repo={dialogState.repo}
+                    updateDialogState={(update) =>
+                      updateDialogState((state) =>
+                        update(state.deploySettings)
+                      )
+                    }
+                  />
+                </Box>
+
                 {dialogState.warning && (
                   <Box sx={{ mt: 2 }}>
                     <Alert severity="warning">{dialogState.warning}</Alert>
@@ -162,7 +204,7 @@ export const ApplicationDialog: FC<{
               <Expander />
               <Button
                 type="submit"
-                disabled={!dialogState.repo || !!dialogState.warning}
+                disabled={!canSave}
                 variant="contained"
                 color="primary"
               >
@@ -198,6 +240,32 @@ function getRepoStatusText({
 
 function formatRepoCount(loadedCount: number, totalCount?: number) {
   return totalCount ? `${loadedCount} of ${totalCount}` : `${loadedCount}`
+}
+
+function selectRepo(state: ApplicationDialogState, repo: RepoModel | null) {
+  const previousRepo = state.repo
+  state.repo = repo
+
+  if (!repo) {
+    state.deploySettings = createDeploySettings({ ref: '' })
+    return
+  }
+
+  if (!state.name.trim() || state.name === previousRepo?.name) {
+    state.name = repo.name
+  }
+
+  if (previousRepo?.id !== repo.id || !state.deploySettings.ref) {
+    state.deploySettings = createDeploySettings({ ref: repo.defaultBranch })
+  }
+}
+
+function isDeploySettingsValid({
+  releaseKey,
+  ref,
+  workflowId,
+}: DeploySettings) {
+  return Boolean(workflowId && releaseKey && ref)
 }
 
 export const NewApplicationDialog = () => {

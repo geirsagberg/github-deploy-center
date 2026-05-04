@@ -223,13 +223,16 @@ export type DispatchWorkflow = Workflow & {
 
 export const useFetchWorkflows = ({
   manualWorkflowHandling,
+  repo: repoOverride,
 }: {
   manualWorkflowHandling?: boolean
+  repo?: RepoModel | null
 } = {}) => {
   const { activeAccountId, token, selectedApplication } = useAppState()
   const scope = getGitHubQueryScope({ activeAccountId, token })
 
-  const repo = selectedApplication?.repo
+  const repo =
+    repoOverride === undefined ? selectedApplication?.repo : repoOverride
   const useManualWorkflowHandling =
     manualWorkflowHandling ??
     selectedApplication?.deploySettings.manualWorkflowHandling ??
@@ -238,7 +241,7 @@ export const useFetchWorkflows = ({
   const { data, isLoading, error } = useQuery({
     queryKey: githubQueryKeys.workflows(
       scope,
-      repo,
+      repo ?? undefined,
       useManualWorkflowHandling
     ),
     enabled: !!token && !!repo,
@@ -434,14 +437,17 @@ export const useFetchWorkflowRuns = (): UseQueryResult<
   })
 }
 
-export const useFetchEnvironments = (): UseQueryResult<GitHubEnvironment[]> => {
+export const useFetchEnvironments = (
+  repoOverride?: RepoModel | null
+): UseQueryResult<GitHubEnvironment[]> => {
   const { activeAccountId, token, selectedApplication } = useAppState()
   const scope = getGitHubQueryScope({ activeAccountId, token })
 
-  const repo = selectedApplication?.repo
+  const repo =
+    repoOverride === undefined ? selectedApplication?.repo : repoOverride
 
   return useQuery({
-    queryKey: githubQueryKeys.environments(scope, repo),
+    queryKey: githubQueryKeys.environments(scope, repo ?? undefined),
     enabled: !!token && !!repo,
     queryFn: async ({ signal }) => {
       if (!token || !repo) return []

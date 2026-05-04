@@ -24,11 +24,13 @@ describe('ApplicationWorkspaceView', () => {
       <ApplicationWorkspaceView
         applicationsById={applicationsById}
         selectedApplicationId="api"
+        showNewApplicationModal={() => {}}
         selectApplication={(applicationId) =>
           selectedApplicationIds.push(applicationId)
         }
         editApplication={() => {}}
-        editDeployment={() => {}}
+        exportApplications={() => {}}
+        importApplications={() => {}}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
@@ -43,26 +45,29 @@ describe('ApplicationWorkspaceView', () => {
     expect(selectedApplicationIds).toEqual(['checkout'])
   })
 
-  test('keeps application and deploy edit actions available', async () => {
+  test('opens merged app and deploy settings from one edit action', async () => {
     const actions: string[] = []
     const user = userEvent.setup()
 
-    const { getByRole } = render(
+    const { getByRole, queryByRole } = render(
       <ApplicationWorkspaceView
         applicationsById={applicationsById}
         selectedApplicationId="api"
+        showNewApplicationModal={() => {}}
         selectApplication={() => {}}
-        editApplication={() => actions.push('app')}
-        editDeployment={() => actions.push('deploy')}
+        editApplication={() => actions.push('edit')}
+        exportApplications={() => {}}
+        importApplications={() => {}}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
     )
 
-    await user.click(getByRole('button', { name: 'Edit App' }))
-    await user.click(getByRole('button', { name: 'Edit Deploy' }))
+    await user.click(getByRole('button', { name: /edit/i }))
 
-    expect(actions).toEqual(['app', 'deploy'])
+    expect(actions).toEqual(['edit'])
+    expect(queryByRole('button', { name: 'Edit App' })).toBeNull()
+    expect(queryByRole('button', { name: 'Edit Deploy' })).toBeNull()
   })
 
   test('does not show prototype labels', () => {
@@ -70,9 +75,11 @@ describe('ApplicationWorkspaceView', () => {
       <ApplicationWorkspaceView
         applicationsById={applicationsById}
         selectedApplicationId="api"
+        showNewApplicationModal={() => {}}
         selectApplication={() => {}}
         editApplication={() => {}}
-        editDeployment={() => {}}
+        exportApplications={() => {}}
+        importApplications={() => {}}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
@@ -95,9 +102,11 @@ describe('ApplicationWorkspaceView', () => {
           },
         }}
         selectedApplicationId="api"
+        showNewApplicationModal={() => {}}
         selectApplication={() => {}}
         editApplication={() => {}}
-        editDeployment={() => {}}
+        exportApplications={() => {}}
+        importApplications={() => {}}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
@@ -109,6 +118,82 @@ describe('ApplicationWorkspaceView', () => {
     await user.hover(getByLabelText('prod is failed'))
 
     expect(await findByText('prod: failed')).toBeTruthy()
+  })
+
+  test('puts new application and import/export actions at the top of the sidebar', async () => {
+    const actions: string[] = []
+    const user = userEvent.setup()
+
+    const { getByLabelText, getByRole } = render(
+      <ApplicationWorkspaceView
+        applicationsById={applicationsById}
+        selectedApplicationId="api"
+        showNewApplicationModal={() => actions.push('new')}
+        selectApplication={() => {}}
+        editApplication={() => {}}
+        exportApplications={() => actions.push('export')}
+        importApplications={() => actions.push('import')}
+      >
+        <div>Deployments</div>
+      </ApplicationWorkspaceView>
+    )
+
+    const sidebar = getByLabelText('Applications')
+    const newApplicationButton = within(sidebar).getByRole('button', {
+      name: /new (application|config)/i,
+    })
+    const firstApplicationButton = within(sidebar).getByRole('button', {
+      name: /switch to api/i,
+    })
+
+    expect(
+      !!(
+        newApplicationButton.compareDocumentPosition(firstApplicationButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+      )
+    ).toBe(true)
+
+    await user.click(newApplicationButton)
+    await user.click(
+      within(sidebar).getByRole('button', { name: /application actions/i })
+    )
+    await user.click(getByRole('menuitem', { name: /export/i }))
+    await user.click(
+      within(sidebar).getByRole('button', { name: /application actions/i })
+    )
+    await user.click(getByRole('menuitem', { name: /import/i }))
+
+    expect(actions).toEqual(['new', 'export', 'import'])
+  })
+
+  test('keeps new application available when no applications exist', async () => {
+    const actions: string[] = []
+    const user = userEvent.setup()
+
+    const { getByLabelText, getByRole } = render(
+      <ApplicationWorkspaceView
+        applicationsById={{}}
+        selectedApplicationId=""
+        showNewApplicationModal={() => actions.push('new')}
+        selectApplication={() => {}}
+        editApplication={() => {}}
+        exportApplications={() => actions.push('export')}
+        importApplications={() => actions.push('import')}
+      >
+        <div>Deployments</div>
+      </ApplicationWorkspaceView>
+    )
+
+    const sidebar = getByLabelText('Applications')
+    await user.click(
+      within(sidebar).getByRole('button', { name: /new (application|config)/i })
+    )
+    await user.click(
+      within(sidebar).getByRole('button', { name: /application actions/i })
+    )
+    await user.click(getByRole('menuitem', { name: /import/i }))
+
+    expect(actions).toEqual(['new', 'import'])
   })
 })
 
