@@ -8,6 +8,7 @@ const AddEnvironmentDialog = () => {
     useActions()
   return (
     <EnvironmentDialog
+      autoMapWorkflowInputValue
       dialogState={addEnvironmentDialog}
       onCancel={cancelAddEnvironment}
       onSave={addEnvironment}

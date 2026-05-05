@@ -4,6 +4,7 @@ import {
   editEnvironmentSettings,
   mergeGitHubEnvironments,
   reorderEnvironmentSettings,
+  resolveEnvironmentWorkflowInputValue,
   sortEnvironments,
 } from '../../src/state/environments'
 import type { EnvironmentSettings } from '../../src/state/schemas'
@@ -63,10 +64,61 @@ describe('environment ordering', () => {
         { name: 'dev' },
         { name: 'prod' },
       ],
+      ['dev', 'qa', 'prod'],
     )
 
     expect(Object.keys(merged)).toEqual(['dev', 'qa', 'prod'])
     expect(merged.prod.workflowInputValue).toBe('production')
+  })
+
+  test('skips preregistration when workflow choices are unavailable', () => {
+    const merged = mergeGitHubEnvironments(
+      {
+        prod: settings('prod', 'production'),
+      },
+      [{ name: 'dev' }, { name: 'prod' }],
+      undefined,
+    )
+
+    expect(merged).toEqual({
+      prod: settings('prod', 'production'),
+    })
+  })
+
+  test('maps GitHub environments from exact and unambiguous choice matches', () => {
+    const merged = mergeGitHubEnvironments(
+      {},
+      [
+        { name: 'prod' },
+        { name: 'uidp-dev' },
+        { name: 'uidp-ops' },
+        { name: 'github-pages' },
+      ],
+      ['dev', 'prod'],
+    )
+
+    expect(merged).toEqual({
+      'uidp-dev': settings('uidp-dev', 'dev'),
+      prod: settings('prod', ''),
+    })
+  })
+
+  test('resolves exact, partial, ambiguous, and missing choice matches', () => {
+    expect(resolveEnvironmentWorkflowInputValue('prod', ['dev', 'prod'])).toBe(
+      '',
+    )
+    expect(
+      resolveEnvironmentWorkflowInputValue('uidp-dev', ['dev', 'prod']),
+    ).toBe('dev')
+    expect(
+      resolveEnvironmentWorkflowInputValue('uidp-dev', ['uidp', 'dev']),
+    ).toBeUndefined()
+    expect(
+      resolveEnvironmentWorkflowInputValue('uidp-ops', ['dev', 'prod']),
+    ).toBeUndefined()
+    expect(
+      resolveEnvironmentWorkflowInputValue('uidp-dev', undefined),
+    ).toBeUndefined()
   })
 
   test('sorts manually added environments', () => {

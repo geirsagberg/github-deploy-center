@@ -14,13 +14,9 @@ import { orderBy } from 'lodash-es'
 import type { FC } from 'react'
 import { useFetchEnvironments, useFetchRepos } from '../api/fetchHooks'
 import { useActions, useAppState } from '../store'
-import type { ApplicationDialogState } from '../store'
+import type { ApplicationDialogState, DeploymentDialogState } from '../store'
 import { createDeploySettings } from '../state/schemas'
-import type {
-  DeploySettings,
-  GitHubEnvironment,
-  RepoModel,
-} from '../state/schemas'
+import type { GitHubEnvironment, RepoModel } from '../state/schemas'
 import { theme } from '../theme'
 import { CredentialErrorAlert } from './CredentialErrorAlert'
 import { DeploymentSettingsFields } from './DeploymentDialog'
@@ -40,7 +36,7 @@ export const ApplicationDialog: FC<{
   }: {
     repo: RepoModel
     name: string
-    deploySettings: DeploySettings
+    deploySettings: DeploymentDialogState
     githubEnvironments: GitHubEnvironment[]
     releaseFilter: string
   }) => void
@@ -264,7 +260,7 @@ function isDeploySettingsValid({
   releaseKey,
   ref,
   workflowId,
-}: DeploySettings) {
+}: DeploymentDialogState) {
   return Boolean(workflowId && releaseKey && ref)
 }
 

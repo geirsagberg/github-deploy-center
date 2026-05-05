@@ -23,6 +23,7 @@ import {
   resolveGitHubIdentity,
   type GitHubIdentityResolver,
 } from '../api/githubIdentity'
+import { getEnvironmentChoiceOptions } from '../api/workflowDispatch'
 import { showConfirm } from '../utils/dialog'
 import {
   addAccountProfile,
@@ -287,6 +288,24 @@ export const triggerDeployment = async ({
   }
 }
 
+function toPersistedDeploySettings(
+  deploySettings: DeploymentDialogState,
+): DeploySettings {
+  const { dispatchInputs: _dispatchInputs, ...persistedDeploySettings } =
+    deploySettings
+
+  return clone(persistedDeploySettings)
+}
+
+function getDialogEnvironmentChoiceOptions(
+  deploySettings: DeploymentDialogState,
+) {
+  return getEnvironmentChoiceOptions(
+    deploySettings.dispatchInputs,
+    deploySettings.environmentKey,
+  )
+}
+
 export const createNewApplication = ({
   deploySettings,
   githubEnvironments,
@@ -294,7 +313,7 @@ export const createNewApplication = ({
   name,
   releaseFilter,
 }: {
-  deploySettings: DeploySettings
+  deploySettings: DeploymentDialogState
   githubEnvironments: GitHubEnvironment[]
   repo: RepoModel
   name: string
@@ -317,10 +336,11 @@ export const createNewApplication = ({
     applicationName,
     releaseFilter
   )
-  appConfig.deploySettings = clone(deploySettings)
+  appConfig.deploySettings = toPersistedDeploySettings(deploySettings)
   appConfig.environmentSettingsByName = mergeGitHubEnvironments(
     appConfig.environmentSettingsByName,
-    githubEnvironments
+    githubEnvironments,
+    getDialogEnvironmentChoiceOptions(deploySettings),
   )
   workspace.applicationsById[appConfig.id] = appConfig
   workspace.selectedApplicationId = appConfig.id
@@ -355,11 +375,18 @@ export const editDeployment = () => {
 
 export const saveDeployment = (githubEnvironments: GitHubEnvironment[] = []) => {
   if (appState.selectedApplication && appState.deploymentDialog) {
-    appState.selectedApplication.deploySettings = clone(appState.deploymentDialog)
+    const environmentChoices = getDialogEnvironmentChoiceOptions(
+      appState.deploymentDialog,
+    )
+
+    appState.selectedApplication.deploySettings = toPersistedDeploySettings(
+      appState.deploymentDialog,
+    )
     appState.selectedApplication.environmentSettingsByName =
       mergeGitHubEnvironments(
         appState.selectedApplication.environmentSettingsByName,
         githubEnvironments,
+        environmentChoices,
       )
   }
   delete appState.deploymentDialog
@@ -380,7 +407,7 @@ export const saveApplication = ({
   name,
   releaseFilter,
 }: {
-  deploySettings: DeploySettings
+  deploySettings: DeploymentDialogState
   githubEnvironments: GitHubEnvironment[]
   repo: RepoModel
   name: string
@@ -406,10 +433,11 @@ export const saveApplication = ({
 
   application.repo = clone(repo)
   application.name = applicationName
-  application.deploySettings = clone(deploySettings)
+  application.deploySettings = toPersistedDeploySettings(deploySettings)
   application.environmentSettingsByName = mergeGitHubEnvironments(
     application.environmentSettingsByName,
-    githubEnvironments
+    githubEnvironments,
+    getDialogEnvironmentChoiceOptions(deploySettings),
   )
   application.releaseFilter = releaseFilter
   delete appState.editApplicationDialog
@@ -448,6 +476,7 @@ export const showAddEnvironmentModal = () => {
   appState.addEnvironmentDialog = {
     environmentName: '',
     workflowInputValue: '',
+    workflowInputValueTouched: false,
   }
 }
 

@@ -8,19 +8,47 @@ const environmentNameCollator = new Intl.Collator(undefined, {
 export function mergeGitHubEnvironments(
   currentSettings: Record<string, EnvironmentSettings>,
   githubEnvironments: readonly GitHubEnvironment[],
+  workflowInputChoices: readonly string[] | undefined,
 ) {
   const merged = { ...currentSettings }
 
   for (const environment of githubEnvironments) {
     if (!isDeployEnvironmentName(environment.name)) continue
+    if (environment.name in merged) continue
 
-    merged[environment.name] ??= {
+    const workflowInputValue = resolveEnvironmentWorkflowInputValue(
+      environment.name,
+      workflowInputChoices,
+    )
+
+    if (workflowInputValue === undefined) continue
+
+    merged[environment.name] = {
       name: environment.name,
-      workflowInputValue: '',
+      workflowInputValue,
     }
   }
 
   return environmentSettingsByName(sortEnvironments(Object.values(merged)))
+}
+
+export function resolveEnvironmentWorkflowInputValue(
+  environmentName: string,
+  workflowInputChoices: readonly string[] | undefined,
+) {
+  if (!workflowInputChoices?.length) return undefined
+
+  if (workflowInputChoices.includes(environmentName)) return ''
+
+  const environmentParts = environmentName
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+  const partialMatches = workflowInputChoices.filter((choice) =>
+    environmentParts.includes(choice.toLowerCase()),
+  )
+
+  return partialMatches.length === 1 ? partialMatches[0] : undefined
 }
 
 export function addEnvironmentSettings(

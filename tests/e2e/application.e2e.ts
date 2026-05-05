@@ -80,6 +80,55 @@ test('creates an application and persists selected workflow settings', async ({
   )
   expect(environmentNames).toContain('prod')
   expect(environmentNames).not.toContain('github-pages')
+  expect(environmentNames).not.toContain('uidp-ops')
+  expect(savedApplication?.environmentSettingsByName).toMatchObject({
+    prod: {
+      name: 'prod',
+      workflowInputValue: '',
+    },
+    'uidp-dev': {
+      name: 'uidp-dev',
+      workflowInputValue: 'dev',
+    },
+    'uidp-prod': {
+      name: 'uidp-prod',
+      workflowInputValue: 'prod',
+    },
+  })
+})
+
+test('maps workflow choice values when adding an environment', async ({
+  page,
+  github,
+}) => {
+  const application = createPersistedApplicationWithChoiceWorkflow()
+  await github.seedAuthenticatedState({
+    applicationsById: { [application.id]: application },
+    selectedApplicationId: application.id,
+  })
+
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Add environment' }).click()
+  await page
+    .getByRole('combobox', { name: 'Find or add environment' })
+    .fill('uidp-dev')
+
+  await expect(
+    page.getByLabel('Workflow input value (defaults to environment name)')
+  ).toHaveValue('dev')
+  await page.getByRole('button', { name: 'Save' }).click()
+
+  const savedApplication = await readPersistedApplication(
+    github,
+    application.id
+  )
+
+  expect(savedApplication?.environmentSettingsByName).toMatchObject({
+    'uidp-dev': {
+      name: 'uidp-dev',
+      workflowInputValue: 'dev',
+    },
+  })
 })
 
 test('reorders environments for a saved application', async ({ page, github }) => {
@@ -307,5 +356,19 @@ function createPersistedApplicationWithEnvironments(environmentNames: string[]) 
         },
       ])
     ),
+  }
+}
+
+function createPersistedApplicationWithChoiceWorkflow() {
+  const application = createPersistedApplication()
+
+  return {
+    ...application,
+    deploySettings: {
+      ...application.deploySettings,
+      environmentKey: 'deploy_target',
+      releaseKey: 'release_version',
+    },
+    environmentSettingsByName: {},
   }
 }

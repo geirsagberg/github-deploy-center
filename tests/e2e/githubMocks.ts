@@ -40,7 +40,13 @@ on:
       release_version:
         description: Release to deploy
       deploy_target:
-        type: environment
+        type: choice
+        options:
+          - dev
+          - test
+          - qa
+          - staging
+          - prod
 `,
   [E2E_NON_DEPLOY_WORKFLOW.path]: `
 name: ${E2E_NON_DEPLOY_WORKFLOW.name}
@@ -234,14 +240,17 @@ class GitHubMock {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          total_count: 8,
+          total_count: 11,
           environments: [
             { name: 'prod' },
+            { name: 'uidp-prod' },
+            { name: 'uidp-ops' },
             { name: 'sandbox' },
             { name: 'staging' },
             { name: 'qa' },
             { name: 'tst' },
             { name: 'test' },
+            { name: 'uidp-dev' },
             { name: 'dev' },
             { name: 'github-pages' },
           ],

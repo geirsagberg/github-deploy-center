@@ -3,6 +3,7 @@ import { useSnapshot } from 'valtio'
 import { proxy, type Snapshot } from 'valtio/vanilla'
 import { DeploymentState } from '../generated/graphql'
 import { defaultAppSettings } from '../state'
+import type { WorkflowDispatchInputs } from '../api/workflowDispatch'
 import type {
   AccountProfile,
   AppSettings,
@@ -36,7 +37,7 @@ export type ApplicationDialogState = {
   repo: RepoModel | null
   name: string
   releaseFilter: string
-  deploySettings: DeploySettings
+  deploySettings: DeploymentDialogState
   warning?: string
 }
 
@@ -53,10 +54,13 @@ export const createApplicationDialogState = (
 export type EnvironmentDialogState = {
   environmentName: string
   workflowInputValue: string
+  workflowInputValueTouched?: boolean
   originalEnvironmentName?: string
 }
 
-export type DeploymentDialogState = DeploySettings
+export type DeploymentDialogState = DeploySettings & {
+  dispatchInputs?: WorkflowDispatchInputs
+}
 
 export type SettingsDialogState = {}
 

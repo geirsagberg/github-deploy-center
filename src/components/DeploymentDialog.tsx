@@ -86,6 +86,16 @@ export function DeploymentSettingsFields({
         onChange={(workflow) =>
           updateDialogState((state) => selectWorkflow(state, workflow))
         }
+        onWorkflowLoaded={(workflow) =>
+          updateDialogState((state) => {
+            if (
+              state.workflowId === workflow.id &&
+              state.dispatchInputs !== workflow.dispatchInputs
+            ) {
+              state.dispatchInputs = workflow.dispatchInputs
+            }
+          })
+        }
       />
       <TextField
         disabled={disabled}
@@ -203,6 +213,7 @@ function selectWorkflow(
   workflow: DispatchWorkflow | null
 ) {
   state.workflowId = workflow?.id ?? 0
+  state.dispatchInputs = workflow?.dispatchInputs
 
   if (!workflow) return
 
@@ -228,6 +239,7 @@ function updateManualWorkflowHandling(
 ) {
   state.manualWorkflowHandling = manualWorkflowHandling
   state.workflowId = 0
+  state.dispatchInputs = undefined
 }
 
 function shouldReplaceWithInference(value: string, defaultValue: string) {

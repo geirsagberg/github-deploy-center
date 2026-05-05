@@ -7,6 +7,7 @@ import {
   Select,
 } from '@mui/material'
 import type { FormControlProps } from '@mui/material'
+import { useEffect } from 'react'
 import { useFetchWorkflows } from '../api/fetchHooks'
 import type { DispatchWorkflow } from '../api/fetchHooks'
 import { useAppState } from '../store'
@@ -26,6 +27,7 @@ export function SelectWorkflow({
   workflowId,
   manualWorkflowHandling,
   onChange,
+  onWorkflowLoaded,
   repo,
   FormControlProps = {},
 }: {
@@ -34,15 +36,12 @@ export function SelectWorkflow({
   workflowId: number
   manualWorkflowHandling?: boolean
   onChange: (workflow: DispatchWorkflow | null) => void
+  onWorkflowLoaded?: (workflow: DispatchWorkflow) => void
   repo?: RepoModel | null
   FormControlProps?: FormControlProps
 }) {
   const workflows = useFetchWorkflows({ manualWorkflowHandling, repo })
   const { selectedApplication } = useAppState()
-
-  if (workflows.error) {
-    return <CredentialErrorAlert title="Could not load workflows" />
-  }
 
   const workflowApplicationName = applicationName ?? selectedApplication?.name
   const workflowsSorted = (workflows.data ?? []).orderBy(
@@ -66,6 +65,20 @@ export function SelectWorkflow({
     ],
     ['desc', 'asc']
   )
+  const selectedWorkflow = workflowsSorted.find(
+    (workflow) => workflow.id === workflowId
+  )
+
+  useEffect(() => {
+    if (selectedWorkflow) {
+      onWorkflowLoaded?.(selectedWorkflow)
+    }
+  }, [onWorkflowLoaded, selectedWorkflow])
+
+  if (workflows.error) {
+    return <CredentialErrorAlert title="Could not load workflows" />
+  }
+
   return (
     <FormControl variant="outlined" disabled={disabled} {...FormControlProps}>
       <InputLabel id="workflow-select-label">Workflow</InputLabel>
@@ -91,9 +104,11 @@ export function SelectWorkflow({
               Loading workflows...
             </Box>
           ) : (
-            workflowsSorted.find(
-              (workflow) => workflow.id === selectedWorkflowId
-            )?.name ?? <em>None</em>
+            selectedWorkflow?.id === selectedWorkflowId ? (
+              selectedWorkflow.name
+            ) : (
+              <em>None</em>
+            )
           )
         }
         onChange={(e) => {

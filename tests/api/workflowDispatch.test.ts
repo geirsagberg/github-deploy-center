@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import {
+  getEnvironmentChoiceOptions,
   inferDeployWorkflowInputs,
   inferEnvironmentInputName,
   inferReleaseInputName,
@@ -63,6 +64,25 @@ on:
       },
     })
   })
+
+  test('returns choice input options', () => {
+    expect(
+      parseWorkflowDispatch(`
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options:
+          - dev
+          - prod
+`)
+    ).toEqual({
+      inputs: {
+        environment: { type: 'choice', options: ['dev', 'prod'] },
+      },
+    })
+  })
 })
 
 describe('workflow dispatch input inference', () => {
@@ -98,6 +118,13 @@ describe('workflow dispatch input inference', () => {
         env: {},
       })
     ).toBe('env')
+
+    expect(
+      inferEnvironmentInputName({
+        release_version: {},
+        deploy_target: { type: 'choice', options: ['dev'] },
+      })
+    ).toBe('deploy_target')
   })
 
   test('infers deploy workflows only when both release and environment match', () => {
@@ -114,6 +141,16 @@ describe('workflow dispatch input inference', () => {
     expect(
       inferDeployWorkflowInputs({
         release_version: {},
+        deploy_target: { type: 'choice', options: ['dev'] },
+      })
+    ).toEqual({
+      releaseKey: 'release_version',
+      environmentKey: 'deploy_target',
+    })
+
+    expect(
+      inferDeployWorkflowInputs({
+        release_version: {},
       })
     ).toBeUndefined()
 
@@ -121,6 +158,27 @@ describe('workflow dispatch input inference', () => {
       inferDeployWorkflowInputs({
         deploy_target: { type: 'environment' },
       })
+    ).toBeUndefined()
+  })
+
+  test('returns environment choice options only for choice inputs', () => {
+    expect(
+      getEnvironmentChoiceOptions(
+        {
+          environment: { type: 'choice', options: ['dev', 'prod'] },
+          deploy_target: { type: 'environment', options: ['qa'] },
+        },
+        'environment',
+      ),
+    ).toEqual(['dev', 'prod'])
+
+    expect(
+      getEnvironmentChoiceOptions(
+        {
+          deploy_target: { type: 'environment', options: ['qa'] },
+        },
+        'deploy_target',
+      ),
     ).toBeUndefined()
   })
 })

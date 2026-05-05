@@ -227,7 +227,10 @@ export const useFetchWorkflows = ({
 }: {
   manualWorkflowHandling?: boolean
   repo?: RepoModel | null
-} = {}) => {
+} = {}): Pick<
+  UseQueryResult<DispatchWorkflow[]>,
+  'data' | 'isLoading' | 'error'
+> => {
   const { activeAccountId, token, selectedApplication } = useAppState()
   const scope = getGitHubQueryScope({ activeAccountId, token })
 
@@ -238,7 +241,7 @@ export const useFetchWorkflows = ({
     selectedApplication?.deploySettings.manualWorkflowHandling ??
     false
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<DispatchWorkflow[]>({
     queryKey: githubQueryKeys.workflows(
       scope,
       repo ?? undefined,

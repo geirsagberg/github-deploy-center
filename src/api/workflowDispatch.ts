@@ -2,6 +2,7 @@ import { parse } from 'yaml'
 
 export type WorkflowDispatchInput = {
   type?: string
+  options?: readonly string[]
 }
 
 export type WorkflowDispatchInputs = Record<string, WorkflowDispatchInput>
@@ -76,8 +77,20 @@ export function inferEnvironmentInputName(
     ) ??
     findExactInput(inputNames, 'environment') ??
     findExactInput(inputNames, 'env') ??
-    findInputStartingWith(inputNames, ['environment', 'env', 'target'])
+    findInputStartingWith(inputNames, ['environment', 'env', 'target']) ??
+    findInputWithPart(inputNames, ['environment', 'env', 'target'])
   )
+}
+
+export function getEnvironmentChoiceOptions(
+  inputs: WorkflowDispatchInputs | undefined,
+  environmentKey: string
+): readonly string[] | undefined {
+  const input = inputs?.[environmentKey]
+
+  return input?.type?.toLowerCase() === 'choice' && input.options?.length
+    ? input.options
+    : undefined
 }
 
 export function inferDeployWorkflowInputs(
@@ -105,8 +118,13 @@ function parseDispatchInputs(
 function parseDispatchInput(
   input: Record<string, unknown>
 ): WorkflowDispatchInput {
+  const options = Array.isArray(input.options)
+    ? input.options.filter((option): option is string => typeof option === 'string')
+    : undefined
+
   return {
     type: typeof input.type === 'string' ? input.type : undefined,
+    ...(options?.length ? { options } : {}),
   }
 }
 
@@ -124,4 +142,15 @@ function findInputStartingWith(
   return inputNames.find((name) =>
     prefixes.some((prefix) => name.toLowerCase().startsWith(prefix))
   )
+}
+
+function findInputWithPart(
+  inputNames: string[],
+  expectedParts: string[]
+): string | undefined {
+  return inputNames.find((name) => {
+    const parts = name.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
+
+    return parts.some((part) => expectedParts.includes(part))
+  })
 }

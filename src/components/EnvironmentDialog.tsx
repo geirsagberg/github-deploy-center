@@ -14,10 +14,16 @@ import {
   TextField,
 } from '@mui/material'
 import type { FC } from 'react'
-import { useFetchEnvironments } from '../api/fetchHooks'
+import { useEffect } from 'react'
+import { useFetchEnvironments, useFetchWorkflows } from '../api/fetchHooks'
+import { getEnvironmentChoiceOptions } from '../api/workflowDispatch'
 import { useAppState } from '../store'
 import type { EnvironmentDialogState } from '../store'
-import { isDeployEnvironmentName, sortEnvironments } from '../state/environments'
+import {
+  isDeployEnvironmentName,
+  resolveEnvironmentWorkflowInputValue,
+  sortEnvironments,
+} from '../state/environments'
 import type { EnvironmentSettings } from '../state/schemas'
 
 type Option = {
@@ -35,8 +41,10 @@ export const EnvironmentDialog: FC<{
   onCancel: () => void
   onDelete?: () => void | Promise<void>
   existingEnvironmentNames?: readonly string[]
+  autoMapWorkflowInputValue?: boolean
 }> = ({
   dialogState,
+  autoMapWorkflowInputValue = false,
   onSave,
   onCancel,
   onDelete,
@@ -46,6 +54,23 @@ export const EnvironmentDialog: FC<{
 }) => {
   const { data, isLoading, error } = useFetchEnvironments()
   const { selectedApplication } = useAppState()
+  const shouldFetchWorkflowChoices = autoMapWorkflowInputValue && !!dialogState
+  const workflows = useFetchWorkflows({
+    manualWorkflowHandling:
+      selectedApplication?.deploySettings.manualWorkflowHandling,
+    repo: shouldFetchWorkflowChoices ? selectedApplication?.repo : null,
+  })
+  const selectedWorkflow = workflows.data?.find(
+    (workflow) => workflow.id === selectedApplication?.deploySettings.workflowId,
+  )
+  const workflowInputChoices =
+    autoMapWorkflowInputValue && selectedApplication?.deploySettings
+      ? getEnvironmentChoiceOptions(
+          selectedWorkflow?.dispatchInputs,
+          selectedApplication.deploySettings.environmentKey,
+        )
+      : undefined
+  const workflowInputChoiceKey = workflowInputChoices?.join('\0') ?? ''
   const filteredEnvironments = sortEnvironments(
     (data || []).filter((d) => isDeployEnvironmentName(d.name)),
   )
@@ -58,6 +83,39 @@ export const EnvironmentDialog: FC<{
     )
   const canSave =
     !!dialogState?.environmentName && !hasDuplicateEnvironmentName
+
+  useEffect(() => {
+    if (
+      !dialogState ||
+      !autoMapWorkflowInputValue ||
+      dialogState.workflowInputValueTouched
+    ) {
+      return
+    }
+
+    const workflowInputValue =
+      resolveEnvironmentWorkflowInputValue(
+        dialogState.environmentName,
+        workflowInputChoices,
+      ) ?? ''
+
+    if (workflowInputValue === dialogState.workflowInputValue) return
+
+    updateDialogState((state) => {
+      if (!state.workflowInputValueTouched) {
+        state.workflowInputValue = workflowInputValue
+      }
+    })
+  }, [
+    autoMapWorkflowInputValue,
+    dialogState,
+    dialogState?.environmentName,
+    dialogState?.workflowInputValue,
+    dialogState?.workflowInputValueTouched,
+    updateDialogState,
+    workflowInputChoiceKey,
+    workflowInputChoices,
+  ])
 
   return (
     <Dialog open={!!dialogState} fullWidth onClose={onCancel}>
@@ -91,8 +149,13 @@ export const EnvironmentDialog: FC<{
                   label="Environment name"
                   value={dialogState.environmentName}
                   onChange={(e) =>
-                    updateDialogState(
-                      (state) => (state.environmentName = e.target.value),
+                    updateDialogState((state) =>
+                      updateEnvironmentName(
+                        state,
+                        e.target.value,
+                        workflowInputChoices,
+                        autoMapWorkflowInputValue,
+                      ),
                     )
                   }
                 />
@@ -100,8 +163,8 @@ export const EnvironmentDialog: FC<{
                   label="Workflow input value"
                   value={dialogState.workflowInputValue}
                   onChange={(e) =>
-                    updateDialogState(
-                      (state) => (state.workflowInputValue = e.target.value),
+                    updateDialogState((state) =>
+                      updateWorkflowInputValue(state, e.target.value),
                     )
                   }
                 />
@@ -116,18 +179,26 @@ export const EnvironmentDialog: FC<{
                   inputValue={dialogState.environmentName}
                   openOnFocus={!onDelete}
                   onChange={(_, value) =>
-                    updateDialogState(
-                      (state) =>
-                        (state.environmentName =
-                          typeof value === 'string'
-                            ? value
-                            : value?.inputValue ?? value?.name ?? '')
+                    updateDialogState((state) =>
+                      updateEnvironmentName(
+                        state,
+                        typeof value === 'string'
+                          ? value
+                          : value?.inputValue ?? value?.name ?? '',
+                        workflowInputChoices,
+                        autoMapWorkflowInputValue,
+                      ),
                     )
                   }
                   onInputChange={(_, value, reason) => {
                     if (reason === 'input' || reason === 'clear') {
-                      updateDialogState(
-                        (state) => (state.environmentName = value),
+                      updateDialogState((state) =>
+                        updateEnvironmentName(
+                          state,
+                          value,
+                          workflowInputChoices,
+                          autoMapWorkflowInputValue,
+                        ),
                       )
                     }
                   }}
@@ -181,9 +252,11 @@ export const EnvironmentDialog: FC<{
                       variant="outlined"
                       value={dialogState.workflowInputValue}
                       onChange={(event) =>
-                        updateDialogState(
-                          (state) =>
-                            (state.workflowInputValue = event.target.value)
+                        updateDialogState((state) =>
+                          updateWorkflowInputValue(
+                            state,
+                            event.target.value,
+                          ),
                         )
                       }
                     />
@@ -225,4 +298,29 @@ export const EnvironmentDialog: FC<{
       ) : null}
     </Dialog>
   )
+}
+
+function updateEnvironmentName(
+  state: EnvironmentDialogState,
+  environmentName: string,
+  workflowInputChoices: readonly string[] | undefined,
+  autoMapWorkflowInputValue: boolean,
+) {
+  state.environmentName = environmentName
+
+  if (autoMapWorkflowInputValue && !state.workflowInputValueTouched) {
+    state.workflowInputValue =
+      resolveEnvironmentWorkflowInputValue(
+        environmentName,
+        workflowInputChoices,
+      ) ?? ''
+  }
+}
+
+function updateWorkflowInputValue(
+  state: EnvironmentDialogState,
+  workflowInputValue: string,
+) {
+  state.workflowInputValue = workflowInputValue
+  state.workflowInputValueTouched = true
 }
