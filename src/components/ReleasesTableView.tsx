@@ -23,6 +23,7 @@ import { DeploymentState } from '../generated/graphql'
 import type {
   EnvironmentSettings,
   PendingDeployment,
+  RepoModel,
   WorkflowRun,
 } from '../state/schemas'
 import type { DeploymentModel, ReleaseModel } from '../store'
@@ -56,6 +57,51 @@ const getButtonStyle = (state?: DeploymentState) => {
 
 const isTransientDeploymentState = (state?: DeploymentState) =>
   !!state && TRANSIENT_DEPLOYMENT_STATES.has(state)
+
+type WorkflowRunLink = {
+  href: string
+  label: string
+  title: string
+  conclusion?: WorkflowRun['conclusion']
+}
+
+export function getWorkflowRunLink({
+  deployment,
+  pendingDeployment,
+  repo,
+  workflowRuns,
+}: {
+  deployment?: Pick<DeploymentModel, 'workflowRunId'>
+  pendingDeployment?: PendingDeployment
+  repo?: RepoModel
+  workflowRuns: Record<number, WorkflowRun>
+}): WorkflowRunLink | undefined {
+  const workflowRunId =
+    deployment?.workflowRunId ?? pendingDeployment?.workflowRunId
+
+  if (!workflowRunId) return undefined
+
+  const workflowRun = workflowRuns[workflowRunId]
+
+  if (workflowRun) {
+    const title = `${workflowRun.name} #${workflowRun.run_number}`
+    return {
+      href: workflowRun.html_url,
+      label: `Open ${title}`,
+      title,
+      conclusion: workflowRun.conclusion,
+    }
+  }
+
+  if (!repo) return undefined
+
+  const title = `Workflow run #${workflowRunId}`
+  return {
+    href: `https://github.com/${repo.owner}/${repo.name}/actions/runs/${workflowRunId}`,
+    label: `Open ${title.toLowerCase()}`,
+    title,
+  }
+}
 
 export function getVisibleDeployment(
   deployments: DeploymentModel[],
@@ -142,7 +188,7 @@ export const ReleasesTableView = () => {
   const [draggedEnvironmentName, setDraggedEnvironmentName] = useState<
     string | null
   >(null)
-  const { data: workflowRuns = [] } = workflowRunsQuery
+  const { data: workflowRuns = {} } = workflowRunsQuery
 
   const releases = allReleaseResultsForTag.data || []
 
@@ -241,7 +287,7 @@ export const ReleasesTableView = () => {
     release: ReleaseModel,
     environment: EnvironmentSettings,
     pendingDeployment?: PendingDeployment,
-    workflowRun?: WorkflowRun,
+    workflowRunLink?: WorkflowRunLink,
   ) => {
     const latestRelease = latestReleaseByEnvironment[environment.name]
     const isAfterLatest =
@@ -275,19 +321,21 @@ export const ReleasesTableView = () => {
         >
           {deploymentState?.replaceAll('_', ' ') ?? 'Deploy'}
         </Button>
-        {workflowRun && (
-          <Tooltip title={`${workflowRun.name} #${workflowRun.run_number}`}>
+        {workflowRunLink && (
+          <Tooltip title={workflowRunLink.title}>
             <IconButton
+              aria-label={workflowRunLink.label}
               size="medium"
               color={
-                workflowRun.conclusion
-                  ? workflowRun.conclusion === 'success'
+                workflowRunLink.conclusion
+                  ? workflowRunLink.conclusion === 'success'
                     ? 'success'
                     : 'error'
                   : 'warning'
               }
               target="_blank"
-              href={workflowRun.html_url}
+              rel="noopener noreferrer"
+              href={workflowRunLink.href}
             >
               <Icon fontSize="small">launch</Icon>
             </IconButton>
@@ -394,9 +442,12 @@ export const ReleasesTableView = () => {
                   environment.name,
                   pendingDeployment,
                 )
-                const workflowRun = latestDeployment?.workflowRunId
-                  ? workflowRuns[latestDeployment.workflowRunId]
-                  : undefined
+                const workflowRunLink = getWorkflowRunLink({
+                  deployment: latestDeployment,
+                  pendingDeployment,
+                  repo,
+                  workflowRuns,
+                })
                 return (
                   <TableCell key={environment.name}>
                     {createButton(
@@ -404,7 +455,7 @@ export const ReleasesTableView = () => {
                       release,
                       environment,
                       pendingDeployment,
-                      workflowRun,
+                      workflowRunLink,
                     )}
                   </TableCell>
                 )
