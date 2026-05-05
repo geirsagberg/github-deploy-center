@@ -32,6 +32,25 @@ export function addEnvironmentSettings(
   )
 }
 
+export function editEnvironmentSettings(
+  currentSettings: Record<string, EnvironmentSettings>,
+  originalName: string,
+  settings: EnvironmentSettings,
+) {
+  if (!(originalName in currentSettings)) return currentSettings
+  if (settings.name !== originalName && settings.name in currentSettings) {
+    return currentSettings
+  }
+
+  return Object.fromEntries(
+    Object.entries(currentSettings).map(([name, environment]) =>
+      name === originalName
+        ? [settings.name, settings]
+        : [name, environment],
+    ),
+  )
+}
+
 export function reorderEnvironmentSettings(
   currentSettings: Record<string, EnvironmentSettings>,
   draggedName: string,

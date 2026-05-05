@@ -181,7 +181,7 @@ function getLatestReleaseByEnvironment(
 export const ReleasesTableView = () => {
   const { selectedApplication, pendingDeployments } = useAppState()
   const repo = selectedApplication?.repo
-  const { triggerDeployment, removeEnvironment, reorderEnvironment } =
+  const { triggerDeployment, reorderEnvironment, showEditEnvironmentModal } =
     useActions()
   const allReleaseResultsForTag = useFetchReleases()
   const workflowRunsQuery = useFetchWorkflowRuns()
@@ -410,11 +410,14 @@ export const ReleasesTableView = () => {
                   >
                     {environment.name}
                   </Link>
-                  <IconButton
-                    onClick={() => removeEnvironment(environment.name)}
-                  >
-                    <Icon>delete</Icon>
-                  </IconButton>
+                  <Tooltip title={`Edit ${environment.name}`}>
+                    <IconButton
+                      aria-label={`Edit ${environment.name}`}
+                      onClick={() => showEditEnvironmentModal(environment.name)}
+                    >
+                      <Icon>edit</Icon>
+                    </IconButton>
+                  </Tooltip>
                 </Stack>
               </TableCell>
             ))}

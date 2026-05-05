@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import {
   addEnvironmentSettings,
+  editEnvironmentSettings,
   mergeGitHubEnvironments,
   reorderEnvironmentSettings,
   sortEnvironments,
@@ -79,6 +80,32 @@ describe('environment ordering', () => {
         ),
       ),
     ).toEqual(['dev', 'prod'])
+  })
+
+  test('edits an environment without changing its order', () => {
+    const edited = editEnvironmentSettings(
+      {
+        dev: settings('dev'),
+        test: settings('test'),
+        prod: settings('prod'),
+      },
+      'test',
+      settings('qa', 'quality-assurance'),
+    )
+
+    expect(Object.keys(edited)).toEqual(['dev', 'qa', 'prod'])
+    expect(edited.qa.workflowInputValue).toBe('quality-assurance')
+  })
+
+  test('keeps environments unchanged when editing to a duplicate name', () => {
+    const current = {
+      dev: settings('dev'),
+      prod: settings('prod'),
+    }
+
+    expect(editEnvironmentSettings(current, 'dev', settings('prod'))).toBe(
+      current,
+    )
   })
 
   test('reorders environments by dragging before or after the target', () => {

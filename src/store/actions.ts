@@ -6,6 +6,7 @@ import {
 } from '../state/schemas'
 import {
   addEnvironmentSettings,
+  editEnvironmentSettings,
   mergeGitHubEnvironments,
   reorderEnvironmentSettings,
 } from '../state/environments'
@@ -450,6 +451,19 @@ export const showAddEnvironmentModal = () => {
   }
 }
 
+export const showEditEnvironmentModal = (name: string) => {
+  const environmentSettings =
+    appState.selectedApplication?.environmentSettingsByName[name]
+
+  if (!environmentSettings) return
+
+  appState.editEnvironmentDialog = {
+    environmentName: environmentSettings.name,
+    workflowInputValue: environmentSettings.workflowInputValue,
+    originalEnvironmentName: name,
+  }
+}
+
 export const updateEnvironmentDialog = ({
   addOrEdit,
   update,
@@ -470,6 +484,10 @@ export const cancelAddEnvironment = () => {
   delete appState.addEnvironmentDialog
 }
 
+export const cancelEditEnvironment = () => {
+  delete appState.editEnvironmentDialog
+}
+
 export const addEnvironment = (settings: EnvironmentSettings) => {
   if (
     appState.selectedApplication &&
@@ -482,6 +500,20 @@ export const addEnvironment = (settings: EnvironmentSettings) => {
       )
   }
   delete appState.addEnvironmentDialog
+}
+
+export const editEnvironment = (settings: EnvironmentSettings) => {
+  const originalName = appState.editEnvironmentDialog?.originalEnvironmentName
+
+  if (appState.selectedApplication && originalName) {
+    appState.selectedApplication.environmentSettingsByName =
+      editEnvironmentSettings(
+        appState.selectedApplication.environmentSettingsByName,
+        originalName,
+        settings,
+      )
+  }
+  delete appState.editEnvironmentDialog
 }
 
 export const reorderEnvironment = ({
@@ -502,13 +534,20 @@ export const reorderEnvironment = ({
 }
 
 export const removeEnvironment = async (name: string) => {
+  const environmentSettings =
+    appState.selectedApplication?.environmentSettingsByName[name]
+
+  if (!appState.selectedApplication || !environmentSettings) return
+
   if (
-    appState.selectedApplication &&
-    (await showConfirm(
-      `Are you sure you want to delete ${appState.selectedApplication.environmentSettingsByName[name].name}?`
-    ))
+    await showConfirm(
+      `Are you sure you want to delete ${environmentSettings.name}?`
+    )
   ) {
     delete appState.selectedApplication.environmentSettingsByName[name]
+    if (appState.editEnvironmentDialog?.originalEnvironmentName === name) {
+      delete appState.editEnvironmentDialog
+    }
   }
 }
 
@@ -559,6 +598,7 @@ export const actions = {
   addAccount,
   addEnvironment,
   cancelAddEnvironment,
+  cancelEditEnvironment,
   cancelEditApplication,
   cancelEditDeployment,
   cancelNewApplication,
@@ -567,6 +607,7 @@ export const actions = {
   editApplication,
   editAccount,
   editDeployment,
+  editEnvironment,
   exportApplications,
   hideSettings,
   importApplications,
@@ -580,6 +621,7 @@ export const actions = {
   setAppSetting,
   setToken,
   showAddEnvironmentModal,
+  showEditEnvironmentModal,
   showNewApplicationModal,
   showSettings,
   triggerDeployment,

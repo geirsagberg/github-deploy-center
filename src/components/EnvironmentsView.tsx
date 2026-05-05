@@ -19,6 +19,39 @@ const AddEnvironmentDialog = () => {
   )
 }
 
+const EditEnvironmentDialog = () => {
+  const { editEnvironmentDialog, selectedApplication } = useAppState()
+  const {
+    cancelEditEnvironment,
+    editEnvironment,
+    removeEnvironment,
+    updateEnvironmentDialog,
+  } = useActions()
+  const originalEnvironmentName =
+    editEnvironmentDialog?.originalEnvironmentName ??
+    editEnvironmentDialog?.environmentName
+
+  return (
+    <EnvironmentDialog
+      dialogState={editEnvironmentDialog}
+      existingEnvironmentNames={Object.keys(
+        selectedApplication?.environmentSettingsByName ?? {},
+      )}
+      onCancel={cancelEditEnvironment}
+      onDelete={
+        originalEnvironmentName
+          ? () => removeEnvironment(originalEnvironmentName)
+          : undefined
+      }
+      onSave={editEnvironment}
+      title="Edit environment"
+      updateDialogState={(update) =>
+        updateEnvironmentDialog({ addOrEdit: 'edit', update })
+      }
+    />
+  )
+}
+
 export const EnvironmentsView = () => {
   const { selectedApplication } = useAppState()
   const { showAddEnvironmentModal } = useActions()
@@ -34,6 +67,7 @@ export const EnvironmentsView = () => {
         Add environment
       </Button>
       <AddEnvironmentDialog />
+      <EditEnvironmentDialog />
     </>
   )
 }

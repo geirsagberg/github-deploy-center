@@ -134,6 +134,60 @@ test('reorders environments for a saved application', async ({ page, github }) =
   ).toEqual(['dev', 'prod', 'test', 'tst', 'qa', 'staging', 'sandbox'])
 })
 
+test('edits and deletes environments from the environment dialog', async ({
+  page,
+  github,
+}) => {
+  const application = createPersistedApplicationWithEnvironments(['dev', 'prod'])
+  await github.seedAuthenticatedState({
+    applicationsById: { [application.id]: application },
+    selectedApplicationId: application.id,
+  })
+
+  await page.goto('/')
+
+  await page.getByLabel('Edit dev').click()
+  await expect(
+    page.getByRole('heading', { name: 'Edit environment' })
+  ).toBeVisible()
+  await page
+    .getByRole('combobox', { name: 'Find or add environment' })
+    .fill('development')
+  await page
+    .getByLabel('Workflow input value (defaults to environment name)')
+    .fill('dev-workflow')
+  await page.getByRole('button', { name: 'Save' }).click()
+
+  await expect(page.locator('thead a')).toHaveText(['development', 'prod'])
+
+  let savedApplication = await readPersistedApplication(github, application.id)
+  expect(savedApplication?.environmentSettingsByName).toMatchObject({
+    development: {
+      name: 'development',
+      workflowInputValue: 'dev-workflow',
+    },
+    prod: {
+      name: 'prod',
+      workflowInputValue: 'prod',
+    },
+  })
+  expect(savedApplication?.environmentSettingsByName).not.toHaveProperty('dev')
+
+  await page.getByLabel('Edit development').click()
+  await page.getByRole('button', { name: 'Delete' }).click()
+  await page.getByRole('button', { name: 'Ok' }).click()
+
+  await expect(page.locator('thead a')).toHaveText(['prod'])
+
+  savedApplication = await readPersistedApplication(github, application.id)
+  expect(savedApplication?.environmentSettingsByName).toEqual({
+    prod: {
+      name: 'prod',
+      workflowInputValue: 'prod',
+    },
+  })
+})
+
 test('falls back to file-backed workflows when smart inspection cannot infer deploy workflows', async ({
   page,
   github,
@@ -195,7 +249,7 @@ test('manual workflow setup persists manual mode', async ({
     workflowId: E2E_NON_DEPLOY_WORKFLOW.id,
   })
 
-  await page.getByRole('button', { name: /edit/i }).click()
+  await page.getByRole('button', { name: 'Edit', exact: true }).click()
   await expect(page.getByLabel('Manual', { exact: true })).toBeChecked()
 })
 
@@ -226,6 +280,17 @@ async function readSavedApplication(github: {
   return Object.values(applications).find(
     (application) => application.name === E2E_REPO.name
   )
+}
+
+async function readPersistedApplication(
+  github: { readPersistedState: () => Promise<any> },
+  applicationId: string
+) {
+  const persisted = await github.readPersistedState()
+  const applications = persisted.accountsById[E2E_ACCOUNT_ID].workspace
+    .applicationsById as Record<string, SavedApplication>
+
+  return applications[applicationId]
 }
 
 function createPersistedApplicationWithEnvironments(environmentNames: string[]) {

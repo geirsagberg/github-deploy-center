@@ -53,6 +53,7 @@ export const createApplicationDialogState = (
 export type EnvironmentDialogState = {
   environmentName: string
   workflowInputValue: string
+  originalEnvironmentName?: string
 }
 
 export type DeploymentDialogState = DeploySettings

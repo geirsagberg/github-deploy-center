@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  Icon,
   TextField,
 } from '@mui/material'
 import type { FC } from 'react'
@@ -32,12 +33,32 @@ export const EnvironmentDialog: FC<{
   title: string
   onSave: (settings: EnvironmentSettings) => void
   onCancel: () => void
-}> = ({ dialogState, onSave, onCancel, title, updateDialogState }) => {
+  onDelete?: () => void | Promise<void>
+  existingEnvironmentNames?: readonly string[]
+}> = ({
+  dialogState,
+  onSave,
+  onCancel,
+  onDelete,
+  title,
+  updateDialogState,
+  existingEnvironmentNames = [],
+}) => {
   const { data, isLoading, error } = useFetchEnvironments()
   const { selectedApplication } = useAppState()
   const filteredEnvironments = sortEnvironments(
     (data || []).filter((d) => isDeployEnvironmentName(d.name)),
   )
+  const originalEnvironmentName = dialogState?.originalEnvironmentName
+  const hasDuplicateEnvironmentName =
+    !!dialogState?.environmentName &&
+    existingEnvironmentNames.some(
+      (name) =>
+        name === dialogState.environmentName && name !== originalEnvironmentName,
+    )
+  const canSave =
+    !!dialogState?.environmentName && !hasDuplicateEnvironmentName
+
   return (
     <Dialog open={!!dialogState} fullWidth onClose={onCancel}>
       {dialogState ? (
@@ -53,7 +74,9 @@ export const EnvironmentDialog: FC<{
           }}
         >
           <DialogTitle>{title}</DialogTitle>
-          <DialogContent style={{ display: 'flex', flexDirection: 'column' }}>
+          <DialogContent
+            sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}
+          >
             {error instanceof Error ? (
               <>
                 <Box sx={{ mb: 2 }}>
@@ -69,7 +92,7 @@ export const EnvironmentDialog: FC<{
                   value={dialogState.environmentName}
                   onChange={(e) =>
                     updateDialogState(
-                      (state) => (state.environmentName = e.target.value)
+                      (state) => (state.environmentName = e.target.value),
                     )
                   }
                 />
@@ -78,7 +101,7 @@ export const EnvironmentDialog: FC<{
                   value={dialogState.workflowInputValue}
                   onChange={(e) =>
                     updateDialogState(
-                      (state) => (state.workflowInputValue = e.target.value)
+                      (state) => (state.workflowInputValue = e.target.value),
                     )
                   }
                 />
@@ -90,7 +113,8 @@ export const EnvironmentDialog: FC<{
                   loading={isLoading}
                   options={filteredEnvironments.map<Option>((x) => x)}
                   value={dialogState.environmentName}
-                  openOnFocus
+                  inputValue={dialogState.environmentName}
+                  openOnFocus={!onDelete}
                   onChange={(_, value) =>
                     updateDialogState(
                       (state) =>
@@ -100,6 +124,13 @@ export const EnvironmentDialog: FC<{
                             : value?.inputValue ?? value?.name ?? '')
                     )
                   }
+                  onInputChange={(_, value, reason) => {
+                    if (reason === 'input' || reason === 'clear') {
+                      updateDialogState(
+                        (state) => (state.environmentName = value),
+                      )
+                    }
+                  }}
                   getOptionLabel={(option) =>
                     typeof option === 'string' ? option : option.name
                   }
@@ -145,7 +176,6 @@ export const EnvironmentDialog: FC<{
                 {selectedApplication?.deploySettings.type === 'workflow' &&
                   selectedApplication.deploySettings.environmentKey && (
                     <TextField
-                      style={{ marginTop: '1rem' }}
                       label="Workflow input value (defaults to environment name)"
                       fullWidth
                       variant="outlined"
@@ -160,12 +190,29 @@ export const EnvironmentDialog: FC<{
                   )}
               </>
             )}
+            {hasDuplicateEnvironmentName && (
+              <Alert severity="warning">
+                An environment named {dialogState.environmentName} already
+                exists.
+              </Alert>
+            )}
           </DialogContent>
           <Box sx={{ p: 2, pt: 1 }}>
             <DialogActions>
+              {onDelete && (
+                <Button
+                  color="error"
+                  onClick={() => void onDelete()}
+                  startIcon={<Icon>delete</Icon>}
+                  sx={{ mr: 'auto' }}
+                  type="button"
+                >
+                  Delete
+                </Button>
+              )}
               <Button
                 type="submit"
-                disabled={!dialogState.environmentName}
+                disabled={!canSave}
                 variant="contained"
                 color="primary"
               >
