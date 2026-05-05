@@ -6,6 +6,12 @@ import { defineConfig } from 'vite'
 const reactCompiler = reactCompilerPreset()
 reactCompiler.rolldown.filter.id = { exclude: ['src/generated/**'] }
 
+const matchesPackage = (id: string, packageName: string) =>
+  id.includes(`/node_modules/${packageName}/`)
+
+const matchesAnyPackage = (id: string, packageNames: string[]) =>
+  packageNames.some((packageName) => matchesPackage(id, packageName))
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), babel({ presets: [reactCompiler] }), visualizer()],
@@ -20,16 +26,49 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          if (id.includes('/node_modules/@octokit/')) {
+          if (matchesPackage(id, '@octokit')) {
             return 'octokit'
           }
 
           if (
-            id.includes('/node_modules/@mui/material/') ||
-            id.includes('/node_modules/@emotion/react/') ||
-            id.includes('/node_modules/@emotion/styled/')
+            matchesPackage(id, '@mui') ||
+            matchesPackage(id, '@emotion') ||
+            matchesPackage(id, '@pigment-css')
           ) {
             return 'mui'
+          }
+
+          if (matchesAnyPackage(id, ['react', 'react-dom', 'scheduler'])) {
+            return 'react'
+          }
+
+          if (
+            matchesAnyPackage(id, [
+              '@tanstack/query-core',
+              '@tanstack/react-query',
+              '@tanstack/react-query-devtools',
+            ])
+          ) {
+            return 'query'
+          }
+
+          if (
+            matchesAnyPackage(id, [
+              'zod',
+              'yaml',
+              'graphql',
+              'graphql-tag',
+              'graphql-request',
+              'lodash-es',
+              'dayjs',
+              'valtio',
+              'proxy-compare',
+              'react-modal-promise',
+              'uuid',
+              'tslib',
+            ])
+          ) {
+            return 'data'
           }
         },
       },
