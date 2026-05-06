@@ -2,6 +2,7 @@ import {
   Box,
   Button,
   ButtonBase,
+  Chip,
   Icon,
   IconButton,
   Link,
@@ -217,6 +218,9 @@ export function ApplicationWorkspaceView({
                   open_in_new
                 </Icon>
               </Link>
+              <SelectedApplicationCustomArgs
+                extraArgs={selectedApplication.deploySettings.extraArgs}
+              />
             </Box>
             <Button
               variant="outlined"
@@ -327,6 +331,7 @@ function ApplicationNavigationButton({
   onClick: () => void
 }) {
   const environmentNames = getEnvironmentNames(application)
+  const extraArgEntries = getExtraArgEntries(application)
 
   return (
     <ButtonBase
@@ -362,7 +367,7 @@ function ApplicationNavigationButton({
         <Typography noWrap sx={{ fontWeight: isSelected ? 800 : 600 }}>
           {application.name}
         </Typography>
-        {environmentNames.length ? (
+        {environmentNames.length || extraArgEntries.length ? (
           <Box
             sx={{
               display: 'flex',
@@ -378,6 +383,7 @@ function ApplicationNavigationButton({
                 status={environmentStatuses[environmentName] ?? 'outdated'}
               />
             ))}
+            <CustomArgsNavigationIndicator extraArgEntries={extraArgEntries} />
           </Box>
         ) : null}
       </Box>
@@ -417,6 +423,87 @@ function EnvironmentStatusChip({
         {environmentName}
       </Box>
     </Tooltip>
+  )
+}
+
+function CustomArgsNavigationIndicator({
+  extraArgEntries,
+}: {
+  extraArgEntries: [string, string][]
+}) {
+  if (!extraArgEntries.length) return null
+
+  return (
+    <Tooltip title={formatExtraArgsTooltip(extraArgEntries)}>
+      <Box
+        aria-label={formatExtraArgsLabel(extraArgEntries.length)}
+        component="span"
+        sx={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 0.25,
+          px: 0.55,
+          py: 0.08,
+          maxWidth: '100%',
+          borderRadius: 0.8,
+          border: (theme) =>
+            `1px solid ${alpha(theme.palette.secondary.light, 0.7)}`,
+          background: (theme) => alpha(theme.palette.secondary.dark, 0.38),
+          color: 'secondary.light',
+          fontSize: '0.64rem',
+          fontWeight: 800,
+          lineHeight: 1.45,
+        }}
+      >
+        <Icon aria-hidden="true" sx={{ fontSize: '0.78rem' }}>
+          tune
+        </Icon>
+        {extraArgEntries.length}
+      </Box>
+    </Tooltip>
+  )
+}
+
+function SelectedApplicationCustomArgs({
+  extraArgs,
+}: {
+  extraArgs: Record<string, string>
+}) {
+  const extraArgEntries = getExtraArgEntries({ deploySettings: { extraArgs } })
+
+  if (!extraArgEntries.length) return null
+
+  return (
+    <Box
+      aria-label="Custom workflow args"
+      sx={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: 0.55,
+        mt: 0.25,
+      }}
+    >
+      {extraArgEntries.map(([key, value]) => (
+        <Chip
+          color="secondary"
+          key={key}
+          label={`${key}=${value}`}
+          size="small"
+          variant="outlined"
+          sx={{
+            maxWidth: '100%',
+            borderColor: (theme) => alpha(theme.palette.secondary.light, 0.72),
+            backgroundColor: (theme) =>
+              alpha(theme.palette.secondary.dark, 0.22),
+            '& .MuiChip-label': {
+              display: 'block',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            },
+          }}
+        />
+      ))}
+    </Box>
   )
 }
 
@@ -543,6 +630,25 @@ function getSortedReleases(
 
 function getEnvironmentNames(application: ApplicationConfig) {
   return Object.keys(application.environmentSettingsByName)
+}
+
+function getExtraArgEntries({
+  deploySettings,
+}: {
+  deploySettings: { extraArgs: Record<string, string> }
+}) {
+  return Object.entries(deploySettings.extraArgs).sort(([left], [right]) =>
+    left.localeCompare(right),
+  )
+}
+
+function formatExtraArgsLabel(count: number) {
+  return `${count} custom workflow ${count === 1 ? 'arg' : 'args'}`
+}
+
+function formatExtraArgsTooltip(extraArgEntries: [string, string][]) {
+  const names = extraArgEntries.map(([key]) => key).join(', ')
+  return `${formatExtraArgsLabel(extraArgEntries.length)}: ${names}`
 }
 
 function formatStatus(status: EnvironmentDeployStatus) {

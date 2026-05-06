@@ -157,6 +157,108 @@ describe('ApplicationWorkspaceView', () => {
     expect(await findByText('prod: failed')).toBeTruthy()
   })
 
+  test('shows selected application custom arg values as labels', () => {
+    const customArgApplications = {
+      api: createApplication({
+        id: 'api',
+        name: 'API',
+        owner: 'deploy-center',
+        repo: 'api',
+        environments: ['test'],
+        extraArgs: {
+          dry_run: 'true',
+          region: 'eu-west-1',
+        },
+      }),
+    }
+
+    const { getByLabelText } = render(
+      <ApplicationWorkspaceView
+        applicationsById={customArgApplications}
+        selectedApplicationId="api"
+        showNewApplicationModal={() => {}}
+        selectApplication={() => {}}
+        editApplication={() => {}}
+        exportApplications={() => {}}
+        importApplications={() => {}}
+      >
+        <div>Deployments</div>
+      </ApplicationWorkspaceView>
+    )
+
+    const customArgs = getByLabelText('Custom workflow args')
+
+    expect(within(customArgs).getByText('dry_run=true')).toBeTruthy()
+    expect(within(customArgs).getByText('region=eu-west-1')).toBeTruthy()
+  })
+
+  test('shows custom arg indicators in app navigation with names in the tooltip', async () => {
+    const user = userEvent.setup()
+    const customArgApplications = {
+      api: applicationsById.api,
+      checkout: createApplication({
+        id: 'checkout',
+        name: 'Checkout',
+        owner: 'deploy-center',
+        repo: 'checkout',
+        environments: ['staging', 'prod'],
+        extraArgs: {
+          dry_run: 'true',
+          region: 'eu-west-1',
+        },
+      }),
+    }
+
+    const { findByText, getByRole, queryByText } = render(
+      <ApplicationWorkspaceView
+        applicationsById={customArgApplications}
+        selectedApplicationId="api"
+        showNewApplicationModal={() => {}}
+        selectApplication={() => {}}
+        editApplication={() => {}}
+        exportApplications={() => {}}
+        importApplications={() => {}}
+      >
+        <div>Deployments</div>
+      </ApplicationWorkspaceView>
+    )
+
+    const checkoutButton = getByRole('button', { name: /switch to checkout/i })
+    const customArgsIndicator = within(checkoutButton).getByLabelText(
+      '2 custom workflow args'
+    )
+
+    await user.hover(customArgsIndicator)
+
+    expect(
+      await findByText('2 custom workflow args: dry_run, region')
+    ).toBeTruthy()
+    expect(queryByText('dry_run=true')).toBeNull()
+    expect(queryByText('region=eu-west-1')).toBeNull()
+  })
+
+  test('does not show a custom args indicator for applications without custom args', () => {
+    const { getByRole } = render(
+      <ApplicationWorkspaceView
+        applicationsById={applicationsById}
+        selectedApplicationId="api"
+        showNewApplicationModal={() => {}}
+        selectApplication={() => {}}
+        editApplication={() => {}}
+        exportApplications={() => {}}
+        importApplications={() => {}}
+      >
+        <div>Deployments</div>
+      </ApplicationWorkspaceView>
+    )
+
+    const checkoutButton = getByRole('button', { name: /switch to checkout/i })
+
+    expect(
+      within(checkoutButton).queryByLabelText(/custom workflow args/i)
+    ).toBeNull()
+  })
+
   test('puts new application and import/export actions at the top of the sidebar', async () => {
     const actions: string[] = []
     const user = userEvent.setup()
@@ -317,8 +419,10 @@ function createApplication({
   owner,
   ref = 'main',
   repo,
+  extraArgs = {},
 }: {
   environments: string[]
+  extraArgs?: Record<string, string>
   id: string
   name: string
   owner: string
@@ -341,7 +445,7 @@ function createApplication({
       releaseKey: 'ref',
       workflowId: 1,
       ref,
-      extraArgs: {},
+      extraArgs,
       manualWorkflowHandling: false,
     },
     environmentSettingsByName: Object.fromEntries(
