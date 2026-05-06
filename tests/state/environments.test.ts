@@ -47,12 +47,12 @@ describe('environment ordering', () => {
   test('recognizes environment suffixes after app prefixes', () => {
     expect(
       sortEnvironments([
-        { name: 'uidp-prod' },
-        { name: 'uidp-dev' },
-        { name: 'uidp-staging' },
-        { name: 'uidp-tst' },
+        { name: 'sample-prod' },
+        { name: 'sample-dev' },
+        { name: 'sample-staging' },
+        { name: 'sample-tst' },
       ]).map((environment) => environment.name),
-    ).toEqual(['uidp-dev', 'uidp-tst', 'uidp-staging', 'uidp-prod'])
+    ).toEqual(['sample-dev', 'sample-tst', 'sample-staging', 'sample-prod'])
   })
 
   test('merges GitHub environments without replacing existing settings', () => {
@@ -92,17 +92,17 @@ describe('environment ordering', () => {
       {},
       [
         { name: 'prod' },
-        { name: 'uidp-dev' },
-        { name: 'uidp-qa' },
-        { name: 'uidp-ops' },
+        { name: 'sample-dev' },
+        { name: 'sample-qa' },
+        { name: 'sample-ops' },
         { name: 'github-pages' },
       ],
       ['dev', 'qa', 'prod'],
     )
 
     expect(merged).toEqual({
-      'uidp-dev': settings('uidp-dev', 'dev'),
-      'uidp-qa': settings('uidp-qa', 'qa'),
+      'sample-dev': settings('sample-dev', 'dev'),
+      'sample-qa': settings('sample-qa', 'qa'),
       prod: settings('prod', ''),
     })
   })
@@ -111,27 +111,27 @@ describe('environment ordering', () => {
     const merged = mergeGitHubEnvironments(
       {},
       [
-        { name: 'uidp-admin-dev' },
-        { name: 'uidp-api-dev' },
-        { name: 'uidp-dev' },
-        { name: 'uidp-prod' },
+        { name: 'sample-admin-dev' },
+        { name: 'sample-api-dev' },
+        { name: 'sample-dev' },
+        { name: 'sample-prod' },
       ],
       ['dev', 'prod'],
     )
 
     expect(merged).toEqual({
-      'uidp-prod': settings('uidp-prod', 'prod'),
+      'sample-prod': settings('sample-prod', 'prod'),
     })
   })
 
   test('suggests app-scoped mappings from workflow choices', () => {
     const suggestions = suggestEnvironmentMappings({
-      applicationName: 'UIDP',
+      applicationName: 'Sample',
       repoName: 'platform',
       githubEnvironments: [
-        { name: 'uidp-admin-qa' },
-        { name: 'uidp-dev' },
-        { name: 'uidp-prod' },
+        { name: 'sample-admin-qa' },
+        { name: 'sample-dev' },
+        { name: 'sample-prod' },
         { name: 'github-pages' },
       ],
       workflowInputChoices: ['dev', 'qa', 'prod'],
@@ -140,21 +140,21 @@ describe('environment ordering', () => {
     expect(suggestions).toMatchObject([
       {
         enabled: true,
-        environmentName: 'uidp-dev',
-        existingEnvironmentName: 'uidp-dev',
+        environmentName: 'sample-dev',
+        existingEnvironmentName: 'sample-dev',
         workflowChoice: 'dev',
         workflowInputValue: 'dev',
       },
       {
         enabled: true,
-        environmentName: 'uidp-qa',
+        environmentName: 'sample-qa',
         workflowChoice: 'qa',
         workflowInputValue: 'qa',
       },
       {
         enabled: true,
-        environmentName: 'uidp-prod',
-        existingEnvironmentName: 'uidp-prod',
+        environmentName: 'sample-prod',
+        existingEnvironmentName: 'sample-prod',
         workflowChoice: 'prod',
         workflowInputValue: 'prod',
       },
@@ -168,7 +168,7 @@ describe('environment ordering', () => {
       repoName: 'deploy-center-fixture',
       githubEnvironments: [
         { name: 'dev' },
-        { name: 'uidp-qa' },
+        { name: 'sample-qa' },
         { name: 'prod' },
         { name: 'github-pages' },
       ],
@@ -183,8 +183,8 @@ describe('environment ordering', () => {
         workflowInputValue: '',
       },
       {
-        environmentName: 'uidp-qa',
-        existingEnvironmentName: 'uidp-qa',
+        environmentName: 'sample-qa',
+        existingEnvironmentName: 'sample-qa',
         workflowChoice: 'qa',
         workflowInputValue: 'qa',
       },
@@ -200,9 +200,9 @@ describe('environment ordering', () => {
   test('does not suggest mappings when workflow choices are unavailable', () => {
     expect(
       suggestEnvironmentMappings({
-        applicationName: 'UIDP',
+        applicationName: 'Sample',
         repoName: 'platform',
-        githubEnvironments: [{ name: 'uidp-dev' }],
+        githubEnvironments: [{ name: 'sample-dev' }],
         workflowInputChoices: undefined,
       }),
     ).toEqual([])
@@ -213,43 +213,43 @@ describe('environment ordering', () => {
       '',
     )
     expect(
-      resolveEnvironmentWorkflowInputValue('uidp-dev', ['dev', 'prod']),
+      resolveEnvironmentWorkflowInputValue('sample-dev', ['dev', 'prod']),
     ).toBe('dev')
     expect(
-      resolveEnvironmentWorkflowInputValue('uidp-dev', ['uidp', 'dev']),
+      resolveEnvironmentWorkflowInputValue('sample-dev', ['sample', 'dev']),
     ).toBeUndefined()
     expect(
-      resolveEnvironmentWorkflowInputValue('uidp-ops', ['dev', 'prod']),
+      resolveEnvironmentWorkflowInputValue('sample-ops', ['dev', 'prod']),
     ).toBeUndefined()
     expect(
-      resolveEnvironmentWorkflowInputValue('uidp-dev', undefined),
+      resolveEnvironmentWorkflowInputValue('sample-dev', undefined),
     ).toBeUndefined()
   })
 
   test('resolves a workflow choice only when the reverse mapping is unique', () => {
     const githubEnvironments = [
-      { name: 'uidp-admin-dev' },
-      { name: 'uidp-api-dev' },
-      { name: 'uidp-qa' },
+      { name: 'sample-admin-dev' },
+      { name: 'sample-api-dev' },
+      { name: 'sample-qa' },
     ]
 
     expect(
       resolveUnambiguousEnvironmentWorkflowInputValue(
-        'uidp-qa',
+        'sample-qa',
         githubEnvironments,
         ['dev', 'qa'],
       ),
     ).toBe('qa')
     expect(
       resolveUnambiguousEnvironmentWorkflowInputValue(
-        'uidp-admin-dev',
+        'sample-admin-dev',
         githubEnvironments,
         ['dev', 'qa'],
       ),
     ).toBeUndefined()
     expect(
       resolveUnambiguousEnvironmentWorkflowInputValue(
-        'uidp-prod',
+        'sample-prod',
         githubEnvironments,
         ['dev', 'qa', 'prod'],
       ),

@@ -39,7 +39,7 @@ test('creates an application and persists selected workflow settings', async ({
 
   await selectRepo(page)
   await expect(applicationNameInput(page)).toHaveValue(E2E_REPO.name)
-  await applicationNameInput(page).fill('uidp')
+  await applicationNameInput(page).fill('sample')
   await expect(page.getByLabel('Release input name')).toBeEnabled()
 
   await openWorkflowSelect(page)
@@ -66,12 +66,12 @@ test('creates an application and persists selected workflow settings', async ({
   await expect(
     page.getByText(/additional environments can be added later/i)
   ).toBeVisible()
-  await expect(page.getByLabel('Environment for dev')).toHaveValue('uidp-dev')
+  await expect(page.getByLabel('Environment for dev')).toHaveValue('sample-dev')
   await expect(page.getByLabel('Workflow input for dev')).toHaveValue('dev')
-  await expect(page.getByLabel('Environment for qa')).toHaveValue('uidp-qa')
+  await expect(page.getByLabel('Environment for qa')).toHaveValue('sample-qa')
   await expect(page.getByLabel('Workflow input for qa')).toHaveValue('qa')
   await page.getByLabel('Enable staging').uncheck()
-  await page.getByLabel('Environment for prod').fill('uidp-production')
+  await page.getByLabel('Environment for prod').fill('sample-production')
   await page.getByRole('button', { name: 'Save mappings' }).click()
 
   await expect(
@@ -80,7 +80,7 @@ test('creates an application and persists selected workflow settings', async ({
     })
   ).toBeVisible()
 
-  const savedApplication = await readSavedApplication(github, 'uidp')
+  const savedApplication = await readSavedApplication(github, 'sample')
 
   expect(savedApplication).toBeTruthy()
   expect(savedApplication?.deploySettings).toMatchObject({
@@ -93,26 +93,26 @@ test('creates an application and persists selected workflow settings', async ({
   const environmentNames = Object.keys(
     savedApplication?.environmentSettingsByName ?? {}
   )
-  expect(environmentNames).toContain('uidp-dev')
-  expect(environmentNames).toContain('uidp-test')
-  expect(environmentNames).toContain('uidp-qa')
-  expect(environmentNames).toContain('uidp-production')
+  expect(environmentNames).toContain('sample-dev')
+  expect(environmentNames).toContain('sample-test')
+  expect(environmentNames).toContain('sample-qa')
+  expect(environmentNames).toContain('sample-production')
   expect(environmentNames).not.toContain('prod')
   expect(environmentNames).not.toContain('github-pages')
-  expect(environmentNames).not.toContain('uidp-admin-qa')
-  expect(environmentNames).not.toContain('uidp-staging')
-  expect(environmentNames).not.toContain('uidp-ops')
+  expect(environmentNames).not.toContain('sample-admin-qa')
+  expect(environmentNames).not.toContain('sample-staging')
+  expect(environmentNames).not.toContain('sample-ops')
   expect(savedApplication?.environmentSettingsByName).toMatchObject({
-    'uidp-dev': {
-      name: 'uidp-dev',
+    'sample-dev': {
+      name: 'sample-dev',
       workflowInputValue: 'dev',
     },
-    'uidp-qa': {
-      name: 'uidp-qa',
+    'sample-qa': {
+      name: 'sample-qa',
       workflowInputValue: 'qa',
     },
-    'uidp-production': {
-      name: 'uidp-production',
+    'sample-production': {
+      name: 'sample-production',
       workflowInputValue: 'prod',
     },
   })
@@ -132,7 +132,7 @@ test('leaves ambiguous workflow choice values blank when adding an environment',
   await page.getByRole('button', { name: 'Add environment' }).click()
   await page
     .getByRole('combobox', { name: 'Find or add environment' })
-    .fill('uidp-dev')
+    .fill('sample-dev')
 
   await expect(
     page.getByLabel('Workflow input value (defaults to environment name)')
@@ -145,8 +145,8 @@ test('leaves ambiguous workflow choice values blank when adding an environment',
   )
 
   expect(savedApplication?.environmentSettingsByName).toMatchObject({
-    'uidp-dev': {
-      name: 'uidp-dev',
+    'sample-dev': {
+      name: 'sample-dev',
       workflowInputValue: '',
     },
   })
