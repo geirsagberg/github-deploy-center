@@ -1,11 +1,6 @@
 import {
   Autocomplete,
-  Button,
   Checkbox,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   FormControlLabel,
   Stack,
   TextField,
@@ -13,8 +8,6 @@ import {
   Typography,
 } from '@mui/material'
 import { fromPairs } from 'lodash-es'
-import { useFetchEnvironments } from '../api/fetchHooks'
-import { useActions, useAppState } from '../store'
 import type { DeploymentDialogState } from '../store'
 import {
   selectDeployWorkflow,
@@ -26,13 +19,13 @@ import { SelectWorkflow } from './SelectWorkflow'
 
 export function DeploymentSettingsFields({
   applicationName,
-  deploymentDialog,
+  deploySettings,
   disabled = false,
   repo,
   updateDialogState,
 }: {
   applicationName?: string
-  deploymentDialog: DeploymentDialogState
+  deploySettings: DeploymentDialogState
   disabled?: boolean
   repo?: RepoModel | null
   updateDialogState: (update: (state: DeploymentDialogState) => void) => void
@@ -66,7 +59,7 @@ export function DeploymentSettingsFields({
               <Checkbox
                 disabled={disabled}
                 size="small"
-                checked={deploymentDialog.manualWorkflowHandling}
+                checked={deploySettings.manualWorkflowHandling}
                 onChange={(event) =>
                   updateDialogState((state) =>
                     updateManualWorkflowHandling(state, event.target.checked),
@@ -82,8 +75,8 @@ export function DeploymentSettingsFields({
       <SelectWorkflow
         applicationName={applicationName}
         disabled={disabled}
-        workflowId={deploymentDialog.workflowId}
-        manualWorkflowHandling={deploymentDialog.manualWorkflowHandling}
+        workflowId={deploySettings.workflowId}
+        manualWorkflowHandling={deploySettings.manualWorkflowHandling}
         repo={repo}
         onChange={(workflow) =>
           updateDialogState((state) => selectDeployWorkflow(state, workflow))
@@ -97,27 +90,27 @@ export function DeploymentSettingsFields({
       <TextField
         disabled={disabled}
         label="Release input name"
-        value={deploymentDialog.releaseKey}
+        value={deploySettings.releaseKey}
         onChange={(e) =>
           updateDialogState(
-            (settings) => (settings.releaseKey = e.target.value)
+            (settings) => (settings.releaseKey = e.target.value),
           )
         }
       />
       <TextField
         disabled={disabled}
         label="Environment input name (optional)"
-        value={deploymentDialog.environmentKey}
+        value={deploySettings.environmentKey}
         onChange={(e) =>
           updateDialogState(
-            (settings) => (settings.environmentKey = e.target.value)
+            (settings) => (settings.environmentKey = e.target.value),
           )
         }
       />
       <TextField
         disabled={disabled}
         label="Run workflow from branch"
-        value={deploymentDialog.ref}
+        value={deploySettings.ref}
         onChange={(e) =>
           updateDialogState((settings) => (settings.ref = e.target.value))
         }
@@ -128,8 +121,8 @@ export function DeploymentSettingsFields({
         multiple
         options={[]}
         freeSolo
-        value={Object.entries(deploymentDialog.extraArgs).map(
-          ([key, value]) => `${key}=${value}`
+        value={Object.entries(deploySettings.extraArgs).map(
+          ([key, value]) => `${key}=${value}`,
         )}
         renderInput={(params) => (
           <TextField
@@ -148,59 +141,5 @@ export function DeploymentSettingsFields({
         }}
       />
     </Stack>
-  )
-}
-
-export const DeploymentDialog = () => {
-  const { deploymentDialog } = useAppState()
-  const { updateDeployWorkflowDialog, cancelEditDeployment, saveDeployment } =
-    useActions()
-  const environments = useFetchEnvironments()
-
-  const valid = Boolean(
-    deploymentDialog &&
-      deploymentDialog.workflowId &&
-      deploymentDialog.releaseKey &&
-      deploymentDialog.ref
-  )
-  return (
-    <Dialog open={!!deploymentDialog} fullWidth onClose={cancelEditDeployment}>
-      {deploymentDialog ? (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (valid) {
-              saveDeployment(environments.data ?? [])
-            }
-          }}
-        >
-          <DialogTitle>Deploy workflow settings</DialogTitle>
-          <DialogContent
-            style={{
-              display: 'flex',
-              gap: '1rem',
-              flexDirection: 'column',
-              overflow: 'visible',
-            }}
-          >
-            <DeploymentSettingsFields
-              deploymentDialog={deploymentDialog}
-              updateDialogState={updateDeployWorkflowDialog}
-            />
-          </DialogContent>
-          <DialogActions style={{ padding: '2rem' }}>
-            <Button
-              type="submit"
-              disabled={!valid}
-              variant="contained"
-              color="primary"
-            >
-              Save
-            </Button>
-            <Button onClick={cancelEditDeployment}>Cancel</Button>
-          </DialogActions>
-        </form>
-      ) : null}
-    </Dialog>
   )
 }

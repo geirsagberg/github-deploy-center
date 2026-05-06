@@ -3,7 +3,6 @@ import {
   addEnvironmentSettings,
   editEnvironmentSettings,
   isProductionEnvironmentValue,
-  mergeGitHubEnvironments,
   reorderEnvironmentSettings,
   resolveEnvironmentWorkflowInputValue,
   resolveUnambiguousEnvironmentWorkflowInputValue,
@@ -54,75 +53,6 @@ describe('environment ordering', () => {
         { name: 'sample-tst' },
       ]).map((environment) => environment.name),
     ).toEqual(['sample-dev', 'sample-tst', 'sample-staging', 'sample-prod'])
-  })
-
-  test('merges GitHub environments without replacing existing settings', () => {
-    const merged = mergeGitHubEnvironments(
-      {
-        prod: settings('prod', 'production'),
-      },
-      [
-        { name: 'github-pages' },
-        { name: 'qa' },
-        { name: 'dev' },
-        { name: 'prod' },
-      ],
-      ['dev', 'qa', 'prod'],
-    )
-
-    expect(Object.keys(merged)).toEqual(['dev', 'qa', 'prod'])
-    expect(merged.prod.workflowInputValue).toBe('production')
-  })
-
-  test('skips preregistration when workflow choices are unavailable', () => {
-    const merged = mergeGitHubEnvironments(
-      {
-        prod: settings('prod', 'production'),
-      },
-      [{ name: 'dev' }, { name: 'prod' }],
-      undefined,
-    )
-
-    expect(merged).toEqual({
-      prod: settings('prod', 'production'),
-    })
-  })
-
-  test('maps GitHub environments from exact and unambiguous choice matches', () => {
-    const merged = mergeGitHubEnvironments(
-      {},
-      [
-        { name: 'prod' },
-        { name: 'sample-dev' },
-        { name: 'sample-qa' },
-        { name: 'sample-ops' },
-        { name: 'github-pages' },
-      ],
-      ['dev', 'qa', 'prod'],
-    )
-
-    expect(merged).toEqual({
-      'sample-dev': settings('sample-dev', 'dev'),
-      'sample-qa': settings('sample-qa', 'qa'),
-      prod: settings('prod', ''),
-    })
-  })
-
-  test('skips matches when multiple environments map to the same choice', () => {
-    const merged = mergeGitHubEnvironments(
-      {},
-      [
-        { name: 'sample-admin-dev' },
-        { name: 'sample-api-dev' },
-        { name: 'sample-dev' },
-        { name: 'sample-prod' },
-      ],
-      ['dev', 'prod'],
-    )
-
-    expect(merged).toEqual({
-      'sample-prod': settings('sample-prod', 'prod'),
-    })
   })
 
   test('suggests app-scoped mappings from workflow choices', () => {

@@ -8,7 +8,6 @@ import {
   addEnvironmentSettings,
   editEnvironmentSettings,
   isProductionEnvironmentValue,
-  mergeGitHubEnvironments,
   reorderEnvironmentSettings,
   sortEnvironments,
   suggestEnvironmentMappings,
@@ -225,14 +224,6 @@ export const showNewApplicationModal = () => {
   )
 }
 
-export const updateDeployWorkflowDialog = (
-  update: (state: DeploymentDialogState) => void
-) => {
-  if (appState.deploymentDialog) {
-    update(appState.deploymentDialog)
-  }
-}
-
 export const triggerDeployment = async ({
   release,
   environmentName,
@@ -387,40 +378,13 @@ export const editApplication = () => {
   }
 }
 
-export const editDeployment = () => {
-  editApplication()
-}
-
-export const saveDeployment = (githubEnvironments: GitHubEnvironment[] = []) => {
-  if (appState.selectedApplication && appState.deploymentDialog) {
-    const environmentChoices = getDeployEnvironmentChoices(
-      appState.deploymentDialog,
-    )
-
-    appState.selectedApplication.deploySettings = toPersistedDeploySettings(
-      appState.deploymentDialog,
-    )
-    appState.selectedApplication.environmentSettingsByName =
-      mergeGitHubEnvironments(
-        appState.selectedApplication.environmentSettingsByName,
-        githubEnvironments,
-        environmentChoices,
-      )
-  }
-  delete appState.deploymentDialog
-}
-
-export const cancelEditDeployment = () => {
-  delete appState.deploymentDialog
-}
-
 export const cancelEditApplication = () => {
   delete appState.editApplicationDialog
 }
 
 export const saveApplication = ({
   deploySettings,
-  githubEnvironments,
+  githubEnvironments: _githubEnvironments,
   repo,
   name,
   releaseFilter,
@@ -452,11 +416,6 @@ export const saveApplication = ({
   application.repo = clone(repo)
   application.name = applicationName
   application.deploySettings = toPersistedDeploySettings(deploySettings)
-  application.environmentSettingsByName = mergeGitHubEnvironments(
-    application.environmentSettingsByName,
-    githubEnvironments,
-    getDeployEnvironmentChoices(deploySettings),
-  )
   application.releaseFilter = releaseFilter
   delete appState.editApplicationDialog
 }
@@ -704,14 +663,12 @@ export const actions = {
   cancelAddEnvironment,
   cancelEditEnvironment,
   cancelEditApplication,
-  cancelEditDeployment,
   cancelEnvironmentMappings,
   cancelNewApplication,
   createNewApplication,
   deleteApplication,
   editApplication,
   editAccount,
-  editDeployment,
   editEnvironment,
   exportApplications,
   hideSettings,
@@ -720,7 +677,6 @@ export const actions = {
   removeAccount,
   removeEnvironment,
   saveApplication,
-  saveDeployment,
   saveEnvironmentMappings,
   selectAccount,
   selectApplication,
@@ -732,7 +688,6 @@ export const actions = {
   showSettings,
   triggerDeployment,
   updateApplicationDialog,
-  updateDeployWorkflowDialog,
   updateEnvironmentDialog,
   updateEnvironmentMappingDialog,
 }

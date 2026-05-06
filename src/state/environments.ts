@@ -14,36 +14,6 @@ export type EnvironmentMappingSuggestion = {
   existingEnvironmentName?: string
 }
 
-export function mergeGitHubEnvironments(
-  currentSettings: Record<string, EnvironmentSettings>,
-  githubEnvironments: readonly GitHubEnvironment[],
-  workflowInputChoices: readonly string[] | undefined,
-) {
-  const merged = { ...currentSettings }
-  const workflowInputValueByEnvironmentName =
-    resolveUnambiguousEnvironmentWorkflowInputValues(
-      githubEnvironments,
-      workflowInputChoices,
-    )
-
-  for (const environment of githubEnvironments) {
-    if (!isDeployEnvironmentName(environment.name)) continue
-    if (environment.name in merged) continue
-
-    const workflowInputValue =
-      workflowInputValueByEnvironmentName[environment.name]
-
-    if (workflowInputValue === undefined) continue
-
-    merged[environment.name] = {
-      name: environment.name,
-      workflowInputValue,
-    }
-  }
-
-  return environmentSettingsByName(sortEnvironments(Object.values(merged)))
-}
-
 export function suggestEnvironmentMappings({
   applicationName,
   repoName,

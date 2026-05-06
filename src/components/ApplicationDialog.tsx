@@ -19,7 +19,7 @@ import { createDeploySettings } from '../state/schemas'
 import type { GitHubEnvironment, RepoModel } from '../state/schemas'
 import { theme } from '../theme'
 import { CredentialErrorAlert } from './CredentialErrorAlert'
-import { DeploymentSettingsFields } from './DeploymentDialog'
+import { DeploymentSettingsFields } from './DeploymentSettingsFields'
 import Expander from './Expander'
 import { RepoSearchBox } from './RepoSearchView'
 
@@ -168,7 +168,7 @@ export const ApplicationDialog: FC<{
                 >
                   <DeploymentSettingsFields
                     applicationName={dialogState.name}
-                    deploymentDialog={dialogState.deploySettings}
+                    deploySettings={dialogState.deploySettings}
                     disabled={!dialogState.repo}
                     repo={dialogState.repo}
                     updateDialogState={(update) =>

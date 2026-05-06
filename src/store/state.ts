@@ -81,7 +81,6 @@ export type AppState = {
   environmentMappingDialog?: EnvironmentMappingDialogState
   addEnvironmentDialog?: EnvironmentDialogState
   editEnvironmentDialog?: EnvironmentDialogState
-  deploymentDialog?: DeploymentDialogState
   settingsDialog?: SettingsDialogState
   readonly pendingDeployments: Record<string, PendingDeployment>
   settings: AppSettings
