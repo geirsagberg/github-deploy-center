@@ -8,7 +8,13 @@ on:
         required: true
       environment:
         description: Which environment to deploy to (dev, test or prod)
+        type: choice
         required: true
+        default: dev
+        options:
+          - dev
+          - test
+          - prod
 
   workflow_run:
     workflows: [Build and publish]

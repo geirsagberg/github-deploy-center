@@ -9,12 +9,13 @@ import {
   editEnvironmentSettings,
   mergeGitHubEnvironments,
   reorderEnvironmentSettings,
+  sortEnvironments,
+  suggestEnvironmentMappings,
 } from '../state/environments'
 import type {
   AccountProfile,
   AppSettings,
   ApplicationConfig,
-  DeploySettings,
   EnvironmentSettings,
   GitHubEnvironment,
   RepoModel,
@@ -23,8 +24,11 @@ import {
   resolveGitHubIdentity,
   type GitHubIdentityResolver,
 } from '../api/githubIdentity'
-import { getEnvironmentChoiceOptions } from '../api/workflowDispatch'
 import { showConfirm } from '../utils/dialog'
+import {
+  getDeployEnvironmentChoices,
+  toPersistedDeploySettings,
+} from '../state/deployWorkflow'
 import {
   addAccountProfile,
   deleteActiveApplication,
@@ -50,6 +54,7 @@ import type {
   ApplicationDialogState,
   DeploymentDialogState,
   EnvironmentDialogState,
+  EnvironmentMappingDialogState,
 } from './state'
 import { downloadJson, restApi, uploadJson } from './services'
 import { getDeploymentId } from './utils'
@@ -288,24 +293,6 @@ export const triggerDeployment = async ({
   }
 }
 
-function toPersistedDeploySettings(
-  deploySettings: DeploymentDialogState,
-): DeploySettings {
-  const { dispatchInputs: _dispatchInputs, ...persistedDeploySettings } =
-    deploySettings
-
-  return clone(persistedDeploySettings)
-}
-
-function getDialogEnvironmentChoiceOptions(
-  deploySettings: DeploymentDialogState,
-) {
-  return getEnvironmentChoiceOptions(
-    deploySettings.dispatchInputs,
-    deploySettings.environmentKey,
-  )
-}
-
 export const createNewApplication = ({
   deploySettings,
   githubEnvironments,
@@ -337,13 +324,23 @@ export const createNewApplication = ({
     releaseFilter
   )
   appConfig.deploySettings = toPersistedDeploySettings(deploySettings)
-  appConfig.environmentSettingsByName = mergeGitHubEnvironments(
-    appConfig.environmentSettingsByName,
+  const environmentMappingSuggestions = suggestEnvironmentMappings({
+    applicationName,
+    repoName: repo.name,
     githubEnvironments,
-    getDialogEnvironmentChoiceOptions(deploySettings),
-  )
+    workflowInputChoices: getDeployEnvironmentChoices(deploySettings),
+  })
   workspace.applicationsById[appConfig.id] = appConfig
   workspace.selectedApplicationId = appConfig.id
+  if (environmentMappingSuggestions.length) {
+    appState.environmentMappingDialog = {
+      applicationId: appConfig.id,
+      applicationName,
+      mappings: environmentMappingSuggestions,
+    }
+  } else {
+    delete appState.environmentMappingDialog
+  }
   delete appState.newApplicationDialog
 }
 
@@ -375,7 +372,7 @@ export const editDeployment = () => {
 
 export const saveDeployment = (githubEnvironments: GitHubEnvironment[] = []) => {
   if (appState.selectedApplication && appState.deploymentDialog) {
-    const environmentChoices = getDialogEnvironmentChoiceOptions(
+    const environmentChoices = getDeployEnvironmentChoices(
       appState.deploymentDialog,
     )
 
@@ -437,7 +434,7 @@ export const saveApplication = ({
   application.environmentSettingsByName = mergeGitHubEnvironments(
     application.environmentSettingsByName,
     githubEnvironments,
-    getDialogEnvironmentChoiceOptions(deploySettings),
+    getDeployEnvironmentChoices(deploySettings),
   )
   application.releaseFilter = releaseFilter
   delete appState.editApplicationDialog
@@ -458,6 +455,63 @@ export const updateApplicationDialog = ({
     dialogState.warning = undefined
     update(dialogState)
   }
+}
+
+export const updateEnvironmentMappingDialog = ({
+  update,
+}: {
+  update: (state: EnvironmentMappingDialogState) => void
+}) => {
+  if (appState.environmentMappingDialog) {
+    update(appState.environmentMappingDialog)
+  }
+}
+
+export const saveEnvironmentMappings = () => {
+  const dialogState = appState.environmentMappingDialog
+
+  if (!dialogState) return
+
+  const workspace = getActiveWorkspace(appState)
+  const application = workspace.applicationsById[dialogState.applicationId]
+
+  if (!application) {
+    delete appState.environmentMappingDialog
+    return
+  }
+
+  const existingEnvironmentNames = new Set(
+    Object.keys(application.environmentSettingsByName).map((name) =>
+      name.toLowerCase(),
+    ),
+  )
+  const mappings = dialogState.mappings.flatMap((mapping) => {
+    const environmentName = mapping.environmentName.trim()
+    const normalizedEnvironmentName = environmentName.toLowerCase()
+
+    if (!mapping.enabled || !environmentName) return []
+    if (existingEnvironmentNames.has(normalizedEnvironmentName)) return []
+
+    existingEnvironmentNames.add(normalizedEnvironmentName)
+    return [
+      {
+        name: environmentName,
+        workflowInputValue: mapping.workflowInputValue.trim(),
+      },
+    ]
+  })
+
+  application.environmentSettingsByName = Object.fromEntries(
+    sortEnvironments([
+      ...Object.values(application.environmentSettingsByName),
+      ...mappings,
+    ]).map((environment) => [environment.name, environment]),
+  )
+  delete appState.environmentMappingDialog
+}
+
+export const cancelEnvironmentMappings = () => {
+  delete appState.environmentMappingDialog
 }
 
 export const deleteApplication = async () => {
@@ -630,6 +684,7 @@ export const actions = {
   cancelEditEnvironment,
   cancelEditApplication,
   cancelEditDeployment,
+  cancelEnvironmentMappings,
   cancelNewApplication,
   createNewApplication,
   deleteApplication,
@@ -645,6 +700,7 @@ export const actions = {
   removeEnvironment,
   saveApplication,
   saveDeployment,
+  saveEnvironmentMappings,
   selectAccount,
   selectApplication,
   setAppSetting,
@@ -657,6 +713,7 @@ export const actions = {
   updateApplicationDialog,
   updateDeployWorkflowDialog,
   updateEnvironmentDialog,
+  updateEnvironmentMappingDialog,
 }
 
 export const useActions = () => actions

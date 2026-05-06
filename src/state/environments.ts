@@ -5,21 +5,33 @@ const environmentNameCollator = new Intl.Collator(undefined, {
   sensitivity: 'base',
 })
 
+export type EnvironmentMappingSuggestion = {
+  id: string
+  enabled: boolean
+  environmentName: string
+  workflowInputValue: string
+  workflowChoice: string
+  existingEnvironmentName?: string
+}
+
 export function mergeGitHubEnvironments(
   currentSettings: Record<string, EnvironmentSettings>,
   githubEnvironments: readonly GitHubEnvironment[],
   workflowInputChoices: readonly string[] | undefined,
 ) {
   const merged = { ...currentSettings }
+  const workflowInputValueByEnvironmentName =
+    resolveUnambiguousEnvironmentWorkflowInputValues(
+      githubEnvironments,
+      workflowInputChoices,
+    )
 
   for (const environment of githubEnvironments) {
     if (!isDeployEnvironmentName(environment.name)) continue
     if (environment.name in merged) continue
 
-    const workflowInputValue = resolveEnvironmentWorkflowInputValue(
-      environment.name,
-      workflowInputChoices,
-    )
+    const workflowInputValue =
+      workflowInputValueByEnvironmentName[environment.name]
 
     if (workflowInputValue === undefined) continue
 
@@ -32,23 +44,172 @@ export function mergeGitHubEnvironments(
   return environmentSettingsByName(sortEnvironments(Object.values(merged)))
 }
 
+export function suggestEnvironmentMappings({
+  applicationName,
+  repoName,
+  githubEnvironments,
+  workflowInputChoices,
+}: {
+  applicationName: string
+  repoName: string
+  githubEnvironments: readonly GitHubEnvironment[]
+  workflowInputChoices: readonly string[] | undefined
+}) {
+  const workflowChoices = uniqueWorkflowChoices(workflowInputChoices)
+
+  if (!workflowChoices.length) return []
+
+  const deployEnvironmentNames = sortEnvironments(
+    githubEnvironments.filter((environment) =>
+      isDeployEnvironmentName(environment.name),
+    ),
+  ).map((environment) => environment.name)
+  const applicationSlug = toEnvironmentSlug(applicationName)
+  const repoSlug = toEnvironmentSlug(repoName)
+  const existingEnvironmentNameBySlug = new Map(
+    deployEnvironmentNames.map((name) => [toEnvironmentSlug(name), name]),
+  )
+  const shouldSuggestAppScopedNames =
+    !!applicationSlug &&
+    (applicationSlug !== repoSlug ||
+      workflowChoices.some((choice) =>
+        existingEnvironmentNameBySlug.has(
+          createApplicationEnvironmentSlug(applicationSlug, choice),
+        ),
+      ))
+
+  if (shouldSuggestAppScopedNames) {
+    return workflowChoices.map((choice, index) => {
+      const environmentSlug = createApplicationEnvironmentSlug(
+        applicationSlug,
+        choice,
+      )
+      const existingEnvironmentName =
+        existingEnvironmentNameBySlug.get(environmentSlug)
+
+      return createEnvironmentMappingSuggestion({
+        id: `${index}:${choice}`,
+        environmentName: existingEnvironmentName ?? environmentSlug,
+        existingEnvironmentName,
+        workflowChoice: choice,
+        workflowInputValue: choice,
+      })
+    })
+  }
+
+  const workflowInputValueByEnvironmentName =
+    resolveUnambiguousEnvironmentWorkflowInputValues(
+      deployEnvironmentNames.map((name) => ({ name })),
+      workflowChoices,
+    )
+
+  return deployEnvironmentNames.flatMap((environmentName) => {
+    const workflowInputValue = workflowInputValueByEnvironmentName[
+      environmentName
+    ]
+    const match = resolveEnvironmentWorkflowInputChoice(
+      environmentName,
+      workflowChoices,
+    )
+
+    return workflowInputValue === undefined || !match
+      ? []
+      : [
+          createEnvironmentMappingSuggestion({
+            id: environmentName,
+            environmentName,
+            existingEnvironmentName: environmentName,
+            workflowChoice: match.choice,
+            workflowInputValue,
+          }),
+        ]
+  })
+}
+
 export function resolveEnvironmentWorkflowInputValue(
+  environmentName: string,
+  workflowInputChoices: readonly string[] | undefined,
+) {
+  const match = resolveEnvironmentWorkflowInputChoice(
+    environmentName,
+    workflowInputChoices,
+  )
+
+  return match?.workflowInputValue
+}
+
+export function resolveUnambiguousEnvironmentWorkflowInputValue(
+  environmentName: string,
+  githubEnvironments: readonly GitHubEnvironment[],
+  workflowInputChoices: readonly string[] | undefined,
+) {
+  const environments = githubEnvironments.some(
+    (environment) => environment.name === environmentName,
+  )
+    ? githubEnvironments
+    : [...githubEnvironments, { name: environmentName }]
+
+  return resolveUnambiguousEnvironmentWorkflowInputValues(
+    environments,
+    workflowInputChoices,
+  )[environmentName]
+}
+
+function resolveUnambiguousEnvironmentWorkflowInputValues(
+  githubEnvironments: readonly GitHubEnvironment[],
+  workflowInputChoices: readonly string[] | undefined,
+) {
+  const matches = githubEnvironments
+    .filter((environment) => isDeployEnvironmentName(environment.name))
+    .flatMap((environment) => {
+      const match = resolveEnvironmentWorkflowInputChoice(
+        environment.name,
+        workflowInputChoices,
+      )
+
+      return match ? [{ environmentName: environment.name, ...match }] : []
+    })
+  const matchCountsByChoice = matches.reduce<Record<string, number>>(
+    (counts, match) => ({
+      ...counts,
+      [match.choice]: (counts[match.choice] ?? 0) + 1,
+    }),
+    {},
+  )
+
+  return Object.fromEntries(
+    matches.flatMap((match) =>
+      matchCountsByChoice[match.choice] === 1
+        ? [[match.environmentName, match.workflowInputValue]]
+        : [],
+    ),
+  )
+}
+
+function resolveEnvironmentWorkflowInputChoice(
   environmentName: string,
   workflowInputChoices: readonly string[] | undefined,
 ) {
   if (!workflowInputChoices?.length) return undefined
 
-  if (workflowInputChoices.includes(environmentName)) return ''
+  if (workflowInputChoices.includes(environmentName)) {
+    return {
+      choice: environmentName,
+      workflowInputValue: '',
+    }
+  }
 
-  const environmentParts = environmentName
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter(Boolean)
+  const environmentParts = splitEnvironmentParts(environmentName)
   const partialMatches = workflowInputChoices.filter((choice) =>
     environmentParts.includes(choice.toLowerCase()),
   )
 
-  return partialMatches.length === 1 ? partialMatches[0] : undefined
+  return partialMatches.length === 1
+    ? {
+        choice: partialMatches[0],
+        workflowInputValue: partialMatches[0],
+      }
+    : undefined
 }
 
 export function addEnvironmentSettings(
@@ -140,7 +301,7 @@ function environmentRank(name: string) {
 
 function matchesEnvironmentPrefix(name: string, prefixes: string[]) {
   const normalized = name.toLowerCase()
-  const parts = normalized.split(/[^a-z0-9]+/).filter(Boolean)
+  const parts = splitEnvironmentParts(name)
 
   return prefixes.some(
     (prefix) =>
@@ -153,4 +314,52 @@ function environmentSettingsByName(environments: EnvironmentSettings[]) {
   return Object.fromEntries(
     environments.map((environment) => [environment.name, environment]),
   )
+}
+
+function createEnvironmentMappingSuggestion({
+  id,
+  environmentName,
+  existingEnvironmentName,
+  workflowChoice,
+  workflowInputValue,
+}: Omit<EnvironmentMappingSuggestion, 'enabled'>): EnvironmentMappingSuggestion {
+  return {
+    id,
+    enabled: true,
+    environmentName,
+    existingEnvironmentName,
+    workflowChoice,
+    workflowInputValue,
+  }
+}
+
+function uniqueWorkflowChoices(
+  workflowInputChoices: readonly string[] | undefined,
+) {
+  const seenChoices = new Set<string>()
+
+  return (workflowInputChoices ?? []).flatMap((choice) => {
+    const normalizedChoice = choice.trim().toLowerCase()
+    if (!normalizedChoice || seenChoices.has(normalizedChoice)) return []
+
+    seenChoices.add(normalizedChoice)
+    return [choice.trim()]
+  })
+}
+
+function createApplicationEnvironmentSlug(
+  applicationSlug: string,
+  workflowChoice: string,
+) {
+  const choiceSlug = toEnvironmentSlug(workflowChoice)
+
+  return choiceSlug ? `${applicationSlug}-${choiceSlug}` : applicationSlug
+}
+
+function toEnvironmentSlug(value: string) {
+  return splitEnvironmentParts(value).join('-')
+}
+
+function splitEnvironmentParts(value: string) {
+  return value.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
 }

@@ -3,16 +3,18 @@ import { useSnapshot } from 'valtio'
 import { proxy, type Snapshot } from 'valtio/vanilla'
 import { DeploymentState } from '../generated/graphql'
 import { defaultAppSettings } from '../state'
-import type { WorkflowDispatchInputs } from '../api/workflowDispatch'
+import type { DeploymentDialogState } from '../state/deployWorkflow'
+import type { EnvironmentMappingSuggestion } from '../state/environments'
 import type {
   AccountProfile,
   AppSettings,
   ApplicationConfig,
-  DeploySettings,
   PendingDeployment,
   RepoModel,
 } from '../state/schemas'
 import { createDeploySettings } from '../state/schemas'
+
+export type { DeploymentDialogState } from '../state/deployWorkflow'
 
 export interface ReleaseModel {
   id: string
@@ -58,8 +60,10 @@ export type EnvironmentDialogState = {
   originalEnvironmentName?: string
 }
 
-export type DeploymentDialogState = DeploySettings & {
-  dispatchInputs?: WorkflowDispatchInputs
+export type EnvironmentMappingDialogState = {
+  applicationId: string
+  applicationName: string
+  mappings: EnvironmentMappingSuggestion[]
 }
 
 export type SettingsDialogState = {}
@@ -74,6 +78,7 @@ export type AppState = {
   readonly selectedApplication?: ApplicationConfig
   newApplicationDialog?: ApplicationDialogState
   editApplicationDialog?: ApplicationDialogState
+  environmentMappingDialog?: EnvironmentMappingDialogState
   addEnvironmentDialog?: EnvironmentDialogState
   editEnvironmentDialog?: EnvironmentDialogState
   deploymentDialog?: DeploymentDialogState

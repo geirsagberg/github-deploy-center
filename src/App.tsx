@@ -17,6 +17,7 @@ import {
   EditApplicationDialog,
   NewApplicationDialog,
 } from './components/ApplicationDialog'
+import { EnvironmentMappingDialog } from './components/EnvironmentMappingDialog'
 import { EnvironmentsView } from './components/EnvironmentsView'
 import { ReleasesTableView } from './components/ReleasesTableView'
 import { SettingsDialog } from './components/SettingsDialog'
@@ -92,6 +93,7 @@ const App = () => {
                 </ApplicationWorkspace>
                 <NewApplicationDialog />
                 <EditApplicationDialog />
+                <EnvironmentMappingDialog />
               </>
             ) : (
               <Typography color="text.secondary">

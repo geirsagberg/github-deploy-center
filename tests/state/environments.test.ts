@@ -5,7 +5,9 @@ import {
   mergeGitHubEnvironments,
   reorderEnvironmentSettings,
   resolveEnvironmentWorkflowInputValue,
+  resolveUnambiguousEnvironmentWorkflowInputValue,
   sortEnvironments,
+  suggestEnvironmentMappings,
 } from '../../src/state/environments'
 import type { EnvironmentSettings } from '../../src/state/schemas'
 
@@ -91,16 +93,119 @@ describe('environment ordering', () => {
       [
         { name: 'prod' },
         { name: 'uidp-dev' },
+        { name: 'uidp-qa' },
         { name: 'uidp-ops' },
         { name: 'github-pages' },
+      ],
+      ['dev', 'qa', 'prod'],
+    )
+
+    expect(merged).toEqual({
+      'uidp-dev': settings('uidp-dev', 'dev'),
+      'uidp-qa': settings('uidp-qa', 'qa'),
+      prod: settings('prod', ''),
+    })
+  })
+
+  test('skips matches when multiple environments map to the same choice', () => {
+    const merged = mergeGitHubEnvironments(
+      {},
+      [
+        { name: 'uidp-admin-dev' },
+        { name: 'uidp-api-dev' },
+        { name: 'uidp-dev' },
+        { name: 'uidp-prod' },
       ],
       ['dev', 'prod'],
     )
 
     expect(merged).toEqual({
-      'uidp-dev': settings('uidp-dev', 'dev'),
-      prod: settings('prod', ''),
+      'uidp-prod': settings('uidp-prod', 'prod'),
     })
+  })
+
+  test('suggests app-scoped mappings from workflow choices', () => {
+    const suggestions = suggestEnvironmentMappings({
+      applicationName: 'UIDP',
+      repoName: 'platform',
+      githubEnvironments: [
+        { name: 'uidp-admin-qa' },
+        { name: 'uidp-dev' },
+        { name: 'uidp-prod' },
+        { name: 'github-pages' },
+      ],
+      workflowInputChoices: ['dev', 'qa', 'prod'],
+    })
+
+    expect(suggestions).toMatchObject([
+      {
+        enabled: true,
+        environmentName: 'uidp-dev',
+        existingEnvironmentName: 'uidp-dev',
+        workflowChoice: 'dev',
+        workflowInputValue: 'dev',
+      },
+      {
+        enabled: true,
+        environmentName: 'uidp-qa',
+        workflowChoice: 'qa',
+        workflowInputValue: 'qa',
+      },
+      {
+        enabled: true,
+        environmentName: 'uidp-prod',
+        existingEnvironmentName: 'uidp-prod',
+        workflowChoice: 'prod',
+        workflowInputValue: 'prod',
+      },
+    ])
+    expect(suggestions[1].existingEnvironmentName).toBeUndefined()
+  })
+
+  test('suggests exact existing environments for generic repo mappings', () => {
+    const suggestions = suggestEnvironmentMappings({
+      applicationName: 'deploy-center-fixture',
+      repoName: 'deploy-center-fixture',
+      githubEnvironments: [
+        { name: 'dev' },
+        { name: 'uidp-qa' },
+        { name: 'prod' },
+        { name: 'github-pages' },
+      ],
+      workflowInputChoices: ['dev', 'qa', 'prod'],
+    })
+
+    expect(suggestions).toMatchObject([
+      {
+        environmentName: 'dev',
+        existingEnvironmentName: 'dev',
+        workflowChoice: 'dev',
+        workflowInputValue: '',
+      },
+      {
+        environmentName: 'uidp-qa',
+        existingEnvironmentName: 'uidp-qa',
+        workflowChoice: 'qa',
+        workflowInputValue: 'qa',
+      },
+      {
+        environmentName: 'prod',
+        existingEnvironmentName: 'prod',
+        workflowChoice: 'prod',
+        workflowInputValue: '',
+      },
+    ])
+  })
+
+  test('does not suggest mappings when workflow choices are unavailable', () => {
+    expect(
+      suggestEnvironmentMappings({
+        applicationName: 'UIDP',
+        repoName: 'platform',
+        githubEnvironments: [{ name: 'uidp-dev' }],
+        workflowInputChoices: undefined,
+      }),
+    ).toEqual([])
   })
 
   test('resolves exact, partial, ambiguous, and missing choice matches', () => {
@@ -119,6 +224,36 @@ describe('environment ordering', () => {
     expect(
       resolveEnvironmentWorkflowInputValue('uidp-dev', undefined),
     ).toBeUndefined()
+  })
+
+  test('resolves a workflow choice only when the reverse mapping is unique', () => {
+    const githubEnvironments = [
+      { name: 'uidp-admin-dev' },
+      { name: 'uidp-api-dev' },
+      { name: 'uidp-qa' },
+    ]
+
+    expect(
+      resolveUnambiguousEnvironmentWorkflowInputValue(
+        'uidp-qa',
+        githubEnvironments,
+        ['dev', 'qa'],
+      ),
+    ).toBe('qa')
+    expect(
+      resolveUnambiguousEnvironmentWorkflowInputValue(
+        'uidp-admin-dev',
+        githubEnvironments,
+        ['dev', 'qa'],
+      ),
+    ).toBeUndefined()
+    expect(
+      resolveUnambiguousEnvironmentWorkflowInputValue(
+        'uidp-prod',
+        githubEnvironments,
+        ['dev', 'qa', 'prod'],
+      ),
+    ).toBe('prod')
   })
 
   test('sorts manually added environments', () => {

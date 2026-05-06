@@ -39,6 +39,7 @@ test('creates an application and persists selected workflow settings', async ({
 
   await selectRepo(page)
   await expect(applicationNameInput(page)).toHaveValue(E2E_REPO.name)
+  await applicationNameInput(page).fill('uidp')
   await expect(page.getByLabel('Release input name')).toBeEnabled()
 
   await openWorkflowSelect(page)
@@ -60,12 +61,26 @@ test('creates an application and persists selected workflow settings', async ({
   await page.getByRole('button', { name: 'Save' }).click()
 
   await expect(
+    page.getByRole('heading', { name: 'Register environments?' })
+  ).toBeVisible()
+  await expect(
+    page.getByText(/additional environments can be added later/i)
+  ).toBeVisible()
+  await expect(page.getByLabel('Environment for dev')).toHaveValue('uidp-dev')
+  await expect(page.getByLabel('Workflow input for dev')).toHaveValue('dev')
+  await expect(page.getByLabel('Environment for qa')).toHaveValue('uidp-qa')
+  await expect(page.getByLabel('Workflow input for qa')).toHaveValue('qa')
+  await page.getByLabel('Enable staging').uncheck()
+  await page.getByLabel('Environment for prod').fill('uidp-production')
+  await page.getByRole('button', { name: 'Save mappings' }).click()
+
+  await expect(
     page.getByRole('link', {
       name: `${E2E_WORKFLOW.name} to ${E2E_REPO.defaultBranch}`,
     })
   ).toBeVisible()
 
-  const savedApplication = await readSavedApplication(github)
+  const savedApplication = await readSavedApplication(github, 'uidp')
 
   expect(savedApplication).toBeTruthy()
   expect(savedApplication?.deploySettings).toMatchObject({
@@ -78,26 +93,32 @@ test('creates an application and persists selected workflow settings', async ({
   const environmentNames = Object.keys(
     savedApplication?.environmentSettingsByName ?? {}
   )
-  expect(environmentNames).toContain('prod')
+  expect(environmentNames).toContain('uidp-dev')
+  expect(environmentNames).toContain('uidp-test')
+  expect(environmentNames).toContain('uidp-qa')
+  expect(environmentNames).toContain('uidp-production')
+  expect(environmentNames).not.toContain('prod')
   expect(environmentNames).not.toContain('github-pages')
+  expect(environmentNames).not.toContain('uidp-admin-qa')
+  expect(environmentNames).not.toContain('uidp-staging')
   expect(environmentNames).not.toContain('uidp-ops')
   expect(savedApplication?.environmentSettingsByName).toMatchObject({
-    prod: {
-      name: 'prod',
-      workflowInputValue: '',
-    },
     'uidp-dev': {
       name: 'uidp-dev',
       workflowInputValue: 'dev',
     },
-    'uidp-prod': {
-      name: 'uidp-prod',
+    'uidp-qa': {
+      name: 'uidp-qa',
+      workflowInputValue: 'qa',
+    },
+    'uidp-production': {
+      name: 'uidp-production',
       workflowInputValue: 'prod',
     },
   })
 })
 
-test('maps workflow choice values when adding an environment', async ({
+test('leaves ambiguous workflow choice values blank when adding an environment', async ({
   page,
   github,
 }) => {
@@ -115,7 +136,7 @@ test('maps workflow choice values when adding an environment', async ({
 
   await expect(
     page.getByLabel('Workflow input value (defaults to environment name)')
-  ).toHaveValue('dev')
+  ).toHaveValue('')
   await page.getByRole('button', { name: 'Save' }).click()
 
   const savedApplication = await readPersistedApplication(
@@ -126,7 +147,7 @@ test('maps workflow choice values when adding an environment', async ({
   expect(savedApplication?.environmentSettingsByName).toMatchObject({
     'uidp-dev': {
       name: 'uidp-dev',
-      workflowInputValue: 'dev',
+      workflowInputValue: '',
     },
   })
 })
@@ -319,15 +340,16 @@ async function selectRepo(page: Page) {
   await page.getByRole('option', { name: E2E_REPO.name }).click()
 }
 
-async function readSavedApplication(github: {
-  readPersistedState: () => Promise<any>
-}) {
+async function readSavedApplication(
+  github: { readPersistedState: () => Promise<any> },
+  applicationName = E2E_REPO.name
+) {
   const persisted = await github.readPersistedState()
   const applications = persisted.accountsById[E2E_ACCOUNT_ID].workspace
     .applicationsById as Record<string, SavedApplication>
 
   return Object.values(applications).find(
-    (application) => application.name === E2E_REPO.name
+    (application) => application.name === applicationName
   )
 }
 

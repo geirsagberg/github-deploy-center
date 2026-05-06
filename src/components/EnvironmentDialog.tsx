@@ -21,7 +21,7 @@ import { useAppState } from '../store'
 import type { EnvironmentDialogState } from '../store'
 import {
   isDeployEnvironmentName,
-  resolveEnvironmentWorkflowInputValue,
+  resolveUnambiguousEnvironmentWorkflowInputValue,
   sortEnvironments,
 } from '../state/environments'
 import type { EnvironmentSettings } from '../state/schemas'
@@ -74,6 +74,9 @@ export const EnvironmentDialog: FC<{
   const filteredEnvironments = sortEnvironments(
     (data || []).filter((d) => isDeployEnvironmentName(d.name)),
   )
+  const filteredEnvironmentKey = filteredEnvironments
+    .map((environment) => environment.name)
+    .join('\0')
   const originalEnvironmentName = dialogState?.originalEnvironmentName
   const hasDuplicateEnvironmentName =
     !!dialogState?.environmentName &&
@@ -94,8 +97,9 @@ export const EnvironmentDialog: FC<{
     }
 
     const workflowInputValue =
-      resolveEnvironmentWorkflowInputValue(
+      resolveUnambiguousEnvironmentWorkflowInputValue(
         dialogState.environmentName,
+        filteredEnvironments,
         workflowInputChoices,
       ) ?? ''
 
@@ -112,6 +116,7 @@ export const EnvironmentDialog: FC<{
     dialogState?.environmentName,
     dialogState?.workflowInputValue,
     dialogState?.workflowInputValueTouched,
+    filteredEnvironmentKey,
     updateDialogState,
     workflowInputChoiceKey,
     workflowInputChoices,
@@ -153,6 +158,7 @@ export const EnvironmentDialog: FC<{
                       updateEnvironmentName(
                         state,
                         e.target.value,
+                        filteredEnvironments,
                         workflowInputChoices,
                         autoMapWorkflowInputValue,
                       ),
@@ -185,6 +191,7 @@ export const EnvironmentDialog: FC<{
                         typeof value === 'string'
                           ? value
                           : value?.inputValue ?? value?.name ?? '',
+                        filteredEnvironments,
                         workflowInputChoices,
                         autoMapWorkflowInputValue,
                       ),
@@ -196,6 +203,7 @@ export const EnvironmentDialog: FC<{
                         updateEnvironmentName(
                           state,
                           value,
+                          filteredEnvironments,
                           workflowInputChoices,
                           autoMapWorkflowInputValue,
                         ),
@@ -303,6 +311,7 @@ export const EnvironmentDialog: FC<{
 function updateEnvironmentName(
   state: EnvironmentDialogState,
   environmentName: string,
+  githubEnvironments: readonly { name: string }[],
   workflowInputChoices: readonly string[] | undefined,
   autoMapWorkflowInputValue: boolean,
 ) {
@@ -310,8 +319,9 @@ function updateEnvironmentName(
 
   if (autoMapWorkflowInputValue && !state.workflowInputValueTouched) {
     state.workflowInputValue =
-      resolveEnvironmentWorkflowInputValue(
+      resolveUnambiguousEnvironmentWorkflowInputValue(
         environmentName,
+        githubEnvironments,
         workflowInputChoices,
       ) ?? ''
   }

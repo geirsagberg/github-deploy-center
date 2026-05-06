@@ -9,6 +9,7 @@ export type {
   DeploymentDialogState,
   DeploymentModel,
   EnvironmentDialogState,
+  EnvironmentMappingDialogState,
   ReleaseModel,
   SettingsDialogState,
 } from './state'

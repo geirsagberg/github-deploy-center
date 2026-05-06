@@ -13,14 +13,16 @@ import {
   Typography,
 } from '@mui/material'
 import { fromPairs } from 'lodash-es'
-import { useFetchEnvironments, type DispatchWorkflow } from '../api/fetchHooks'
+import { useFetchEnvironments } from '../api/fetchHooks'
 import { useActions, useAppState } from '../store'
 import type { DeploymentDialogState } from '../store'
+import {
+  selectDeployWorkflow,
+  updateDeployWorkflowMetadata,
+  updateManualWorkflowHandling,
+} from '../state/deployWorkflow'
 import type { RepoModel } from '../state/schemas'
 import { SelectWorkflow } from './SelectWorkflow'
-
-const DEFAULT_RELEASE_KEY = 'ref'
-const DEFAULT_ENVIRONMENT_KEY = 'environment'
 
 export function DeploymentSettingsFields({
   applicationName,
@@ -67,7 +69,7 @@ export function DeploymentSettingsFields({
                 checked={deploymentDialog.manualWorkflowHandling}
                 onChange={(event) =>
                   updateDialogState((state) =>
-                    updateManualWorkflowHandling(state, event.target.checked)
+                    updateManualWorkflowHandling(state, event.target.checked),
                   )
                 }
                 sx={{ p: 0.5 }}
@@ -84,17 +86,12 @@ export function DeploymentSettingsFields({
         manualWorkflowHandling={deploymentDialog.manualWorkflowHandling}
         repo={repo}
         onChange={(workflow) =>
-          updateDialogState((state) => selectWorkflow(state, workflow))
+          updateDialogState((state) => selectDeployWorkflow(state, workflow))
         }
         onWorkflowLoaded={(workflow) =>
-          updateDialogState((state) => {
-            if (
-              state.workflowId === workflow.id &&
-              state.dispatchInputs !== workflow.dispatchInputs
-            ) {
-              state.dispatchInputs = workflow.dispatchInputs
-            }
-          })
+          updateDialogState((state) =>
+            updateDeployWorkflowMetadata(state, workflow),
+          )
         }
       />
       <TextField
@@ -206,42 +203,4 @@ export const DeploymentDialog = () => {
       ) : null}
     </Dialog>
   )
-}
-
-function selectWorkflow(
-  state: DeploymentDialogState,
-  workflow: DispatchWorkflow | null
-) {
-  state.workflowId = workflow?.id ?? 0
-  state.dispatchInputs = workflow?.dispatchInputs
-
-  if (!workflow) return
-
-  const deployInputs = state.manualWorkflowHandling
-    ? undefined
-    : workflow.deployInputs
-
-  if (shouldReplaceWithInference(state.releaseKey, DEFAULT_RELEASE_KEY)) {
-    state.releaseKey = deployInputs?.releaseKey ?? DEFAULT_RELEASE_KEY
-  }
-
-  if (
-    shouldReplaceWithInference(state.environmentKey, DEFAULT_ENVIRONMENT_KEY)
-  ) {
-    state.environmentKey =
-      deployInputs?.environmentKey ?? DEFAULT_ENVIRONMENT_KEY
-  }
-}
-
-function updateManualWorkflowHandling(
-  state: DeploymentDialogState,
-  manualWorkflowHandling: boolean
-) {
-  state.manualWorkflowHandling = manualWorkflowHandling
-  state.workflowId = 0
-  state.dispatchInputs = undefined
-}
-
-function shouldReplaceWithInference(value: string, defaultValue: string) {
-  return !value || value === defaultValue
 }
