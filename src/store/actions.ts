@@ -7,6 +7,7 @@ import {
 import {
   addEnvironmentSettings,
   editEnvironmentSettings,
+  isProductionEnvironmentValue,
   mergeGitHubEnvironments,
   reorderEnvironmentSettings,
   sortEnvironments,
@@ -249,11 +250,34 @@ export const triggerDeployment = async ({
   const environmentSettings = environmentSettingsByName[environmentName]
 
   const { repo } = selectedApplication
+  const environmentArg =
+    environmentSettings.workflowInputValue || environmentSettings.name
+  const isProductionDeployment =
+    isProductionEnvironmentValue(environmentSettings.name) ||
+    (deploySettings.environmentKey
+      ? isProductionEnvironmentValue(environmentArg)
+      : false)
+  const details = [
+    { label: 'Version', value: release },
+    { label: 'Environment', value: environmentSettings.name },
+    ...(deploySettings.environmentKey &&
+    environmentArg !== environmentSettings.name
+      ? [{ label: 'Workflow input', value: environmentArg }]
+      : []),
+    { label: 'Repository', value: `${repo.owner}/${repo.name}` },
+    { label: 'Workflow ref', value: deploySettings.ref },
+  ]
 
   if (
-    await showConfirm(
-      `Are you sure you want to deploy "${release}" to "${environmentSettings.name}" in "${repo.owner}/${repo.name}@${deploySettings.ref}"?`
-    )
+    await showConfirm({
+      title: `Deploy ${release} to ${environmentSettings.name}?`,
+      message: 'Review the deployment target before continuing.',
+      details,
+      warning: isProductionDeployment
+        ? 'Production environment detected. Verify the version and target before deploying.'
+        : undefined,
+      confirmLabel: 'Deploy',
+    })
   ) {
     const deploymentId = getDeploymentId({
       release,
@@ -268,9 +292,6 @@ export const triggerDeployment = async ({
     const { owner, name } = repo
     const { ref, workflowId, environmentKey, releaseKey, extraArgs } =
       deploySettings
-
-    const environmentArg =
-      environmentSettings.workflowInputValue || environmentSettings.name
 
     const inputs = environmentKey
       ? {

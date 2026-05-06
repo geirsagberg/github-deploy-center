@@ -281,6 +281,12 @@ export function isDeployEnvironmentName(name: string) {
   return name.toLowerCase() !== 'github-pages'
 }
 
+export function isProductionEnvironmentValue(value: string) {
+  return splitEnvironmentParts(value).some(
+    (part) => part === 'prod' || part === 'production',
+  )
+}
+
 function compareEnvironmentNames(
   first: { name: string },
   second: { name: string },

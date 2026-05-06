@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   addEnvironmentSettings,
   editEnvironmentSettings,
+  isProductionEnvironmentValue,
   mergeGitHubEnvironments,
   reorderEnvironmentSettings,
   resolveEnvironmentWorkflowInputValue,
@@ -310,5 +311,14 @@ describe('environment ordering', () => {
     expect(
       Object.keys(reorderEnvironmentSettings(current, 'prod', 'test')),
     ).toEqual(['dev', 'prod', 'test', 'qa'])
+  })
+
+  test('detects production environments by token', () => {
+    expect(isProductionEnvironmentValue('prod')).toBe(true)
+    expect(isProductionEnvironmentValue('production')).toBe(true)
+    expect(isProductionEnvironmentValue('sample-prod')).toBe(true)
+    expect(isProductionEnvironmentValue('production-eu')).toBe(true)
+    expect(isProductionEnvironmentValue('product-preview')).toBe(false)
+    expect(isProductionEnvironmentValue('preprod')).toBe(false)
   })
 })

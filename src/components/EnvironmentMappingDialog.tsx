@@ -8,6 +8,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Icon,
   Table,
   TableBody,
   TableCell,
@@ -85,92 +86,107 @@ export const EnvironmentMappingDialog: FC = () => {
             </Alert>
 
             <Box sx={{ overflowX: 'auto' }}>
-              <Table size="small" sx={{ minWidth: 720, tableLayout: 'fixed' }}>
+              <Table size="small" sx={{ minWidth: 840, tableLayout: 'fixed' }}>
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ width: 72 }}>Use</TableCell>
                     <TableCell sx={{ width: 120 }}>Choice</TableCell>
                     <TableCell>GitHub environment</TableCell>
+                    <TableCell sx={{ width: 132 }}>Source</TableCell>
                     <TableCell>Workflow input</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {environmentMappingDialog.mappings.map((mapping) => (
-                    <TableRow key={mapping.id}>
-                      <TableCell>
-                        <Tooltip
-                          title={
-                            mapping.enabled
-                              ? 'Include this mapping'
-                              : 'Skip this mapping'
-                          }
-                        >
-                          <Checkbox
-                            checked={mapping.enabled}
-                            slotProps={{
-                              input: {
-                                'aria-label': `Enable ${mapping.workflowChoice}`,
-                              },
+                  {environmentMappingDialog.mappings.map((mapping) => {
+                    const source = getMappingSource(mapping)
+
+                    return (
+                      <TableRow key={mapping.id}>
+                        <TableCell>
+                          <Tooltip
+                            title={
+                              mapping.enabled
+                                ? 'Include this mapping'
+                                : 'Skip this mapping'
+                            }
+                          >
+                            <Checkbox
+                              checked={mapping.enabled}
+                              slotProps={{
+                                input: {
+                                  'aria-label': `Enable ${mapping.workflowChoice}`,
+                                },
+                              }}
+                              onChange={(event) =>
+                                updateMapping(
+                                  mapping.id,
+                                  (state) =>
+                                    (state.enabled = event.target.checked),
+                                )
+                              }
+                            />
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            label={mapping.workflowChoice}
+                            sx={{
+                              borderColor: 'divider',
+                              bgcolor: 'action.hover',
+                              color: 'text.primary',
+                              opacity: mapping.enabled ? 1 : 0.56,
                             }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            disabled={!mapping.enabled}
+                            fullWidth
+                            label={`Environment for ${mapping.workflowChoice}`}
+                            value={mapping.environmentName}
+                            size="small"
                             onChange={(event) =>
                               updateMapping(
                                 mapping.id,
                                 (state) =>
-                                  (state.enabled = event.target.checked),
+                                  (state.environmentName = event.target.value),
                               )
                             }
                           />
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          variant="outlined"
-                          color="secondary"
-                          label={mapping.workflowChoice}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          disabled={!mapping.enabled}
-                          fullWidth
-                          label={`Environment for ${mapping.workflowChoice}`}
-                          value={mapping.environmentName}
-                          size="small"
-                          helperText={
-                            mapping.existingEnvironmentName
-                              ? 'Existing in GitHub'
-                              : 'Suggested name'
-                          }
-                          onChange={(event) =>
-                            updateMapping(
-                              mapping.id,
-                              (state) =>
-                                (state.environmentName = event.target.value),
-                            )
-                          }
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          disabled={!mapping.enabled}
-                          fullWidth
-                          label={`Workflow input for ${mapping.workflowChoice}`}
-                          value={mapping.workflowInputValue}
-                          size="small"
-                          placeholder="Defaults to environment name"
-                          onChange={(event) =>
-                            updateMapping(
-                              mapping.id,
-                              (state) =>
-                                (state.workflowInputValue =
-                                  event.target.value),
-                            )
-                          }
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            color={source.color}
+                            icon={<Icon fontSize="small">{source.icon}</Icon>}
+                            label={source.label}
+                            sx={{ opacity: mapping.enabled ? 1 : 0.56 }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            disabled={!mapping.enabled}
+                            fullWidth
+                            label={`Workflow input for ${mapping.workflowChoice}`}
+                            value={mapping.workflowInputValue}
+                            size="small"
+                            placeholder="Defaults to environment name"
+                            onChange={(event) =>
+                              updateMapping(
+                                mapping.id,
+                                (state) =>
+                                  (state.workflowInputValue =
+                                    event.target.value),
+                              )
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </Box>
@@ -222,4 +238,20 @@ function getDuplicateEnabledEnvironmentNames(
   }
 
   return [...duplicateNames]
+}
+
+function getMappingSource(
+  mapping: EnvironmentMappingDialogState['mappings'][number],
+) {
+  return mapping.existingEnvironmentName
+    ? ({
+        color: 'success',
+        icon: 'check_circle',
+        label: 'Existing',
+      } as const)
+    : ({
+        color: 'info',
+        icon: 'add_circle',
+        label: 'Suggested',
+      } as const)
 }

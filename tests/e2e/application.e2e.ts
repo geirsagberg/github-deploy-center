@@ -70,6 +70,8 @@ test('creates an application and persists selected workflow settings', async ({
   await expect(page.getByLabel('Workflow input for dev')).toHaveValue('dev')
   await expect(page.getByLabel('Environment for qa')).toHaveValue('sample-qa')
   await expect(page.getByLabel('Workflow input for qa')).toHaveValue('qa')
+  await expect(page.getByText('Existing', { exact: true })).toHaveCount(2)
+  await expect(page.getByText('Suggested', { exact: true })).toHaveCount(3)
   await page.getByLabel('Enable staging').uncheck()
   await page.getByLabel('Environment for prod').fill('sample-production')
   await page.getByRole('button', { name: 'Save mappings' }).click()
