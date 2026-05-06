@@ -4,6 +4,7 @@ import {
   ButtonBase,
   Icon,
   IconButton,
+  Link,
   ListItemIcon,
   ListItemText,
   Menu,
@@ -194,10 +195,28 @@ export function ApplicationWorkspaceView({
               <Typography sx={{ fontSize: '1.65rem', lineHeight: 1.1 }}>
                 {selectedApplication.name}
               </Typography>
-              <Typography color="text.secondary">
+              <Link
+                href={getRepoBranchUrl(selectedApplication)}
+                rel="noopener noreferrer"
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  justifySelf: 'start',
+                  width: 'fit-content',
+                }}
+                target="_blank"
+                underline="always"
+              >
                 {formatRepo(selectedApplication)} on{' '}
                 {selectedApplication.deploySettings.ref}
-              </Typography>
+                <Icon
+                  aria-hidden="true"
+                  sx={{ fontSize: '1rem', lineHeight: 1 }}
+                >
+                  open_in_new
+                </Icon>
+              </Link>
             </Box>
             <Button
               variant="outlined"
@@ -485,6 +504,13 @@ function getLatestDeploymentForEnvironment({
 
 function formatRepo(application: ApplicationConfig) {
   return `${application.repo.owner}/${application.repo.name}`
+}
+
+function getRepoBranchUrl(application: ApplicationConfig) {
+  const repoUrl = `https://github.com/${application.repo.owner}/${application.repo.name}`
+  const ref = application.deploySettings.ref.trim()
+
+  return ref ? `${repoUrl}/tree/${encodeURIComponent(ref)}` : repoUrl
 }
 
 function getSortedApplications(

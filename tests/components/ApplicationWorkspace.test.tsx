@@ -89,6 +89,43 @@ describe('ApplicationWorkspaceView', () => {
     expect(queryByText('Active application')).toBeNull()
   })
 
+  test('links the selected repo and branch label to GitHub', () => {
+    const slashBranchApplications = {
+      api: createApplication({
+        id: 'api',
+        name: 'API',
+        owner: 'deploy-center',
+        repo: 'api',
+        environments: ['test'],
+        ref: 'release/2026.05',
+      }),
+    }
+
+    const { getByRole } = render(
+      <ApplicationWorkspaceView
+        applicationsById={slashBranchApplications}
+        selectedApplicationId="api"
+        showNewApplicationModal={() => {}}
+        selectApplication={() => {}}
+        editApplication={() => {}}
+        exportApplications={() => {}}
+        importApplications={() => {}}
+      >
+        <div>Deployments</div>
+      </ApplicationWorkspaceView>
+    )
+
+    const repoBranchLink = getByRole('link', {
+      name: 'deploy-center/api on release/2026.05',
+    })
+
+    expect(repoBranchLink.getAttribute('href')).toBe(
+      'https://github.com/deploy-center/api/tree/release%2F2026.05'
+    )
+    expect(repoBranchLink.getAttribute('target')).toBe('_blank')
+    expect(within(repoBranchLink).getByText('open_in_new')).toBeTruthy()
+  })
+
   test('shows environment status chips with tooltips instead of the repo owner', async () => {
     const user = userEvent.setup()
 
@@ -278,12 +315,14 @@ function createApplication({
   id,
   name,
   owner,
+  ref = 'main',
   repo,
 }: {
   environments: string[]
   id: string
   name: string
   owner: string
+  ref?: string
   repo: string
 }): ApplicationConfig {
   return {
@@ -301,7 +340,7 @@ function createApplication({
       environmentKey: 'environment',
       releaseKey: 'ref',
       workflowId: 1,
-      ref: 'main',
+      ref,
       extraArgs: {},
       manualWorkflowHandling: false,
     },
