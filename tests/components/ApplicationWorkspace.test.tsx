@@ -2,14 +2,9 @@ import '../setupDom'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { cleanup, render, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import dayjs from 'dayjs'
-import {
-  ApplicationWorkspaceView,
-  getApplicationEnvironmentStatuses,
-} from '../../src/components/ApplicationWorkspace'
-import { DeploymentState } from '../../src/generated/graphql'
+import { ApplicationWorkspaceView } from '../../src/components/ApplicationWorkspace'
 import type { ApplicationConfig } from '../../src/state/schemas'
-import { actions, type DeploymentModel, type ReleaseModel } from '../../src/store'
+import { actions } from '../../src/store'
 
 const originalActions = {
   editApplication: actions.editApplication,
@@ -310,58 +305,6 @@ describe('ApplicationWorkspaceView', () => {
   })
 })
 
-describe('getApplicationEnvironmentStatuses', () => {
-  test('marks environments as up to date, outdated, or failed', () => {
-    const application = createApplication({
-      id: 'api',
-      name: 'API',
-      owner: 'deploy-center',
-      repo: 'api',
-      environments: ['dev', 'qa', 'prod'],
-    })
-
-    expect(
-      getApplicationEnvironmentStatuses({
-        application,
-        pendingDeployments: {},
-        releases: [
-          release({
-            id: 'v2',
-            createdAt: '2026-05-02T10:00:00.000Z',
-            deployments: [
-              deployment({
-                environment: 'dev',
-                id: 'v2-dev',
-                state: DeploymentState.Active,
-              }),
-              deployment({
-                environment: 'prod',
-                id: 'v2-prod',
-                state: DeploymentState.Failure,
-              }),
-            ],
-          }),
-          release({
-            id: 'v1',
-            createdAt: '2026-05-01T10:00:00.000Z',
-            deployments: [
-              deployment({
-                environment: 'qa',
-                id: 'v1-qa',
-                state: DeploymentState.Active,
-              }),
-            ],
-          }),
-        ],
-      })
-    ).toEqual({
-      dev: 'up-to-date',
-      prod: 'failed',
-      qa: 'outdated',
-    })
-  })
-})
-
 const applicationsById: Record<string, ApplicationConfig> = {
   api: createApplication({
     id: 'api',
@@ -428,42 +371,5 @@ function createApplication({
         { name: environment, workflowInputValue: environment },
       ])
     ),
-  }
-}
-
-function release({
-  createdAt,
-  deployments,
-  id,
-}: {
-  createdAt: string
-  deployments: DeploymentModel[]
-  id: string
-}): ReleaseModel {
-  return {
-    id,
-    name: id,
-    tagName: id,
-    createdAt: dayjs(createdAt),
-    commit: `commit-${id}`,
-    deployments,
-  }
-}
-
-function deployment({
-  environment,
-  id,
-  state,
-}: {
-  environment: string
-  id: string
-  state: DeploymentState
-}): DeploymentModel {
-  return {
-    id,
-    createdAt: dayjs('2026-05-02T10:00:00.000Z'),
-    environment,
-    modifiedAt: dayjs('2026-05-02T10:00:00.000Z'),
-    state,
   }
 }

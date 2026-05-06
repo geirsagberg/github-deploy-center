@@ -15,19 +15,11 @@ import {
   Tooltip,
 } from '@mui/material'
 import { useMutation } from '@tanstack/react-query'
-import dayjs from 'dayjs'
-import { orderBy, values } from 'lodash-es'
 import { useState, type CSSProperties, type DragEvent } from 'react'
-import { useFetchReleases, useFetchWorkflowRuns } from '../api/fetchHooks'
 import { DeploymentState } from '../generated/graphql'
-import type {
-  EnvironmentSettings,
-  PendingDeployment,
-  RepoModel,
-  WorkflowRun,
-} from '../state/schemas'
-import type { DeploymentModel, ReleaseModel } from '../store'
-import { getDeploymentId, useActions, useAppState } from '../store'
+import type { DeploymentTarget } from '../state/deploymentMatrix'
+import { useActions } from '../store'
+import { useSelectedDeploymentMatrix } from '../store/deploymentMatrixHooks'
 import { CredentialErrorAlert } from './CredentialErrorAlert'
 
 const RELEASE_COLUMN_WIDTH = '12rem'
@@ -42,155 +34,25 @@ const DEPLOYMENT_BUTTON_STYLES: Partial<Record<DeploymentState, CSSProperties>> 
   [DeploymentState.InProgress]: { color: colors.yellow[400] },
 }
 
-const TRANSIENT_DEPLOYMENT_STATES = new Set<DeploymentState>([
-  DeploymentState.Pending,
-  DeploymentState.InProgress,
-  DeploymentState.Queued,
-  DeploymentState.Waiting,
-])
-
 const getButtonStyle = (state?: DeploymentState) => {
   if (!state) return EMPTY_DEPLOYMENT_BUTTON_STYLE
 
   return DEPLOYMENT_BUTTON_STYLES[state] ?? DEFAULT_DEPLOYMENT_BUTTON_STYLE
 }
 
-const isTransientDeploymentState = (state?: DeploymentState) =>
-  !!state && TRANSIENT_DEPLOYMENT_STATES.has(state)
-
-type WorkflowRunLink = {
-  href: string
-  label: string
-  title: string
-  conclusion?: WorkflowRun['conclusion']
-}
-
-export function getWorkflowRunLink({
-  deployment,
-  pendingDeployment,
-  repo,
-  workflowRuns,
-}: {
-  deployment?: Pick<DeploymentModel, 'workflowRunId'>
-  pendingDeployment?: PendingDeployment
-  repo?: RepoModel
-  workflowRuns: Record<number, WorkflowRun>
-}): WorkflowRunLink | undefined {
-  const workflowRunId =
-    deployment?.workflowRunId ?? pendingDeployment?.workflowRunId
-
-  if (!workflowRunId) return undefined
-
-  const workflowRun = workflowRuns[workflowRunId]
-
-  if (workflowRun) {
-    const title = `${workflowRun.name} #${workflowRun.run_number}`
-    return {
-      href: workflowRun.html_url,
-      label: `Open ${title}`,
-      title,
-      conclusion: workflowRun.conclusion,
-    }
-  }
-
-  if (!repo) return undefined
-
-  const title = `Workflow run #${workflowRunId}`
-  return {
-    href: `https://github.com/${repo.owner}/${repo.name}/actions/runs/${workflowRunId}`,
-    label: `Open ${title.toLowerCase()}`,
-    title,
-  }
-}
-
-export function getVisibleDeployment(
-  deployments: DeploymentModel[],
-  environmentName: string,
-  pendingDeployment?: PendingDeployment,
-) {
-  return deployments.find(
-    (deployment) =>
-      deployment.environment === environmentName &&
-      (!!pendingDeployment || !isTransientDeploymentState(deployment.state)),
-  )
-}
-
-export function getDeploymentState({
-  deployment,
-  pendingDeployment,
-}: {
-  deployment?: DeploymentModel
-  pendingDeployment?: PendingDeployment
-}) {
-  const modifiedAt = deployment?.modifiedAt
-
-  if (
-    pendingDeployment &&
-    (!modifiedAt || dayjs(pendingDeployment.createdAt).isAfter(modifiedAt))
-  ) {
-    return DeploymentState.Pending
-  }
-
-  if (
-    !pendingDeployment &&
-    isTransientDeploymentState(deployment?.state)
-  ) {
-    return undefined
-  }
-
-  return deployment?.state
-}
-
-function getLatestReleaseByEnvironment(
-  releases: ReleaseModel[],
-  environments: EnvironmentSettings[],
-  getPendingDeployment: (
-    release: ReleaseModel,
-    environment: EnvironmentSettings,
-  ) => PendingDeployment | undefined,
-) {
-  const remainingEnvironmentNames = new Set(
-    environments.map((environment) => environment.name),
-  )
-  const latestReleaseByEnvironment: Record<string, ReleaseModel> = {}
-
-  for (const release of releases) {
-    if (remainingEnvironmentNames.size === 0) break
-
-    for (const environment of environments) {
-      if (!remainingEnvironmentNames.has(environment.name)) continue
-
-      const pendingDeployment = getPendingDeployment(release, environment)
-      const deployment = getVisibleDeployment(
-        release.deployments,
-        environment.name,
-        pendingDeployment,
-      )
-
-      if (!pendingDeployment && !deployment) continue
-
-      latestReleaseByEnvironment[environment.name] = release
-      remainingEnvironmentNames.delete(environment.name)
-      if (remainingEnvironmentNames.size === 0) break
-    }
-  }
-
-  return latestReleaseByEnvironment
-}
-
 export const ReleasesTableView = () => {
-  const { selectedApplication, pendingDeployments } = useAppState()
-  const repo = selectedApplication?.repo
   const { triggerDeployment, reorderEnvironment, showEditEnvironmentModal } =
     useActions()
-  const allReleaseResultsForTag = useFetchReleases()
-  const workflowRunsQuery = useFetchWorkflowRuns()
+  const {
+    isLoading,
+    matrix,
+    releaseError,
+    selectedApplication,
+    workflowRunsError,
+  } = useSelectedDeploymentMatrix()
   const [draggedEnvironmentName, setDraggedEnvironmentName] = useState<
     string | null
   >(null)
-  const { data: workflowRuns = {} } = workflowRunsQuery
-
-  const releases = allReleaseResultsForTag.data || []
 
   const {
     mutate: deploy,
@@ -208,40 +70,23 @@ export const ReleasesTableView = () => {
     },
   })
 
-  if (!selectedApplication?.deploySettings?.workflowId) {
+  if (!selectedApplication?.deploySettings?.workflowId || !matrix) {
     return null
   }
 
-  if (allReleaseResultsForTag.isLoading) {
+  if (isLoading) {
     return <CircularProgress />
   }
 
-  if (allReleaseResultsForTag.error) {
+  if (releaseError) {
     return <CredentialErrorAlert title="Could not load releases" />
   }
 
-  if (workflowRunsQuery.error) {
+  if (workflowRunsError) {
     return <CredentialErrorAlert title="Could not load workflow runs" />
   }
 
-  const releasesSorted = orderBy(
-    releases
-      .slice()
-      .sort((a, b) =>
-        b.tagName.localeCompare(a.tagName, undefined, { numeric: true }),
-      )
-      .filter((r) =>
-        r.name
-          .toLowerCase()
-          .startsWith(selectedApplication.releaseFilter.toLowerCase()),
-      ),
-    (r) => r.createdAt,
-    'desc',
-  )
-
-  const selectedEnvironments = values(
-    selectedApplication.environmentSettingsByName,
-  )
+  const repo = selectedApplication.repo
 
   const dropEnvironment = (
     event: DragEvent,
@@ -262,44 +107,10 @@ export const ReleasesTableView = () => {
     setDraggedEnvironmentName(null)
   }
 
-  const getPendingDeployment = (
-    release: ReleaseModel,
-    environment: EnvironmentSettings,
-  ) => {
-    const deploymentId = getDeploymentId({
-      release: release.tagName,
-      environment: environment.name,
-      repo: selectedApplication.repo.name,
-      owner: selectedApplication.repo.owner,
-    })
-
-    return pendingDeployments[deploymentId]
-  }
-
-  const latestReleaseByEnvironment = getLatestReleaseByEnvironment(
-    releasesSorted,
-    selectedEnvironments,
-    getPendingDeployment,
-  )
-
-  const createButton = (
-    deployment: DeploymentModel | undefined,
-    release: ReleaseModel,
-    environment: EnvironmentSettings,
-    pendingDeployment?: PendingDeployment,
-    workflowRunLink?: WorkflowRunLink,
-  ) => {
-    const latestRelease = latestReleaseByEnvironment[environment.name]
-    const isAfterLatest =
-      !latestRelease || release.createdAt.isAfter(latestRelease.createdAt)
-
-    const deploymentState = getDeploymentState({
-      deployment,
-      pendingDeployment,
-    })
-
+  const createButton = (target: DeploymentTarget) => {
+    const deploymentState = target.state
     const deployButtonVariant =
-      (isAfterLatest && !deploymentState) ||
+      (target.isAfterLatestDeployment && !deploymentState) ||
       deploymentState === DeploymentState.Active
         ? 'contained'
         : 'outlined'
@@ -309,33 +120,37 @@ export const ReleasesTableView = () => {
         <Button
           disabled={isPending}
           variant={deployButtonVariant}
-          color={!deploymentState && isAfterLatest ? 'primary' : 'inherit'}
+          color={
+            !deploymentState && target.isAfterLatestDeployment
+              ? 'primary'
+              : 'inherit'
+          }
           sx={{ width: DEPLOYMENT_BUTTON_WIDTH }}
           style={getButtonStyle(deploymentState)}
           onClick={() =>
             deploy({
-              release: release.tagName,
-              environmentName: environment.name,
+              release: target.release.tagName,
+              environmentName: target.environment.name,
             })
           }
         >
           {deploymentState?.replaceAll('_', ' ') ?? 'Deploy'}
         </Button>
-        {workflowRunLink && (
-          <Tooltip title={workflowRunLink.title}>
+        {target.workflowRunLink && (
+          <Tooltip title={target.workflowRunLink.title}>
             <IconButton
-              aria-label={workflowRunLink.label}
+              aria-label={target.workflowRunLink.label}
               size="medium"
               color={
-                workflowRunLink.conclusion
-                  ? workflowRunLink.conclusion === 'success'
+                target.workflowRunLink.conclusion
+                  ? target.workflowRunLink.conclusion === 'success'
                     ? 'success'
                     : 'error'
                   : 'warning'
               }
               target="_blank"
               rel="noopener noreferrer"
-              href={workflowRunLink.href}
+              href={target.workflowRunLink.href}
             >
               <Icon fontSize="small">launch</Icon>
             </IconButton>
@@ -353,14 +168,14 @@ export const ReleasesTableView = () => {
       <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
         <colgroup>
           <col style={{ width: RELEASE_COLUMN_WIDTH }} />
-          {selectedEnvironments.map((environment) => (
+          {matrix.environments.map((environment) => (
             <col key={environment.name} />
           ))}
         </colgroup>
         <TableHead>
           <TableRow>
             <TableCell>Release name</TableCell>
-            {selectedEnvironments.map((environment) => (
+            {matrix.environments.map((environment) => (
               <TableCell
                 key={environment.name}
                 onDragOver={(event) => {
@@ -424,7 +239,7 @@ export const ReleasesTableView = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {releasesSorted.map((release) => (
+          {matrix.releases.map((release) => (
             <TableRow key={release.id}>
               <TableCell>
                 <Link
@@ -435,31 +250,13 @@ export const ReleasesTableView = () => {
                   {release.name}
                 </Link>
               </TableCell>
-              {selectedEnvironments.map((environment) => {
-                const pendingDeployment = getPendingDeployment(
-                  release,
-                  environment,
-                )
-                const latestDeployment = getVisibleDeployment(
-                  release.deployments,
-                  environment.name,
-                  pendingDeployment,
-                )
-                const workflowRunLink = getWorkflowRunLink({
-                  deployment: latestDeployment,
-                  pendingDeployment,
-                  repo,
-                  workflowRuns,
-                })
+              {matrix.environments.map((environment) => {
+                const target =
+                  matrix.targetsByReleaseId[release.id][environment.name]
+
                 return (
                   <TableCell key={environment.name}>
-                    {createButton(
-                      latestDeployment,
-                      release,
-                      environment,
-                      pendingDeployment,
-                      workflowRunLink,
-                    )}
+                    {createButton(target)}
                   </TableCell>
                 )
               })}

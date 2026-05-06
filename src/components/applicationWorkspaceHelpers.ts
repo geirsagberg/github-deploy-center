@@ -1,11 +1,9 @@
 import type { ApplicationConfig } from '../state/schemas'
 
-export type EnvironmentDeployStatus = 'up-to-date' | 'outdated' | 'failed'
-
-export type EnvironmentStatusesByApplicationId = Record<
-  string,
-  Record<string, EnvironmentDeployStatus>
->
+export type {
+  EnvironmentDeployStatus,
+  EnvironmentStatusesByApplicationId,
+} from '../state/deploymentMatrix'
 
 export type ExtraArgEntry = [string, string]
 
