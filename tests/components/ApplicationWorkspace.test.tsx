@@ -9,9 +9,18 @@ import {
 } from '../../src/components/ApplicationWorkspace'
 import { DeploymentState } from '../../src/generated/graphql'
 import type { ApplicationConfig } from '../../src/state/schemas'
-import type { DeploymentModel, ReleaseModel } from '../../src/store'
+import { actions, type DeploymentModel, type ReleaseModel } from '../../src/store'
+
+const originalActions = {
+  editApplication: actions.editApplication,
+  exportApplications: actions.exportApplications,
+  importApplications: actions.importApplications,
+  selectApplication: actions.selectApplication,
+  showNewApplicationModal: actions.showNewApplicationModal,
+}
 
 afterEach(() => {
+  Object.assign(actions, originalActions)
   cleanup()
 })
 
@@ -19,18 +28,13 @@ describe('ApplicationWorkspaceView', () => {
   test('switches applications from the app navigation with one click', async () => {
     const selectedApplicationIds: string[] = []
     const user = userEvent.setup()
+    actions.selectApplication = (applicationId) =>
+      selectedApplicationIds.push(applicationId)
 
     const { getByLabelText } = render(
       <ApplicationWorkspaceView
         applicationsById={applicationsById}
         selectedApplicationId="api"
-        showNewApplicationModal={() => {}}
-        selectApplication={(applicationId) =>
-          selectedApplicationIds.push(applicationId)
-        }
-        editApplication={() => {}}
-        exportApplications={() => {}}
-        importApplications={() => {}}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
@@ -46,18 +50,14 @@ describe('ApplicationWorkspaceView', () => {
   })
 
   test('opens merged app and deploy settings from one edit action', async () => {
-    const actions: string[] = []
+    const calledActions: string[] = []
     const user = userEvent.setup()
+    actions.editApplication = () => calledActions.push('edit')
 
     const { getByRole, queryByRole } = render(
       <ApplicationWorkspaceView
         applicationsById={applicationsById}
         selectedApplicationId="api"
-        showNewApplicationModal={() => {}}
-        selectApplication={() => {}}
-        editApplication={() => actions.push('edit')}
-        exportApplications={() => {}}
-        importApplications={() => {}}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
@@ -65,7 +65,7 @@ describe('ApplicationWorkspaceView', () => {
 
     await user.click(getByRole('button', { name: /edit/i }))
 
-    expect(actions).toEqual(['edit'])
+    expect(calledActions).toEqual(['edit'])
     expect(queryByRole('button', { name: 'Edit App' })).toBeNull()
     expect(queryByRole('button', { name: 'Edit Deploy' })).toBeNull()
   })
@@ -75,11 +75,6 @@ describe('ApplicationWorkspaceView', () => {
       <ApplicationWorkspaceView
         applicationsById={applicationsById}
         selectedApplicationId="api"
-        showNewApplicationModal={() => {}}
-        selectApplication={() => {}}
-        editApplication={() => {}}
-        exportApplications={() => {}}
-        importApplications={() => {}}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
@@ -105,11 +100,6 @@ describe('ApplicationWorkspaceView', () => {
       <ApplicationWorkspaceView
         applicationsById={slashBranchApplications}
         selectedApplicationId="api"
-        showNewApplicationModal={() => {}}
-        selectApplication={() => {}}
-        editApplication={() => {}}
-        exportApplications={() => {}}
-        importApplications={() => {}}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
@@ -139,11 +129,6 @@ describe('ApplicationWorkspaceView', () => {
           },
         }}
         selectedApplicationId="api"
-        showNewApplicationModal={() => {}}
-        selectApplication={() => {}}
-        editApplication={() => {}}
-        exportApplications={() => {}}
-        importApplications={() => {}}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
@@ -176,11 +161,6 @@ describe('ApplicationWorkspaceView', () => {
       <ApplicationWorkspaceView
         applicationsById={customArgApplications}
         selectedApplicationId="api"
-        showNewApplicationModal={() => {}}
-        selectApplication={() => {}}
-        editApplication={() => {}}
-        exportApplications={() => {}}
-        importApplications={() => {}}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
@@ -213,11 +193,6 @@ describe('ApplicationWorkspaceView', () => {
       <ApplicationWorkspaceView
         applicationsById={customArgApplications}
         selectedApplicationId="api"
-        showNewApplicationModal={() => {}}
-        selectApplication={() => {}}
-        editApplication={() => {}}
-        exportApplications={() => {}}
-        importApplications={() => {}}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
@@ -242,11 +217,6 @@ describe('ApplicationWorkspaceView', () => {
       <ApplicationWorkspaceView
         applicationsById={applicationsById}
         selectedApplicationId="api"
-        showNewApplicationModal={() => {}}
-        selectApplication={() => {}}
-        editApplication={() => {}}
-        exportApplications={() => {}}
-        importApplications={() => {}}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
@@ -260,18 +230,20 @@ describe('ApplicationWorkspaceView', () => {
   })
 
   test('puts new application and import/export actions at the top of the sidebar', async () => {
-    const actions: string[] = []
+    const calledActions: string[] = []
     const user = userEvent.setup()
+    actions.showNewApplicationModal = () => calledActions.push('new')
+    actions.exportApplications = async () => {
+      calledActions.push('export')
+    }
+    actions.importApplications = async () => {
+      calledActions.push('import')
+    }
 
     const { getByLabelText, getByRole } = render(
       <ApplicationWorkspaceView
         applicationsById={applicationsById}
         selectedApplicationId="api"
-        showNewApplicationModal={() => actions.push('new')}
-        selectApplication={() => {}}
-        editApplication={() => {}}
-        exportApplications={() => actions.push('export')}
-        importApplications={() => actions.push('import')}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
@@ -302,22 +274,24 @@ describe('ApplicationWorkspaceView', () => {
     )
     await user.click(getByRole('menuitem', { name: /import/i }))
 
-    expect(actions).toEqual(['new', 'export', 'import'])
+    expect(calledActions).toEqual(['new', 'export', 'import'])
   })
 
   test('keeps new application available when no applications exist', async () => {
-    const actions: string[] = []
+    const calledActions: string[] = []
     const user = userEvent.setup()
+    actions.showNewApplicationModal = () => calledActions.push('new')
+    actions.exportApplications = async () => {
+      calledActions.push('export')
+    }
+    actions.importApplications = async () => {
+      calledActions.push('import')
+    }
 
     const { getByLabelText, getByRole } = render(
       <ApplicationWorkspaceView
         applicationsById={{}}
         selectedApplicationId=""
-        showNewApplicationModal={() => actions.push('new')}
-        selectApplication={() => {}}
-        editApplication={() => {}}
-        exportApplications={() => actions.push('export')}
-        importApplications={() => actions.push('import')}
       >
         <div>Deployments</div>
       </ApplicationWorkspaceView>
@@ -332,7 +306,7 @@ describe('ApplicationWorkspaceView', () => {
     )
     await user.click(getByRole('menuitem', { name: /import/i }))
 
-    expect(actions).toEqual(['new', 'import'])
+    expect(calledActions).toEqual(['new', 'import'])
   })
 })
 
