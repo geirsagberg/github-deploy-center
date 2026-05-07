@@ -43,7 +43,7 @@ const App = () => {
   const hasActiveAccountToken = hasAccounts && !!token
 
   return (
-    <Container>
+    <Container maxWidth="xl">
       <Paper sx={{ p: 4, display: 'grid', gap: '1rem' }}>
         <Box
           sx={{
