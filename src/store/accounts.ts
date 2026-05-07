@@ -1,6 +1,6 @@
-import { v4 as uuid } from 'uuid'
 import type {
   AccountProfile,
+  AccountTokenStorage,
   AccountWorkspace,
   ApplicationConfig,
   PendingDeployment,
@@ -8,6 +8,7 @@ import type {
 
 export const DEFAULT_ACCOUNT_ID = 'default-account'
 export const DEFAULT_ACCOUNT_NAME = 'GitHub account'
+export const DEFAULT_TOKEN_STORAGE: AccountTokenStorage = 'local'
 
 type AccountContainerState = {
   accountsById: Record<string, AccountProfile>
@@ -32,12 +33,14 @@ export function createAccountWorkspace({
 export function createAccountProfile({
   id,
   token = '',
+  tokenStorage = DEFAULT_TOKEN_STORAGE,
   githubLogin,
   githubUserId,
   workspace,
 }: {
   id: string
   token?: string
+  tokenStorage?: AccountTokenStorage
   githubLogin?: string
   githubUserId?: string
   workspace?: Partial<AccountWorkspace>
@@ -45,6 +48,7 @@ export function createAccountProfile({
   return {
     id,
     token,
+    tokenStorage,
     githubLogin,
     githubUserId,
     workspace: createAccountWorkspace(workspace),
@@ -54,12 +58,14 @@ export function createAccountProfile({
 export function createDefaultAccount({
   id = DEFAULT_ACCOUNT_ID,
   token = '',
+  tokenStorage = DEFAULT_TOKEN_STORAGE,
   applicationsById = {},
   selectedApplicationId = '',
   pendingDeployments = {},
 }: {
   id?: string
   token?: string
+  tokenStorage?: AccountTokenStorage
   applicationsById?: Record<string, ApplicationConfig>
   selectedApplicationId?: string
   pendingDeployments?: Record<string, PendingDeployment>
@@ -67,6 +73,7 @@ export function createDefaultAccount({
   return createAccountProfile({
     id,
     token,
+    tokenStorage,
     workspace: {
       applicationsById,
       selectedApplicationId,
@@ -78,20 +85,24 @@ export function createDefaultAccount({
 export function addAccountProfile(
   state: AccountContainerState,
   {
-    id = uuid(),
+    id,
     token,
+    tokenStorage = DEFAULT_TOKEN_STORAGE,
     githubLogin,
     githubUserId,
   }: {
     id?: string
     token: string
+    tokenStorage?: AccountTokenStorage
     githubLogin: string
     githubUserId: string
   }
 ) {
+  const accountId = id ?? getDeterministicAccountId(githubUserId)
   const account = createAccountProfile({
-    id,
+    id: accountId,
     token,
+    tokenStorage,
     githubLogin,
     githubUserId,
   })
@@ -138,7 +149,7 @@ export function updateAccountProfile(
   state: AccountContainerState,
   accountId: string,
   update: Partial<
-    Pick<AccountProfile, 'token' | 'githubLogin' | 'githubUserId'>
+    Pick<AccountProfile, 'token' | 'tokenStorage' | 'githubLogin' | 'githubUserId'>
   >
 ) {
   const account = state.accountsById[accountId]
@@ -146,6 +157,9 @@ export function updateAccountProfile(
 
   if (update.token !== undefined) {
     account.token = update.token
+  }
+  if (update.tokenStorage !== undefined) {
+    account.tokenStorage = update.tokenStorage
   }
   if (update.githubLogin !== undefined) {
     account.githubLogin = update.githubLogin
@@ -202,13 +216,22 @@ export function getSelectedApplication(state: AccountContainerState) {
 
 export function setActiveAccountToken(
   state: AccountContainerState,
-  token: string
+  token: string,
+  tokenStorage?: AccountTokenStorage
 ) {
-  ensureActiveAccount(state).token = token
+  const account = ensureActiveAccount(state)
+  account.token = token
+  if (tokenStorage !== undefined) {
+    account.tokenStorage = tokenStorage
+  }
 }
 
 export function formatAccountName(account: AccountProfile | undefined) {
   return account?.githubLogin ? `@${account.githubLogin}` : DEFAULT_ACCOUNT_NAME
+}
+
+export function getDeterministicAccountId(githubUserId: string) {
+  return `github-user:${githubUserId}`
 }
 
 export function setActiveAccountApplications(

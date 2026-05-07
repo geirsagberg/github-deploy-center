@@ -3,11 +3,11 @@ import type { Page, Request, Route } from '@playwright/test'
 
 export const STORAGE_KEY = 'gdc.v2.state'
 export const FAKE_TOKEN = 'ghp_e2e_fake'
-export const E2E_ACCOUNT_ID = 'e2e-account'
 export const E2E_USER = {
   id: 'U_e2e_user',
   login: 'e2e-user',
 }
+export const E2E_ACCOUNT_ID = `github-user:${E2E_USER.id}`
 export const E2E_REPO = {
   id: 'R_e2e_repo',
   owner: 'octo-org',
@@ -409,6 +409,7 @@ function buildPersistedState({
       [E2E_ACCOUNT_ID]: {
         id: E2E_ACCOUNT_ID,
         token: FAKE_TOKEN,
+        tokenStorage: 'local',
         githubLogin: E2E_USER.login,
         githubUserId: E2E_USER.id,
         workspace: {

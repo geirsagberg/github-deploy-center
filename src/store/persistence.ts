@@ -13,6 +13,7 @@ import { parsePersistedState } from './persistedState'
 import type { PersistedState } from './persistedState'
 
 const STORAGE_KEY = 'gdc.v2.state'
+const SESSION_TOKEN_STORAGE_KEY_PREFIX = 'gdc.v2.session-token.'
 
 let initialized = false
 
@@ -77,7 +78,7 @@ function savePersistedState() {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        accountsById: state.accountsById,
+        accountsById: toPersistedAccountsById(state.accountsById),
         activeAccountId: state.activeAccountId,
         settings: state.settings,
       })
@@ -92,11 +93,76 @@ function loadPersistedState(): PersistedState | undefined {
   if (data === undefined) return undefined
 
   try {
-    return parsePersistedState(data)
+    const state = parsePersistedState(data)
+    return state ? applySessionTokens(state) : undefined
   } catch (error) {
     console.error(`Could not load ${STORAGE_KEY}`, error)
     return undefined
   }
+}
+
+function toPersistedAccountsById(
+  accountsById: Readonly<Record<string, AccountProfile>>
+) {
+  return Object.fromEntries(
+    Object.entries(accountsById).map(([id, account]) => {
+      syncSessionToken(account)
+      return [
+        id,
+        {
+          ...account,
+          token: account.tokenStorage === 'session' ? '' : account.token,
+        },
+      ]
+    })
+  )
+}
+
+function applySessionTokens(state: PersistedState): PersistedState {
+  return {
+    ...state,
+    accountsById: Object.fromEntries(
+      Object.entries(state.accountsById).map(([id, account]) => [
+        id,
+        {
+          ...account,
+          token:
+            account.tokenStorage === 'session'
+              ? loadSessionToken(account.id) ?? ''
+              : account.token,
+        },
+      ])
+    ),
+  }
+}
+
+function syncSessionToken(account: Readonly<AccountProfile>) {
+  if (typeof sessionStorage === 'undefined') return
+
+  try {
+    if (account.tokenStorage === 'session' && account.token) {
+      sessionStorage.setItem(getSessionTokenStorageKey(account.id), account.token)
+    } else {
+      sessionStorage.removeItem(getSessionTokenStorageKey(account.id))
+    }
+  } catch (error) {
+    console.error(`Could not save session token for ${account.id}`, error)
+  }
+}
+
+function loadSessionToken(accountId: string) {
+  if (typeof sessionStorage === 'undefined') return undefined
+
+  try {
+    return sessionStorage.getItem(getSessionTokenStorageKey(accountId)) ?? undefined
+  } catch (error) {
+    console.error(`Could not load session token for ${accountId}`, error)
+    return undefined
+  }
+}
+
+function getSessionTokenStorageKey(accountId: string) {
+  return `${SESSION_TOKEN_STORAGE_KEY_PREFIX}${accountId}`
 }
 
 function filterAccountsPendingDeployments(

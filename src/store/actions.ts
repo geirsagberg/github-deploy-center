@@ -14,6 +14,7 @@ import {
 } from '../state/environments'
 import type {
   AccountProfile,
+  AccountTokenStorage,
   AppSettings,
   ApplicationConfig,
   EnvironmentSettings,
@@ -30,6 +31,7 @@ import {
   toPersistedDeploySettings,
 } from '../state/deployWorkflow'
 import {
+  DEFAULT_TOKEN_STORAGE,
   addAccountProfile,
   deleteActiveApplication,
   findAccountByGitHubUserId,
@@ -65,6 +67,7 @@ export const setToken = (token: string) => {
 
 export type AddAccountInput = {
   token: string
+  tokenStorage?: AccountTokenStorage
 }
 
 export class DifferentIdentityTokenError extends Error {
@@ -87,7 +90,7 @@ export class DifferentIdentityTokenError extends Error {
 
 export async function addAccountToState(
   state: AppState,
-  { token }: AddAccountInput,
+  { token, tokenStorage = DEFAULT_TOKEN_STORAGE }: AddAccountInput,
   resolveIdentity: GitHubIdentityResolver = resolveGitHubIdentity
 ) {
   const normalizedToken = token.trim()
@@ -109,6 +112,7 @@ export async function addAccountToState(
   if (existingAccount) {
     updateAccountProfile(state, existingAccount.id, {
       token: normalizedToken,
+      tokenStorage,
       githubLogin: identity.login,
       githubUserId: identity.id,
     })
@@ -118,6 +122,7 @@ export async function addAccountToState(
 
   return addAccountProfile(state, {
     token: normalizedToken,
+    tokenStorage,
     githubLogin: identity.login,
     githubUserId: identity.id,
   })
@@ -129,11 +134,12 @@ export const addAccount = (input: AddAccountInput) =>
 export type EditAccountInput = {
   accountId: string
   token?: string
+  tokenStorage?: AccountTokenStorage
 }
 
 export async function editAccountInState(
   state: AppState,
-  { accountId, token = '' }: EditAccountInput,
+  { accountId, token = '', tokenStorage }: EditAccountInput,
   resolveIdentity: GitHubIdentityResolver = resolveGitHubIdentity
 ) {
   const account = state.accountsById[accountId]
@@ -144,6 +150,9 @@ export async function editAccountInState(
   const normalizedToken = token.trim()
 
   if (!normalizedToken) {
+    if (tokenStorage !== undefined) {
+      updateAccountProfile(state, accountId, { tokenStorage })
+    }
     return account
   }
 
@@ -165,6 +174,7 @@ export async function editAccountInState(
 
   return updateAccountProfile(state, accountId, {
     token: normalizedToken,
+    tokenStorage: tokenStorage ?? account.tokenStorage,
     githubLogin: identity.login,
     githubUserId: identity.id,
   })

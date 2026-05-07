@@ -119,9 +119,13 @@ export const accountWorkspaceSchema = z.object({
 export interface AccountWorkspace
   extends z.infer<typeof accountWorkspaceSchema> {}
 
+export const accountTokenStorageSchema = z.enum(['local', 'session'])
+export type AccountTokenStorage = z.infer<typeof accountTokenStorageSchema>
+
 export const accountProfileSchema = z.object({
   id: z.string(),
   token: z.string(),
+  tokenStorage: accountTokenStorageSchema,
   githubLogin: z.string().optional(),
   githubUserId: z.string().optional(),
   workspace: accountWorkspaceSchema,

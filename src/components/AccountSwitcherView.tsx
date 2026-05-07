@@ -3,7 +3,6 @@ import {
   Button,
   Dialog,
   DialogContent,
-  DialogTitle,
   Divider,
   Icon,
   ListItemIcon,
@@ -11,8 +10,8 @@ import {
   Menu,
   MenuItem,
 } from '@mui/material'
-import { useState } from 'react'
 import type { MouseEvent } from 'react'
+import { useState } from 'react'
 import type { AccountProfile } from '../state/schemas'
 import { formatAccountName } from '../store/accounts'
 import type { AddAccountInput, EditAccountInput } from '../store/actions'
@@ -151,7 +150,6 @@ export function AccountSwitcherView({
         maxWidth="sm"
         onClose={() => setAddDialogOpen(false)}
       >
-        <DialogTitle>Add account</DialogTitle>
         <DialogContent>
           <AccountSetupView
             addAccount={addAccount}
@@ -167,7 +165,6 @@ export function AccountSwitcherView({
         maxWidth="sm"
         onClose={() => setEditDialogOpen(false)}
       >
-        <DialogTitle>Edit account</DialogTitle>
         <DialogContent>
           {activeAccount ? (
             <AccountEditView

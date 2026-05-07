@@ -272,7 +272,7 @@ describe('ApplicationWorkspaceView', () => {
     expect(calledActions).toEqual(['new', 'export', 'import'])
   })
 
-  test('keeps new application available when no applications exist', async () => {
+  test('shows first-application actions when no applications exist', async () => {
     const calledActions: string[] = []
     const user = userEvent.setup()
     actions.showNewApplicationModal = () => calledActions.push('new')
@@ -283,7 +283,7 @@ describe('ApplicationWorkspaceView', () => {
       calledActions.push('import')
     }
 
-    const { getByLabelText, getByRole } = render(
+    const { getByRole, queryByLabelText } = render(
       <ApplicationWorkspaceView
         applicationsById={{}}
         selectedApplicationId=""
@@ -292,14 +292,19 @@ describe('ApplicationWorkspaceView', () => {
       </ApplicationWorkspaceView>
     )
 
-    const sidebar = getByLabelText('Applications')
+    expect(queryByLabelText('Applications')).toBeNull()
+    const emptyState = getByRole('region', {
+      name: /add your first deploy config/i,
+    })
+
     await user.click(
-      within(sidebar).getByRole('button', { name: /new (application|config)/i })
+      within(emptyState).getByRole('button', {
+        name: /^new (application|config)$/i,
+      })
     )
     await user.click(
-      within(sidebar).getByRole('button', { name: /application actions/i })
+      within(emptyState).getByRole('button', { name: /^import$/i })
     )
-    await user.click(getByRole('menuitem', { name: /import/i }))
 
     expect(calledActions).toEqual(['new', 'import'])
   })

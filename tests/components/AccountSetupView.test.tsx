@@ -14,7 +14,7 @@ describe('AccountSetupView', () => {
     const submitted: AddAccountInput[] = []
     const user = userEvent.setup()
 
-    const { getByLabelText, getByRole, getByText } = render(
+    const { getByLabelText, getByRole, queryByText } = render(
       <AccountSetupView
         addAccount={async (input) => {
           submitted.push(input)
@@ -25,8 +25,12 @@ describe('AccountSetupView', () => {
     const tokenInput = getByLabelText(
       /personal access token/i
     ) as HTMLInputElement
+    const rememberTokenCheckbox = getByLabelText(
+      /remember token between sessions/i
+    ) as HTMLInputElement
     expect(tokenInput.type).toBe('password')
-    expect(getByText(/stored in your browser's local storage/i)).toBeTruthy()
+    expect(rememberTokenCheckbox.checked).toBe(true)
+    expect(queryByText(/stored in your browser's local storage/i)).toBeNull()
 
     await user.type(tokenInput, 'ghp_valid')
     await user.click(getByRole('button', { name: /add account/i }))
@@ -35,6 +39,33 @@ describe('AccountSetupView', () => {
       expect(submitted).toEqual([
         {
           token: 'ghp_valid',
+          tokenStorage: 'local',
+        },
+      ])
+    })
+  })
+
+  test('submits the session-only PAT storage choice', async () => {
+    const submitted: AddAccountInput[] = []
+    const user = userEvent.setup()
+
+    const { getByLabelText, getByRole } = render(
+      <AccountSetupView
+        addAccount={async (input) => {
+          submitted.push(input)
+        }}
+      />
+    )
+
+    await user.type(getByLabelText(/personal access token/i), 'ghp_valid')
+    await user.click(getByLabelText(/remember token between sessions/i))
+    await user.click(getByRole('button', { name: /add account/i }))
+
+    await waitFor(() => {
+      expect(submitted).toEqual([
+        {
+          token: 'ghp_valid',
+          tokenStorage: 'session',
         },
       ])
     })

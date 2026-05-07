@@ -2,35 +2,46 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
+  FormControlLabel,
   Icon,
   Link,
   TextField,
   Typography,
 } from '@mui/material'
+import type { FormEvent, ReactNode } from 'react'
 import { useState } from 'react'
-import type { FormEvent } from 'react'
+import type { AccountTokenStorage } from '../state/schemas'
 import type { AddAccountInput } from '../store/actions'
 
 type AccountSetupViewProps = {
   addAccount: (input: AddAccountInput) => Promise<unknown>
   title?: string
-  description?: string
+  description?: ReactNode
+  initialTokenStorage?: AccountTokenStorage
+  wide?: boolean
   submitLabel?: string
+  submitIcon?: string
   onAdded?: () => void
 }
 
 export function AccountSetupView({
   addAccount,
   title = 'Add your GitHub account',
-  description = "Personal access tokens are stored in your browser's local storage.",
+  description,
+  initialTokenStorage = 'local',
+  wide = false,
   submitLabel = 'Add account',
+  submitIcon = 'person_add',
   onAdded,
 }: AccountSetupViewProps) {
   const [token, setToken] = useState('')
+  const [tokenStorage, setTokenStorage] =
+    useState<AccountTokenStorage>(initialTokenStorage)
   const [error, setError] = useState<string>()
   const [isAdding, setIsAdding] = useState(false)
 
-  const canAdd = !!token.trim() && !isAdding
+  const canAdd = !isAdding
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -38,13 +49,13 @@ export function AccountSetupView({
     setIsAdding(true)
 
     try {
-      await addAccount({ token })
+      await addAccount({ token, tokenStorage })
       onAdded?.()
     } catch (error) {
       setError(
         error instanceof Error
           ? error.message
-          : 'Could not add that account. Check the token and try again.'
+          : 'Could not add that account. Check the token and try again.',
       )
     } finally {
       setIsAdding(false)
@@ -57,44 +68,75 @@ export function AccountSetupView({
       onSubmit={handleSubmit}
       sx={{
         display: 'grid',
-        gap: 2,
-        maxWidth: 560,
+        gap: wide ? 3 : 2,
+        maxWidth: wide ? undefined : 560,
+        width: '100%',
+        alignItems: 'start',
       }}
     >
       <Box sx={{ display: 'grid', gap: 0.75 }}>
-        <Typography variant="h5" component="h2">
+        <Typography variant={wide ? 'h4' : 'h5'} component="h2">
           {title}
         </Typography>
-        <Typography color="text.secondary">
-          {description}
-        </Typography>
+        {description && (
+          <Typography color="text.secondary">{description}</Typography>
+        )}
       </Box>
-      {error ? <Alert severity="error">{error}</Alert> : null}
-      <TextField
-        label="Personal access token"
-        value={token}
-        onChange={(event) => setToken(event.target.value)}
-        type="password"
-        autoComplete="off"
-        required
-        helperText={
-          <>
-            <Link target="_blank" href="https://github.com/settings/tokens/new">
-              Create a token
-            </Link>{' '}
-            with the <code>repo</code> scope.
-          </>
-        }
-      />
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <Button
-          type="submit"
-          variant="contained"
-          disabled={!canAdd}
-          startIcon={<Icon>person_add</Icon>}
-        >
-          {isAdding ? 'Adding account...' : submitLabel}
-        </Button>
+      <Box sx={{ display: 'grid', gap: 2 }}>
+        {error ? <Alert severity="error">{error}</Alert> : null}
+        <Box sx={{ display: 'grid', gap: 1.5 }}>
+          <TextField
+            label="Personal access token"
+            value={token}
+            onChange={(event) => setToken(event.target.value)}
+            type="password"
+            autoComplete="off"
+            required
+            slotProps={{
+              htmlInput: { 'aria-label': 'Personal access token' },
+            }}
+          />
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 1.5,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Link
+              target="_blank"
+              rel="noreferrer"
+              href="https://github.com/settings/tokens/new"
+            >
+              Create a token with the <code>repo</code> scope.
+            </Link>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={tokenStorage === 'local'}
+                  onChange={(event) =>
+                    setTokenStorage(event.target.checked ? 'local' : 'session')
+                  }
+                />
+              }
+              label="Remember token between sessions"
+              sx={{ mr: 0 }}
+            />
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={!canAdd}
+            fullWidth={wide}
+            startIcon={submitIcon ? <Icon>{submitIcon}</Icon> : undefined}
+          >
+            {isAdding ? 'Adding account...' : submitLabel}
+          </Button>
+        </Box>
       </Box>
     </Box>
   )

@@ -9,7 +9,7 @@ GDC is a static website for showing your GitHub releases and deployments, and pr
 
 ![GitHub Deploy Center](images/github-deploy-center.png)
 
-- GDC is a fully static website and uses only local storage. No cookies, and nothing is sent to any server!
+- GDC is a fully static website and stores configuration locally. Personal access tokens can be kept in local or session storage. No cookies, and nothing is sent to any server!
 - Application settings can be exported, shared and imported.
 - Monorepos are supported, with a flexible configuration flow for multiple applications in the same repo.
 

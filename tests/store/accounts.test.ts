@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test'
 import {
   DEFAULT_ACCOUNT_ID,
   createAccountProfile,
+  getDeterministicAccountId,
   getActiveAccount,
   getActiveWorkspace,
   removeAccountProfile,
@@ -73,6 +74,9 @@ describe('persisted account migration', () => {
     ])
     expect(migrated?.accountsById[MIGRATED_ACCOUNT_ID].token).toBe(
       'ghp_legacy'
+    )
+    expect(migrated?.accountsById[MIGRATED_ACCOUNT_ID].tokenStorage).toBe(
+      'local'
     )
     expect(
       migrated?.accountsById[MIGRATED_ACCOUNT_ID].workspace.applicationsById
@@ -149,6 +153,7 @@ describe('persisted account migration', () => {
     expect(Object.keys(migrated?.accountsById ?? {})).toEqual(['valid'])
     expect(migrated?.accountsById.valid.id).toBe('valid')
     expect(migrated?.accountsById.valid.token).toBe('ghp_valid')
+    expect(migrated?.accountsById.valid.tokenStorage).toBe('local')
     expect(migrated?.accountsById.valid.workspace.selectedApplicationId).toBe(
       app.id
     )
@@ -182,6 +187,64 @@ describe('persisted account migration', () => {
       migrated?.accountsById.valid.workspace.applicationsById[app.id]
         .deploySettings.manualWorkflowHandling
     ).toBe(false)
+  })
+
+  test('rekeys GitHub identities to deterministic account ids', () => {
+    const app = appConfig('app-1')
+    const accountId = getDeterministicAccountId('U_work')
+    const migrated = parsePersistedState({
+      accountsById: {
+        random: {
+          token: 'ghp_valid',
+          tokenStorage: 'session',
+          githubLogin: 'work-octocat',
+          githubUserId: 'U_work',
+          workspace: {
+            applicationsById: { [app.id]: app },
+            selectedApplicationId: app.id,
+            pendingDeployments: {},
+          },
+        },
+      },
+      activeAccountId: 'random',
+    })
+
+    expect(migrated?.activeAccountId).toBe(accountId)
+    expect(migrated?.accountsById.random).toBeUndefined()
+    expect(migrated?.accountsById[accountId].id).toBe(accountId)
+    expect(migrated?.accountsById[accountId].token).toBe('ghp_valid')
+    expect(migrated?.accountsById[accountId].tokenStorage).toBe('session')
+    expect(
+      migrated?.accountsById[accountId].workspace.applicationsById
+    ).toEqual({ [app.id]: app })
+  })
+
+  test('keeps session-token configuration when the PAT is missing', () => {
+    const app = appConfig('app-1')
+    const accountId = getDeterministicAccountId('U_work')
+    const migrated = parsePersistedState({
+      accountsById: {
+        [accountId]: {
+          token: '',
+          tokenStorage: 'session',
+          githubLogin: 'work-octocat',
+          githubUserId: 'U_work',
+          workspace: {
+            applicationsById: { [app.id]: app },
+            selectedApplicationId: app.id,
+            pendingDeployments: {},
+          },
+        },
+      },
+      activeAccountId: accountId,
+    })
+
+    expect(migrated?.activeAccountId).toBe(accountId)
+    expect(migrated?.accountsById[accountId].token).toBe('')
+    expect(migrated?.accountsById[accountId].tokenStorage).toBe('session')
+    expect(
+      migrated?.accountsById[accountId].workspace.applicationsById
+    ).toEqual({ [app.id]: app })
   })
 })
 
@@ -246,11 +309,28 @@ describe('add account action', () => {
     )
 
     expect(requestedTokens).toEqual(['ghp_valid'])
+    expect(account.id).toBe(getDeterministicAccountId('U_123'))
     expect(state.activeAccountId).toBe(account.id)
     expect(Object.keys(state.accountsById)).toEqual([account.id])
     expect(account.token).toBe('ghp_valid')
+    expect(account.tokenStorage).toBe('local')
     expect(account.githubLogin).toBe('octocat')
     expect(account.githubUserId).toBe('U_123')
+  })
+
+  test('saves the selected token storage with a new account', async () => {
+    const state = createInitialAppState()
+
+    const account = await addAccountToState(
+      state,
+      {
+        token: 'ghp_valid',
+        tokenStorage: 'session',
+      },
+      async () => githubIdentity('U_123', 'octocat')
+    )
+
+    expect(account.tokenStorage).toBe('session')
   })
 
   test('rejects invalid PATs without saving an account', async () => {
@@ -437,6 +517,7 @@ describe('edit account action', () => {
       {
         accountId: 'work',
         token: '',
+        tokenStorage: 'session',
       },
       async () => {
         throw new Error('Unexpected validation')
@@ -444,6 +525,7 @@ describe('edit account action', () => {
     )
 
     expect(state.accountsById.work.token).toBe('ghp_work')
+    expect(state.accountsById.work.tokenStorage).toBe('session')
     expect(state.accountsById.work.githubLogin).toBe('work-octocat')
   })
 

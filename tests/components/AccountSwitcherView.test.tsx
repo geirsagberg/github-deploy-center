@@ -97,6 +97,7 @@ describe('AccountSwitcherView', () => {
       expect(submitted).toEqual([
         {
           token: 'ghp_client',
+          tokenStorage: 'local',
         },
       ])
     })
@@ -136,6 +137,10 @@ describe('AccountSwitcherView', () => {
     ) as HTMLInputElement
 
     expect(tokenInput.type).toBe('password')
+    expect(within(dialog).getByText('@work-octocat')).toBeTruthy()
+    expect(
+      within(dialog).queryByText(/personal access token storage/i)
+    ).toBeNull()
 
     await user.type(tokenInput, 'ghp_replacement')
     await user.click(
@@ -147,6 +152,54 @@ describe('AccountSwitcherView', () => {
         {
           accountId: 'work',
           token: 'ghp_replacement',
+          tokenStorage: 'local',
+        },
+      ])
+    })
+  })
+
+  test('edits the active account token storage from the dialog', async () => {
+    const submitted: unknown[] = []
+    const user = userEvent.setup()
+
+    const { getByRole } = render(
+      <AccountSwitcherView
+        accountsById={{
+          work: createAccountProfile({
+            id: 'work',
+            token: 'ghp_work',
+            githubLogin: 'work-octocat',
+            githubUserId: 'U_work',
+          }),
+        }}
+        activeAccountId="work"
+        addAccount={async () => {}}
+        editAccount={async (input) => {
+          submitted.push(input)
+        }}
+        removeAccount={async () => true}
+        selectAccount={() => {}}
+      />
+    )
+
+    await user.click(
+      getByRole('button', { name: /active account: @work-octocat/i })
+    )
+    await user.click(getByRole('menuitem', { name: /edit account/i }))
+    const dialog = getByRole('dialog')
+    await user.click(
+      within(dialog).getByLabelText(/remember token between sessions/i)
+    )
+    await user.click(
+      within(dialog).getByRole('button', { name: /save account/i })
+    )
+
+    await waitFor(() => {
+      expect(submitted).toEqual([
+        {
+          accountId: 'work',
+          token: '',
+          tokenStorage: 'session',
         },
       ])
     })
@@ -203,6 +256,7 @@ describe('AccountSwitcherView', () => {
       expect(added).toEqual([
         {
           token: 'ghp_personal',
+          tokenStorage: 'local',
         },
       ])
     })

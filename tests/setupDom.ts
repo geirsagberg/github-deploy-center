@@ -25,6 +25,7 @@ for (const key of [
   'MutationObserver',
   'ResizeObserver',
   'localStorage',
+  'sessionStorage',
 ] as const) {
   Object.defineProperty(globalThis, key, {
     value: window[key],

@@ -20,10 +20,14 @@ describe('App account setup state', () => {
     const tokenInput = getByLabelText(
       /personal access token/i
     ) as HTMLInputElement
+    const rememberTokenCheckbox = getByLabelText(
+      /remember token between sessions/i
+    ) as HTMLInputElement
     const githubLink = getByRole('link', { name: /github repository/i })
 
-    expect(getByText('Add your GitHub account')).toBeTruthy()
+    expect(getByText('Connect GitHub Account')).toBeTruthy()
     expect(tokenInput.type).toBe('password')
+    expect(rememberTokenCheckbox.checked).toBe(true)
     expect(
       queryByRole('button', { name: /active account/i })
     ).toBeNull()

@@ -1,28 +1,31 @@
+import type { SvgIconProps } from '@mui/material'
 import {
   Box,
   Container,
+  Divider,
   Icon,
   IconButton,
   Paper,
   SvgIcon,
   Typography,
 } from '@mui/material'
-import type { SvgIconProps } from '@mui/material'
+import type { ReactNode } from 'react'
 import ModalContainer from 'react-modal-promise'
 import { useFetchRepos } from './api/fetchHooks'
 import { AccountSetupView } from './components/AccountSetupView'
 import { AccountSwitcherView } from './components/AccountSwitcherView'
-import { ApplicationWorkspace } from './components/ApplicationWorkspace'
 import {
   EditApplicationDialog,
   NewApplicationDialog,
 } from './components/ApplicationDialog'
+import { ApplicationWorkspace } from './components/ApplicationWorkspace'
 import { EnvironmentMappingDialog } from './components/EnvironmentMappingDialog'
 import { EnvironmentsView } from './components/EnvironmentsView'
 import { ReleasesTableView } from './components/ReleasesTableView'
 import { SettingsDialog } from './components/SettingsDialog'
 import WorkflowInfoView from './components/WorkflowInfoView'
 import { useActions, useAppState } from './store'
+import type { AddAccountInput } from './store/actions'
 
 const RepoPreloader = () => {
   useFetchRepos({ autoFetchAll: true })
@@ -35,80 +38,141 @@ const GitHubIcon = (props: SvgIconProps) => (
   </SvgIcon>
 )
 
+const AppHeader = ({
+  accountSwitcher,
+  showSettings,
+}: {
+  accountSwitcher?: ReactNode
+  showSettings: () => void
+}) => (
+  <>
+    <Paper
+      component="header"
+      square
+      elevation={0}
+      sx={{
+        minHeight: 75,
+        px: { xs: 2, sm: 3 },
+        py: { xs: 1.25, sm: 0 },
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 1.5,
+        flexWrap: 'wrap',
+      }}
+    >
+      <Typography variant="h5" component="h1">
+        GitHub Deploy Center
+      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        {accountSwitcher}
+        <IconButton
+          component="a"
+          href="https://github.com/geirsagberg/github-deploy-center"
+          target="_blank"
+          rel="noreferrer"
+          title="GitHub repository"
+          aria-label="GitHub repository"
+        >
+          <GitHubIcon />
+        </IconButton>
+        <IconButton
+          title="Settings"
+          aria-label="Settings"
+          onClick={() => showSettings()}
+        >
+          <Icon>settings</Icon>
+        </IconButton>
+      </Box>
+    </Paper>
+    <Divider />
+  </>
+)
+
 const App = () => {
-  const { accountsById, activeAccountId, token } = useAppState()
-  const { addAccount, editAccount, removeAccount, selectAccount, showSettings } =
-    useActions()
+  const { accountsById, activeAccount, activeAccountId, token } = useAppState()
+  const {
+    addAccount,
+    editAccount,
+    removeAccount,
+    selectAccount,
+    showSettings,
+  } = useActions()
   const hasAccounts = Object.keys(accountsById).length > 0
   const hasActiveAccountToken = hasAccounts && !!token
+  const saveActiveAccountToken = (input: AddAccountInput) =>
+    editAccount({ accountId: activeAccountId, ...input })
+  const accountSwitcher = hasAccounts ? (
+    <AccountSwitcherView
+      accountsById={accountsById}
+      activeAccountId={activeAccountId}
+      addAccount={addAccount}
+      editAccount={editAccount}
+      removeAccount={removeAccount}
+      selectAccount={selectAccount}
+    />
+  ) : null
 
   return (
-    <Container maxWidth="xl">
-      <Paper sx={{ p: 4, display: 'grid', gap: '1rem' }}>
-        <Box
+    <Box sx={{ minHeight: '100vh' }}>
+      <AppHeader
+        accountSwitcher={accountSwitcher}
+        showSettings={showSettings}
+      />
+      {hasActiveAccountToken ? (
+        <Container component="main" maxWidth="xl" sx={{ py: { xs: 2, md: 3 } }}>
+          <Paper sx={{ p: 4, display: 'grid', gap: '1rem' }}>
+            <RepoPreloader />
+            <ApplicationWorkspace>
+              <EnvironmentsView />
+              <WorkflowInfoView />
+              <ReleasesTableView />
+            </ApplicationWorkspace>
+            <NewApplicationDialog />
+            <EditApplicationDialog />
+            <EnvironmentMappingDialog />
+          </Paper>
+        </Container>
+      ) : (
+        <Container
+          component="main"
+          maxWidth="md"
           sx={{
+            minHeight: 'calc(100vh - 76px)',
             display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 1,
-            flexWrap: 'wrap',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
+            py: { xs: 5, md: 16 },
           }}
         >
-          <Typography variant="h1">GitHub Deploy Center</Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Paper sx={{ p: { xs: 3, sm: 4 }, width: '100%' }}>
             {hasAccounts ? (
-              <AccountSwitcherView
-                accountsById={accountsById}
-                activeAccountId={activeAccountId}
-                addAccount={addAccount}
-                editAccount={editAccount}
-                removeAccount={removeAccount}
-                selectAccount={selectAccount}
+              <AccountSetupView
+                addAccount={saveActiveAccountToken}
+                title="Add a personal access token"
+                description="Add a valid personal access token to this account before GitHub data can load."
+                initialTokenStorage={activeAccount?.tokenStorage}
+                submitLabel="Save token"
+                submitIcon="save"
+                wide
               />
-            ) : null}
-            <IconButton
-              component="a"
-              href="https://github.com/geirsagberg/github-deploy-center"
-              target="_blank"
-              rel="noreferrer"
-              title="GitHub repository"
-              aria-label="GitHub repository"
-            >
-              <GitHubIcon />
-            </IconButton>
-            <IconButton title="Settings" onClick={() => showSettings()}>
-              <Icon>settings</Icon>
-            </IconButton>
-          </Box>
-        </Box>
-        {hasAccounts ? (
-          <>
-            {hasActiveAccountToken ? (
-              <>
-                <RepoPreloader />
-                <ApplicationWorkspace>
-                  <EnvironmentsView />
-                  <WorkflowInfoView />
-                  <ReleasesTableView />
-                </ApplicationWorkspace>
-                <NewApplicationDialog />
-                <EditApplicationDialog />
-                <EnvironmentMappingDialog />
-              </>
             ) : (
-              <Typography color="text.secondary">
-                Add a valid personal access token to this account before GitHub
-                data can load.
-              </Typography>
+              <AccountSetupView
+                addAccount={addAccount}
+                title="Connect GitHub Account"
+                description="Tokens are stored in your browser."
+                initialTokenStorage="local"
+                submitLabel="Connect account"
+                submitIcon=""
+                wide
+              />
             )}
-          </>
-        ) : (
-          <AccountSetupView addAccount={addAccount} />
-        )}
-      </Paper>
+          </Paper>
+        </Container>
+      )}
       <SettingsDialog />
       <ModalContainer />
-    </Container>
+    </Box>
   )
 }
 
