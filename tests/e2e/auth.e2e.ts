@@ -98,24 +98,42 @@ test('session-only PAT keeps configuration in local storage', async ({
   await page.reload()
 
   await expect(
-    page.getByRole('heading', { name: 'Add a personal access token' })
+    page.getByRole('heading', { name: 'Reconnect @e2e-user' })
   ).toBeVisible()
   await expect(page.getByLabel('Personal access token')).toHaveAttribute(
     'type',
     'password'
   )
+  await expect(
+    page.getByLabel('Remember token between sessions')
+  ).not.toBeChecked()
 
-  const persistedAccount = await page.evaluate(
+  await page.getByLabel('Personal access token').fill(FAKE_TOKEN)
+  await page.getByRole('button', { name: 'Save token' }).click()
+
+  await expect(
+    page.getByRole('button', { name: /new (application|config)/i })
+  ).toBeVisible()
+
+  const reconnected = await page.evaluate(
     ({ accountId, storageKey }) => {
       const localState = JSON.parse(localStorage.getItem(storageKey) ?? '{}')
-      return localState.accountsById?.[accountId]
+      const account = localState.accountsById?.[accountId]
+
+      return {
+        localToken: account?.token,
+        tokenStorage: account?.tokenStorage,
+        sessionToken: sessionStorage.getItem(
+          `gdc.v2.session-token.${accountId}`
+        ),
+      }
     },
     { accountId: E2E_ACCOUNT_ID, storageKey: STORAGE_KEY }
   )
 
-  expect(persistedAccount).toMatchObject({
-    token: '',
+  expect(reconnected).toEqual({
+    localToken: '',
     tokenStorage: 'session',
-    githubLogin: 'e2e-user',
+    sessionToken: FAKE_TOKEN,
   })
 })

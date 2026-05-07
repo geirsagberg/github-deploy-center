@@ -25,6 +25,7 @@ import { ReleasesTableView } from './components/ReleasesTableView'
 import { SettingsDialog } from './components/SettingsDialog'
 import WorkflowInfoView from './components/WorkflowInfoView'
 import { useActions, useAppState } from './store'
+import { formatAccountName } from './store/accounts'
 import type { AddAccountInput } from './store/actions'
 
 const RepoPreloader = () => {
@@ -148,19 +149,21 @@ const App = () => {
           <Paper sx={{ p: { xs: 3, sm: 4 }, width: '100%' }}>
             {hasAccounts ? (
               <AccountSetupView
+                key={activeAccountId || 'reconnect'}
                 addAccount={saveActiveAccountToken}
-                title="Add a personal access token"
-                description="Add a valid personal access token to this account before GitHub data can load."
-                initialTokenStorage={activeAccount?.tokenStorage}
+                title={`Reconnect ${formatAccountName(activeAccount)}`}
+                description="Enter a personal access token to load this saved account."
+                initialTokenStorage={activeAccount?.tokenStorage ?? 'local'}
                 submitLabel="Save token"
                 submitIcon="save"
                 wide
               />
             ) : (
               <AccountSetupView
+                key="first-run"
                 addAccount={addAccount}
                 title="Connect GitHub Account"
-                description="Tokens are stored in your browser."
+                description="Tokens are stored only in your browser."
                 initialTokenStorage="local"
                 submitLabel="Connect account"
                 submitIcon=""
