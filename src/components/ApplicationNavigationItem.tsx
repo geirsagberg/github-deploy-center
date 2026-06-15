@@ -4,7 +4,8 @@ import type { ApplicationConfig } from '../state/schemas'
 import { useActions } from '../store'
 import { ApplicationCustomArgsIndicator } from './ApplicationCustomArgs'
 import {
-  getEnvironmentNames,
+  formatEnvironmentChipLabel,
+  getEnvironmentSettings,
   getExtraArgEntries,
   type EnvironmentDeployStatus,
 } from './applicationWorkspaceHelpers'
@@ -22,7 +23,7 @@ export function ApplicationNavigationItem({
   isSelected: boolean
 }) {
   const { selectApplication } = useActions()
-  const environmentNames = getEnvironmentNames(application)
+  const environmentSettings = getEnvironmentSettings(application)
   const extraArgEntries = getExtraArgEntries(application)
 
   return (
@@ -59,7 +60,7 @@ export function ApplicationNavigationItem({
         <Typography noWrap sx={{ fontWeight: isSelected ? 800 : 600 }}>
           {application.name}
         </Typography>
-        {environmentNames.length || extraArgEntries.length ? (
+        {environmentSettings.length || extraArgEntries.length ? (
           <Box
             sx={{
               display: 'flex',
@@ -68,11 +69,12 @@ export function ApplicationNavigationItem({
               mt: 0.55,
             }}
           >
-            {environmentNames.map((environmentName) => (
+            {environmentSettings.map((environment) => (
               <EnvironmentStatusChip
-                environmentName={environmentName}
-                key={environmentName}
-                status={environmentStatuses[environmentName] ?? 'outdated'}
+                environmentName={environment.name}
+                key={environment.name}
+                label={formatEnvironmentChipLabel(environment)}
+                status={environmentStatuses[environment.name] ?? 'outdated'}
               />
             ))}
             <ApplicationCustomArgsIndicator

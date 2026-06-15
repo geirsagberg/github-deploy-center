@@ -137,6 +137,48 @@ describe('ApplicationWorkspaceView', () => {
     expect(await findByText('prod: failed')).toBeTruthy()
   })
 
+  test('uses workflow input values as sidebar environment chip labels', async () => {
+    const user = userEvent.setup()
+    const scopedEnvironmentApplications = {
+      api: createApplication({
+        id: 'api',
+        name: 'API',
+        owner: 'deploy-center',
+        repo: 'api',
+        environments: ['sample-prod', 'sample-test'],
+        workflowInputValues: {
+          'sample-prod': 'prod',
+          'sample-test': '   ',
+        },
+      }),
+    }
+
+    const { findByText, getByLabelText, getByRole } = render(
+      <ApplicationWorkspaceView
+        applicationsById={scopedEnvironmentApplications}
+        environmentStatusesByApplicationId={{
+          api: {
+            'sample-prod': 'failed',
+            'sample-test': 'up-to-date',
+          },
+        }}
+        selectedApplicationId="api"
+      >
+        <div>Deployments</div>
+      </ApplicationWorkspaceView>
+    )
+
+    const apiButton = getByRole('button', { name: /switch to api/i })
+
+    expect(within(apiButton).getByText('prod')).toBeTruthy()
+    expect(within(apiButton).queryByText('sample-prod')).toBeNull()
+    expect(within(apiButton).getByText('sample-test')).toBeTruthy()
+
+    await user.hover(getByLabelText('sample-prod is failed'))
+
+    expect(await findByText('sample-prod: failed')).toBeTruthy()
+  })
+
   test('shows selected application custom arg values as labels', () => {
     const customArgApplications = {
       api: createApplication({
@@ -342,6 +384,7 @@ function createApplication({
   ref = 'main',
   repo,
   extraArgs = {},
+  workflowInputValues = {},
 }: {
   environments: string[]
   extraArgs?: Record<string, string>
@@ -350,6 +393,7 @@ function createApplication({
   owner: string
   ref?: string
   repo: string
+  workflowInputValues?: Record<string, string>
 }): ApplicationConfig {
   return {
     id,
@@ -373,7 +417,10 @@ function createApplication({
     environmentSettingsByName: Object.fromEntries(
       environments.map((environment) => [
         environment,
-        { name: environment, workflowInputValue: environment },
+        {
+          name: environment,
+          workflowInputValue: workflowInputValues[environment] ?? environment,
+        },
       ])
     ),
   }

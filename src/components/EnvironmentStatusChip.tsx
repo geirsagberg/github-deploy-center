@@ -29,9 +29,11 @@ const statusStyles: Record<
 
 export function EnvironmentStatusChip({
   environmentName,
+  label,
   status,
 }: {
   environmentName: string
+  label: string
   status: EnvironmentDeployStatus
 }) {
   const colors = statusStyles[status]
@@ -56,7 +58,7 @@ export function EnvironmentStatusChip({
           textOverflow: 'ellipsis',
         }}
       >
-        {environmentName}
+        {label}
       </Box>
     </Tooltip>
   )

@@ -1,4 +1,4 @@
-import type { ApplicationConfig } from '../state/schemas'
+import type { ApplicationConfig, EnvironmentSettings } from '../state/schemas'
 
 export type {
   EnvironmentDeployStatus,
@@ -9,6 +9,17 @@ export type ExtraArgEntry = [string, string]
 
 export function getEnvironmentNames(application: ApplicationConfig) {
   return Object.keys(application.environmentSettingsByName)
+}
+
+export function getEnvironmentSettings(application: ApplicationConfig) {
+  return Object.values(application.environmentSettingsByName)
+}
+
+export function formatEnvironmentChipLabel({
+  name,
+  workflowInputValue,
+}: EnvironmentSettings) {
+  return workflowInputValue.trim() || name
 }
 
 export function getExtraArgEntries({
