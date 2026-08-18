@@ -7,7 +7,7 @@
 
 GDC is a static website for showing your GitHub releases and deployments, and provides one-click deployment to any environment, powered by -your- GitHub Action workflows.
 
-![GitHub Deploy Center](images/github-deploy-center.png)
+![GitHub Deploy Center](images/github-deploy-center.webp)
 
 - GDC is a fully static website and stores configuration locally. Personal access tokens can be kept in local or session storage. No cookies, and nothing is sent to any server!
 - Application settings can be exported, shared and imported.
