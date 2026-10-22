@@ -231,6 +231,38 @@ describe('deployment matrix environment summaries', () => {
       qa: 'outdated',
     })
   })
+
+  test('treats only the newest active release as current', () => {
+    const matrix = projectDeploymentMatrix({
+      application: createApplication({ environments: ['dev'] }),
+      pendingDeployments: {},
+      releases: [
+        release({
+          id: 'v3',
+          createdAt: '2026-05-03T10:00:00.000Z',
+          deployments: [
+            deployment({ id: 'v3-dev', state: DeploymentState.Failure }),
+          ],
+        }),
+        release({
+          id: 'v2',
+          createdAt: '2026-05-02T10:00:00.000Z',
+          deployments: [
+            deployment({ id: 'v2-dev', state: DeploymentState.Active }),
+          ],
+        }),
+        release({
+          id: 'v1',
+          createdAt: '2026-05-01T10:00:00.000Z',
+          deployments: [
+            deployment({ id: 'v1-dev', state: DeploymentState.Active }),
+          ],
+        }),
+      ],
+    })
+
+    expect(matrix.environments[0].currentRelease?.id).toBe('v2')
+  })
 })
 
 function createApplication({
