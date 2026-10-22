@@ -126,9 +126,13 @@ export function projectDeploymentMatrix({
           sortedReleases[0],
         ),
         latestRelease: latestTarget?.release,
-        currentRelease: targets.find(
-          (target) => target.state === DeploymentState.Active,
-        )?.release,
+        currentRelease: sortedReleases.find((release) =>
+          release.deployments.some(
+            (deployment) =>
+              deployment.environment === environment.name &&
+              deployment.state === DeploymentState.Active,
+          ),
+        ),
       }
     }),
     releases: sortedReleases,
