@@ -29,6 +29,7 @@ export type EnvironmentDeploymentSummary = {
   name: string
   status: EnvironmentDeployStatus
   latestRelease?: ReleaseModel
+  currentRelease?: ReleaseModel
 }
 
 export type DeploymentTarget = {
@@ -113,9 +114,10 @@ export function projectDeploymentMatrix({
   return {
     application,
     environments: environments.map((environment) => {
-      const latestTarget = sortedReleases
-        .map((release) => targetsByReleaseId[release.id][environment.name])
-        .find((target) => target.state)
+      const targets = sortedReleases.map(
+        (release) => targetsByReleaseId[release.id][environment.name],
+      )
+      const latestTarget = targets.find((target) => target.state)
 
       return {
         name: environment.name,
@@ -124,6 +126,13 @@ export function projectDeploymentMatrix({
           sortedReleases[0],
         ),
         latestRelease: latestTarget?.release,
+        currentRelease: sortedReleases.find((release) =>
+          release.deployments.some(
+            (deployment) =>
+              deployment.environment === environment.name &&
+              deployment.state === DeploymentState.Active,
+          ),
+        ),
       }
     }),
     releases: sortedReleases,
