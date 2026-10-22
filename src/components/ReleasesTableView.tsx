@@ -33,9 +33,11 @@ const DEPLOYMENT_BUTTON_STYLES: Partial<Record<DeploymentState, CSSProperties>> 
   [DeploymentState.Pending]: { color: colors.orange[400] },
   [DeploymentState.InProgress]: { color: colors.yellow[400] },
 }
+const SUPERSEDED_DEPLOYMENT_BUTTON_STYLE = { color: colors.blue[400] }
 
-const getButtonStyle = (state?: DeploymentState) => {
+const getButtonStyle = (state?: DeploymentState, isSuperseded?: boolean) => {
   if (!state) return EMPTY_DEPLOYMENT_BUTTON_STYLE
+  if (isSuperseded) return SUPERSEDED_DEPLOYMENT_BUTTON_STYLE
 
   return DEPLOYMENT_BUTTON_STYLES[state] ?? DEFAULT_DEPLOYMENT_BUTTON_STYLE
 }
@@ -107,11 +109,13 @@ export const ReleasesTableView = () => {
     setDraggedEnvironmentName(null)
   }
 
-  const createButton = (target: DeploymentTarget) => {
+  const createButton = (target: DeploymentTarget, isCurrent: boolean) => {
     const deploymentState = target.state
+    const isSuperseded =
+      deploymentState === DeploymentState.Active && !isCurrent
     const deployButtonVariant =
       (target.isAfterLatestDeployment && !deploymentState) ||
-      deploymentState === DeploymentState.Active
+      (deploymentState === DeploymentState.Active && isCurrent)
         ? 'contained'
         : 'outlined'
 
@@ -126,7 +130,7 @@ export const ReleasesTableView = () => {
               : 'inherit'
           }
           sx={{ width: DEPLOYMENT_BUTTON_WIDTH }}
-          style={getButtonStyle(deploymentState)}
+          style={getButtonStyle(deploymentState, isSuperseded)}
           onClick={() =>
             deploy({
               release: target.release.tagName,
@@ -256,7 +260,10 @@ export const ReleasesTableView = () => {
 
                 return (
                   <TableCell key={environment.name}>
-                    {createButton(target)}
+                    {createButton(
+                      target,
+                      environment.currentRelease?.id === release.id,
+                    )}
                   </TableCell>
                 )
               })}
