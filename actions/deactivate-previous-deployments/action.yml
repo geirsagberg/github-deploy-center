@@ -1,0 +1,17 @@
+name: Deactivate Previous Deployments
+description: Deactivate older successful deployments in the current deployment's environment.
+branding:
+  icon: archive
+  color: gray-dark
+
+inputs:
+  current-deployment-id:
+    description: Database ID of the successful deployment that should remain active.
+    required: true
+  token:
+    description: Token with deployments write permission for the current repository.
+    default: ${{ github.token }}
+
+runs:
+  using: node24
+  main: index.mjs
