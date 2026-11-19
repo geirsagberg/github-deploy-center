@@ -21,7 +21,7 @@ steps:
       current-deployment-id: ${{ steps.create_deployment.outputs.deployment_id }}
 ```
 
-Action versions use tags such as `deactivate-previous-deployments-v1.0.0`, separate from GDC release tags. Pin the action to a commit SHA for reproducible workflows. Consumers do not need to check out this repository or install dependencies. The action uses the runner's Node.js 24 runtime and supports GitHub Enterprise API URLs provided by the runner.
+Action versions use tags such as `deactivate-previous-deployments-v1.0.0`, separate from GDC release tags. Lock it with a [workflow lockfile](https://docs.github.com/en/actions/concepts/security/workflow-dependency-lockfiles) by running `gh actions-lock`. Consumers do not need to check out this repository or install dependencies. The action uses the runner's Node.js 24 runtime and supports GitHub Enterprise API URLs provided by the runner.
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |

@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
 
       - name: Find latest tag
         if: env.RELEASE == 'latest'
@@ -70,7 +70,7 @@ jobs:
       TAG: ${{ needs.find_tag.outputs.tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
 
       - name: Validate environment
         if: env.ENVIRONMENT != 'dev' && env.ENVIRONMENT != 'test' && env.ENVIRONMENT != 'prod'
@@ -83,7 +83,7 @@ jobs:
 
       - name: Create deployment
         id: create_deployment
-        uses: chrnorm/deployment-action@v2
+        uses: chrnorm/deployment-action@v2.0.8
         with:
           token: ${{ github.token }}
           environment: ${{ env.ENVIRONMENT }}
@@ -93,7 +93,7 @@ jobs:
           payload: '{"workflow_run_id": ${{ github.run_id }}}'
 
       - name: Set deployment in progress
-        uses: chrnorm/deployment-status@v2
+        uses: chrnorm/deployment-status@v2.0.4
         with:
           token: ${{ github.token }}
           state: in_progress
@@ -111,7 +111,7 @@ jobs:
 
       - name: Login to Azure
         if: env.ENVIRONMENT != 'prod'
-        uses: azure/login@v3
+        uses: azure/login@v3.1.0
         with:
           client-id: ${{ env.AZURE_CLIENT_ID }}
           tenant-id: ${{ env.AZURE_TENANT_ID }}
@@ -130,16 +130,16 @@ jobs:
 
       - name: Upload Pages artifact
         if: env.ENVIRONMENT == 'prod'
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@v5.0.0
         with:
           path: release
 
       - name: Deploy to GitHub Pages
         if: env.ENVIRONMENT == 'prod'
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@v5.0.1
 
       - name: Update deployment status
-        uses: chrnorm/deployment-status@v2
+        uses: chrnorm/deployment-status@v2.0.4
         if: always()
         with:
           token: ${{ github.token }}
