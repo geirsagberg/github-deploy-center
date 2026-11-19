@@ -8,7 +8,6 @@ import {
   addEnvironmentSettings,
   editEnvironmentSettings,
   isProductionEnvironmentValue,
-  reorderEnvironmentSettings,
   sortEnvironments,
   suggestEnvironmentMappings,
 } from '../state/environments'
@@ -25,6 +24,7 @@ import {
   resolveGitHubIdentity,
   type GitHubIdentityResolver,
 } from '../api/githubIdentity'
+import { reorderRecord } from '../utils'
 import { showConfirm } from '../utils/dialog'
 import {
   getDeployEnvironmentChoices,
@@ -598,12 +598,26 @@ export const reorderEnvironment = ({
 }) => {
   if (!appState.selectedApplication) return
 
-  appState.selectedApplication.environmentSettingsByName =
-    reorderEnvironmentSettings(
-      appState.selectedApplication.environmentSettingsByName,
-      draggedName,
-      targetName,
-    )
+  appState.selectedApplication.environmentSettingsByName = reorderRecord(
+    appState.selectedApplication.environmentSettingsByName,
+    draggedName,
+    targetName,
+  )
+}
+
+export const reorderApplication = ({
+  draggedId,
+  targetId,
+}: {
+  draggedId: string
+  targetId: string
+}) => {
+  const workspace = getActiveWorkspace(appState)
+  workspace.applicationsById = reorderRecord(
+    workspace.applicationsById,
+    draggedId,
+    targetId,
+  )
 }
 
 export const removeEnvironment = async (name: string) => {
@@ -683,6 +697,7 @@ export const actions = {
   exportApplications,
   hideSettings,
   importApplications,
+  reorderApplication,
   reorderEnvironment,
   removeAccount,
   removeEnvironment,

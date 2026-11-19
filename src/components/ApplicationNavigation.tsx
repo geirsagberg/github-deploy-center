@@ -1,5 +1,6 @@
 import { Box } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
+import { useState } from 'react'
 import type { ApplicationConfig } from '../state/schemas'
 import type { EnvironmentStatusesByApplicationId } from './applicationWorkspaceHelpers'
 import { ApplicationNavigationActions } from './ApplicationNavigationActions'
@@ -17,6 +18,7 @@ export function ApplicationNavigation({
   selectedApplication?: ApplicationConfig
 }) {
   const theme = useTheme()
+  const [draggedApplicationId, setDraggedApplicationId] = useState<string>()
 
   return (
     <Box
@@ -36,6 +38,8 @@ export function ApplicationNavigation({
       {applications.map((application, index) => (
         <ApplicationNavigationItem
           application={application}
+          draggedApplicationId={draggedApplicationId}
+          onDraggedApplicationIdChange={setDraggedApplicationId}
           color={swatches[index % swatches.length]}
           environmentStatuses={
             environmentStatusesByApplicationId[application.id] ?? {}

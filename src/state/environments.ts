@@ -210,37 +210,6 @@ export function editEnvironmentSettings(
   )
 }
 
-export function reorderEnvironmentSettings(
-  currentSettings: Record<string, EnvironmentSettings>,
-  draggedName: string,
-  targetName: string,
-) {
-  const environments = Object.values(currentSettings)
-  const fromIndex = environments.findIndex(
-    (environment) => environment.name === draggedName,
-  )
-  const toIndex = environments.findIndex(
-    (environment) => environment.name === targetName,
-  )
-
-  if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
-    return currentSettings
-  }
-
-  const [draggedEnvironment] = environments.splice(fromIndex, 1)
-  const targetIndex = environments.findIndex(
-    (environment) => environment.name === targetName,
-  )
-
-  environments.splice(
-    fromIndex < toIndex ? targetIndex + 1 : targetIndex,
-    0,
-    draggedEnvironment,
-  )
-
-  return environmentSettingsByName(environments)
-}
-
 export function sortEnvironments<T extends { name: string }>(
   environments: readonly T[],
 ) {

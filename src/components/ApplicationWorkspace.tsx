@@ -23,7 +23,7 @@ export const ApplicationWorkspace = ({
   children,
 }: ApplicationWorkspaceProps) => {
   const { applicationsById, selectedApplicationId } = useAppState()
-  const applications = getSortedApplications(applicationsById)
+  const applications = Object.values(applicationsById)
   const environmentStatusesByApplicationId =
     useApplicationEnvironmentStatuses(applications)
 
@@ -44,7 +44,7 @@ export function ApplicationWorkspaceView({
   selectedApplicationId,
   environmentStatusesByApplicationId = {},
 }: ApplicationWorkspaceViewProps) {
-  const applications = getSortedApplications(applicationsById)
+  const applications = Object.values(applicationsById)
 
   if (!applications.length) {
     return <EmptyApplicationWorkspace />
@@ -124,13 +124,5 @@ function EmptyApplicationWorkspace() {
         </Box>
       </Box>
     </Box>
-  )
-}
-
-function getSortedApplications(
-  applicationsById: Record<string, ApplicationConfig>,
-) {
-  return Object.values(applicationsById).sort((left, right) =>
-    left.name.localeCompare(right.name),
   )
 }

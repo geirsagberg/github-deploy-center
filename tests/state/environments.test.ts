@@ -3,12 +3,12 @@ import {
   addEnvironmentSettings,
   editEnvironmentSettings,
   isProductionEnvironmentValue,
-  reorderEnvironmentSettings,
   resolveEnvironmentWorkflowInputValue,
   resolveUnambiguousEnvironmentWorkflowInputValue,
   sortEnvironments,
   suggestEnvironmentMappings,
 } from '../../src/state/environments'
+import { reorderRecord } from '../../src/utils'
 import type { EnvironmentSettings } from '../../src/state/schemas'
 
 const settings = (
@@ -234,12 +234,12 @@ describe('environment ordering', () => {
       prod: settings('prod'),
     }
 
-    expect(Object.keys(reorderEnvironmentSettings(current, 'dev', 'qa'))).toEqual(
+    expect(Object.keys(reorderRecord(current, 'dev', 'qa'))).toEqual(
       ['test', 'qa', 'dev', 'prod'],
     )
 
     expect(
-      Object.keys(reorderEnvironmentSettings(current, 'prod', 'test')),
+      Object.keys(reorderRecord(current, 'prod', 'test')),
     ).toEqual(['dev', 'prod', 'test', 'qa'])
   })
 
