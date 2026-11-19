@@ -17,14 +17,18 @@ export function ApplicationNavigationItem({
   draggedApplicationId,
   environmentStatuses,
   isSelected,
+  nextApplicationId,
   onDraggedApplicationIdChange,
+  previousApplicationId,
 }: {
   application: ApplicationConfig
   color: string
   draggedApplicationId?: string
   environmentStatuses: Record<string, EnvironmentDeployStatus>
   isSelected: boolean
+  nextApplicationId?: string
   onDraggedApplicationIdChange: (applicationId?: string) => void
+  previousApplicationId?: string
 }) {
   const { reorderApplication, selectApplication } = useActions()
   const environmentSettings = getEnvironmentSettings(application)
@@ -102,7 +106,21 @@ export function ApplicationNavigationItem({
       </ButtonBase>
       <Box
         aria-label={`Move ${application.name}`}
+        aria-keyshortcuts="ArrowUp ArrowDown"
         draggable
+        role="button"
+        tabIndex={0}
+        onKeyDown={(event) => {
+          const targetId =
+            event.key === 'ArrowUp'
+              ? previousApplicationId
+              : event.key === 'ArrowDown'
+                ? nextApplicationId
+                : undefined
+          if (!targetId) return
+          event.preventDefault()
+          reorderApplication({ draggedId: application.id, targetId })
+        }}
         onDragStart={(event) => {
           onDraggedApplicationIdChange(application.id)
           event.dataTransfer.effectAllowed = 'move'
@@ -117,7 +135,12 @@ export function ApplicationNavigationItem({
           display: 'flex',
           alignItems: 'center',
           px: 0.9,
+          borderRadius: 'inherit',
           cursor: 'grab',
+          '&:focus-visible': {
+            outline: `2px solid ${color}`,
+            outlineOffset: -2,
+          },
         }}
       >
         <Box

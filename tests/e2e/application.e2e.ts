@@ -206,7 +206,7 @@ test('reorders environments for a saved application', async ({ page, github }) =
   ).toEqual(['dev', 'prod', 'test', 'tst', 'qa', 'staging', 'sandbox'])
 })
 
-test('reorders applications by dragging the color handle', async ({
+test('reorders applications with the color handle', async ({
   page,
   github,
 }) => {
@@ -242,6 +242,10 @@ test('reorders applications by dragging the color handle', async ({
       reordered.accountsById[E2E_ACCOUNT_ID].workspace.applicationsById
     )
   ).toEqual(['gamma', 'alpha', 'beta'])
+
+  await navigation.getByRole('button', { name: 'Move Gamma' }).press('ArrowDown')
+
+  await expect(applicationButtons).toHaveText([/^Alpha/, /^Gamma/, /^Beta/])
 })
 
 test('edits and deletes environments from the environment dialog', async ({

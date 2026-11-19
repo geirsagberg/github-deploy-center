@@ -39,6 +39,8 @@ export function ApplicationNavigation({
         <ApplicationNavigationItem
           application={application}
           draggedApplicationId={draggedApplicationId}
+          nextApplicationId={applications[index + 1]?.id}
+          previousApplicationId={applications[index - 1]?.id}
           onDraggedApplicationIdChange={setDraggedApplicationId}
           color={swatches[index % swatches.length]}
           environmentStatuses={
