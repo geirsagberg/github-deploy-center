@@ -206,6 +206,44 @@ test('reorders environments for a saved application', async ({ page, github }) =
   ).toEqual(['dev', 'prod', 'test', 'tst', 'qa', 'staging', 'sandbox'])
 })
 
+test('reorders applications by dragging the color handle', async ({
+  page,
+  github,
+}) => {
+  const applications = ['Alpha', 'Beta', 'Gamma'].map((name) => ({
+    ...createPersistedApplication(),
+    id: name.toLowerCase(),
+    name,
+  }))
+  await github.seedAuthenticatedState({
+    applicationsById: Object.fromEntries(
+      applications.map((application) => [application.id, application])
+    ),
+    selectedApplicationId: 'alpha',
+  })
+
+  await page.goto('/')
+
+  const navigation = page.getByRole('navigation', { name: 'Applications' })
+  const applicationButtons = navigation.getByRole('button', {
+    name: /^Switch to/,
+  })
+  await expect(applicationButtons).toHaveText([/^Alpha/, /^Beta/, /^Gamma/])
+
+  await navigation
+    .getByLabel('Move Gamma')
+    .dragTo(navigation.getByRole('button', { name: 'Switch to Alpha' }))
+
+  await expect(applicationButtons).toHaveText([/^Gamma/, /^Alpha/, /^Beta/])
+
+  const reordered = await github.readPersistedState()
+  expect(
+    Object.keys(
+      reordered.accountsById[E2E_ACCOUNT_ID].workspace.applicationsById
+    )
+  ).toEqual(['gamma', 'alpha', 'beta'])
+})
+
 test('edits and deletes environments from the environment dialog', async ({
   page,
   github,
