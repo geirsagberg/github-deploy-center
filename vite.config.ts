@@ -14,6 +14,7 @@ const matchesAnyPackage = (id: string, packageNames: string[]) =>
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: './',
   plugins: [react(), babel({ presets: [reactCompiler] }), visualizer()],
   resolve: {
     alias: {

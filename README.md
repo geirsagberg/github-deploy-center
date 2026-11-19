@@ -72,7 +72,7 @@ API errors fail the cleanup step. If an update fails partway through, earlier up
 
 ## Hosting
 
-The app is hosted in Azure at https://githubdeploy.z1.web.core.windows.net/, and will be kept updated to the latest version. If you want to host it yourself, you can build it for production with `bun run build`, then host the resulting static assets in `dist/` anywhere you like, e.g. Azure Blob Storage, Heroku, Google Cloud Storage.
+The app is hosted on GitHub Pages at https://geirsagberg.github.io/github-deploy-center/, and will be kept updated to the latest version. If you want to host it yourself, you can build it for production with `bun run build`, then host the resulting static assets in `dist/` anywhere you like, e.g. GitHub Pages, Azure Blob Storage, Google Cloud Storage.
 
 # Development
 

@@ -24,6 +24,7 @@ permissions:
   contents: read
   deployments: write
   id-token: write
+  pages: write
 
 env:
   GITHUB_TOKEN: ${{ github.token }}
@@ -105,9 +106,11 @@ jobs:
         run: unzip release.zip -d release
 
       - name: Download azcopy
+        if: env.ENVIRONMENT != 'prod'
         run: curl https://aka.ms/downloadazcopy-v10-linux --output azcopy_v10.tar.gz -L && tar -xf azcopy_v10.tar.gz --strip-components=1 && chmod +x azcopy
 
       - name: Login to Azure
+        if: env.ENVIRONMENT != 'prod'
         uses: azure/login@v3
         with:
           client-id: ${{ env.AZURE_CLIENT_ID }}
@@ -115,13 +118,25 @@ jobs:
           subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
 
       - name: Set storage account
+        if: env.ENVIRONMENT != 'prod'
         run: |
-          echo "STORAGE_ACCOUNT=${{ env.ENVIRONMENT == 'prod' && 'githubdeploy' || env.ENVIRONMENT == 'test' && 'githubdeploytest' || 'githubdeploydev' }}" >> $GITHUB_ENV
+          echo "STORAGE_ACCOUNT=${{ env.ENVIRONMENT == 'test' && 'githubdeploytest' || 'githubdeploydev' }}" >> $GITHUB_ENV
 
       - name: Copy files to Azure Storage
+        if: env.ENVIRONMENT != 'prod'
         env:
           AZCOPY_AUTO_LOGIN_TYPE: AZCLI
         run: cd release && ../azcopy sync . "https://${STORAGE_ACCOUNT}.blob.core.windows.net/\$web" --delete-destination true
+
+      - name: Upload Pages artifact
+        if: env.ENVIRONMENT == 'prod'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: release
+
+      - name: Deploy to GitHub Pages
+        if: env.ENVIRONMENT == 'prod'
+        uses: actions/deploy-pages@v5
 
       - name: Update deployment status
         uses: chrnorm/deployment-status@v2
