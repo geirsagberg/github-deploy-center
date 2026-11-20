@@ -14,52 +14,49 @@ import { EnvironmentStatusChip } from './EnvironmentStatusChip'
 export function ApplicationNavigationItem({
   application,
   color,
-  draggedApplicationId,
   environmentStatuses,
+  isDragged,
   isSelected,
   nextApplicationId,
-  onDraggedApplicationIdChange,
+  onDragEnd,
+  onDragOver,
+  onDragStart,
   previousApplicationId,
 }: {
   application: ApplicationConfig
   color: string
-  draggedApplicationId?: string
   environmentStatuses: Record<string, EnvironmentDeployStatus>
+  isDragged: boolean
   isSelected: boolean
   nextApplicationId?: string
-  onDraggedApplicationIdChange: (applicationId?: string) => void
+  onDragEnd: () => void
+  onDragOver: (isPointerInLowerHalf: boolean) => void
+  onDragStart: () => void
   previousApplicationId?: string
 }) {
   const { reorderApplication, selectApplication } = useActions()
   const environmentSettings = getEnvironmentSettings(application)
   const extraArgEntries = getExtraArgEntries(application)
 
-  const isDropTarget =
-    !!draggedApplicationId && draggedApplicationId !== application.id
-
   return (
     <Box
       onDragOver={(event) => {
-        if (isDropTarget) event.preventDefault()
-      }}
-      onDrop={(event) => {
-        event.preventDefault()
-        if (isDropTarget) {
-          reorderApplication({
-            draggedId: draggedApplicationId,
-            targetId: application.id,
-          })
-        }
-        onDraggedApplicationIdChange(undefined)
+        const { top, height } = event.currentTarget.getBoundingClientRect()
+        onDragOver(event.clientY > top + height / 2)
       }}
       sx={{
         position: 'relative',
         borderRadius: 1.25,
         background: isSelected ? alpha(color, 0.14) : 'transparent',
-        opacity: draggedApplicationId === application.id ? 0.5 : 1,
+        opacity: isDragged ? 0.5 : 1,
         transition: '140ms ease',
         '&:hover': {
           background: alpha(color, 0.12),
+        },
+        '&:hover .application-drag-handle': {
+          height: 30,
+          opacity: 1,
+          '&::after': { opacity: 1 },
         },
       }}
     >
@@ -122,11 +119,11 @@ export function ApplicationNavigationItem({
           reorderApplication({ draggedId: application.id, targetId })
         }}
         onDragStart={(event) => {
-          onDraggedApplicationIdChange(application.id)
+          onDragStart()
           event.dataTransfer.effectAllowed = 'move'
           event.dataTransfer.setData('text/plain', application.id)
         }}
-        onDragEnd={() => onDraggedApplicationIdChange(undefined)}
+        onDragEnd={onDragEnd}
         sx={{
           position: 'absolute',
           top: 0,
@@ -144,12 +141,24 @@ export function ApplicationNavigationItem({
         }}
       >
         <Box
+          className="application-drag-handle"
           sx={{
+            position: 'relative',
             width: 8,
             height: 36,
             borderRadius: 1,
             background: color,
             opacity: isSelected ? 1 : 0.45,
+            transition: '140ms ease',
+            '&::after': {
+              content: '""',
+              position: 'absolute',
+              inset: '6px 0',
+              backgroundImage: `radial-gradient(circle, ${alpha('#000', 0.4)} 1px, transparent 1.5px)`,
+              backgroundSize: '4px 4px',
+              opacity: 0,
+              transition: 'opacity 140ms ease',
+            },
           }}
         />
       </Box>

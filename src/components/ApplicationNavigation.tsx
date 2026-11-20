@@ -2,6 +2,8 @@ import { Box } from '@mui/material'
 import { alpha, useTheme } from '@mui/material/styles'
 import { useState } from 'react'
 import type { ApplicationConfig } from '../state/schemas'
+import { useActions } from '../store'
+import { reorderKeys } from '../utils'
 import type { EnvironmentStatusesByApplicationId } from './applicationWorkspaceHelpers'
 import { ApplicationNavigationActions } from './ApplicationNavigationActions'
 import { ApplicationNavigationItem } from './ApplicationNavigationItem'
@@ -18,12 +20,28 @@ export function ApplicationNavigation({
   selectedApplication?: ApplicationConfig
 }) {
   const theme = useTheme()
-  const [draggedApplicationId, setDraggedApplicationId] = useState<string>()
+  const { reorderApplication } = useActions()
+  const [drag, setDrag] = useState<{ id: string; order: string[] }>()
+  const orderedApplications = drag
+    ? drag.order.flatMap(
+        (id) => applications.find((application) => application.id === id) ?? [],
+      )
+    : applications
 
   return (
     <Box
       component="nav"
       aria-label="Applications"
+      onDragOver={(event) => {
+        if (drag) event.preventDefault()
+      }}
+      onDrop={(event) => {
+        event.preventDefault()
+        if (!drag) return
+        const targetId = applications[drag.order.indexOf(drag.id)]?.id
+        if (targetId) reorderApplication({ draggedId: drag.id, targetId })
+        setDrag(undefined)
+      }}
       sx={{
         display: 'grid',
         alignContent: 'start',
@@ -35,13 +53,33 @@ export function ApplicationNavigation({
       }}
     >
       <ApplicationNavigationActions />
-      {applications.map((application, index) => (
+      {orderedApplications.map((application, index) => (
         <ApplicationNavigationItem
           application={application}
-          draggedApplicationId={draggedApplicationId}
-          nextApplicationId={applications[index + 1]?.id}
-          previousApplicationId={applications[index - 1]?.id}
-          onDraggedApplicationIdChange={setDraggedApplicationId}
+          isDragged={drag?.id === application.id}
+          nextApplicationId={orderedApplications[index + 1]?.id}
+          previousApplicationId={orderedApplications[index - 1]?.id}
+          onDragStart={() =>
+            setDrag({
+              id: application.id,
+              order: applications.map(({ id }) => id),
+            })
+          }
+          onDragOver={(isPointerInLowerHalf) =>
+            setDrag((current) => {
+              if (!current || current.id === application.id) return current
+              const isMovingDown =
+                current.order.indexOf(current.id) <
+                current.order.indexOf(application.id)
+              // Swap only past the middle, so rows of different heights stay put.
+              if (isMovingDown !== isPointerInLowerHalf) return current
+              return {
+                ...current,
+                order: reorderKeys(current.order, current.id, application.id),
+              }
+            })
+          }
+          onDragEnd={() => setDrag(undefined)}
           color={swatches[index % swatches.length]}
           environmentStatuses={
             environmentStatusesByApplicationId[application.id] ?? {}
