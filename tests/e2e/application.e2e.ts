@@ -230,9 +230,32 @@ test('reorders applications with the color handle', async ({
   })
   await expect(applicationButtons).toHaveText([/^Alpha/, /^Beta/, /^Gamma/])
 
-  await navigation
-    .getByLabel('Move Gamma')
-    .dragTo(navigation.getByRole('button', { name: 'Switch to Alpha' }))
+  const dragGammaOverAlpha = async () => {
+    await navigation.getByLabel('Move Gamma').hover()
+    await page.mouse.down()
+    const alpha = navigation.getByRole('button', { name: 'Switch to Alpha' })
+    // Playwright sends dragenter on the first move and dragover after it.
+    await alpha.hover({ position: { x: 40, y: 4 } })
+    await alpha.hover({ position: { x: 40, y: 6 } })
+    await expect(applicationButtons).toHaveText([/^Gamma/, /^Alpha/, /^Beta/])
+  }
+
+  await dragGammaOverAlpha()
+  await page.mouse.move(600, 400)
+  await page.mouse.up()
+
+  await expect(applicationButtons).toHaveText([/^Alpha/, /^Beta/, /^Gamma/])
+
+  await dragGammaOverAlpha()
+  expect(
+    Object.keys(
+      (await github.readPersistedState()).accountsById[E2E_ACCOUNT_ID]
+        .workspace.applicationsById
+    )
+  ).toEqual(['alpha', 'beta', 'gamma'])
+  // Browsers resend dragover during a drag; Playwright needs a move to do so.
+  await navigation.getByRole('button', { name: 'Switch to Gamma' }).hover()
+  await page.mouse.up()
 
   await expect(applicationButtons).toHaveText([/^Gamma/, /^Alpha/, /^Beta/])
 
