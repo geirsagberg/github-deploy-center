@@ -153,7 +153,9 @@ export function ApplicationNavigationItem({
             '&::after': {
               content: '""',
               position: 'absolute',
-              inset: '6px 0',
+              inset: 0,
+              height: 12,
+              margin: 'auto 0',
               backgroundImage: `radial-gradient(circle, ${alpha('#000', 0.4)} 1px, transparent 1.5px)`,
               backgroundSize: '4px 4px',
               opacity: 0,
